@@ -23,8 +23,9 @@ header {
 header nav ul {
     list-style: none;
     display: flex;
-    justify-content: center;
+    justify-content: left;
     gap: 2rem;
+    margin-left: 1rem;
 }
 
 header nav ul li {

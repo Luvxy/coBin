@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}
+blog Page
+{% endblock %}
+
+{% block content %}
+<h1>게시판 페이지입니다</h1>
+<button><a href="new_post/">글쓰기</a></button>
+<!-- 게시판(postlist)의 게시글(list)을 하나씩 보여줍니다 -->
+<table>
+<!-- 게시글 순서는 pk number가 작은 숫자가 아래로 가도록-->
+{% for post in postlist %}
+<tr>
+    <td><a href="{{post.pk}}">{{post.postname}}</a></td>
+</tr>
+{% endfor %}
+</table>
+{% endblock %}

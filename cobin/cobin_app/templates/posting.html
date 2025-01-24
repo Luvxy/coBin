@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}
+posting Page
+{% endblock %}
+
+{% block content %}
+<h2>{{post.postname}}</h2>
+<p>{{post.contents}}</p>
+<!-- 이미지 보여주기 -->
+{% if post.mainphoto %}
+<img src = "{{ post.mainphoto.url }}" alt="" height="600">
+<br>
+{% endif %}
+<a href="/blog/{{post.pk}}/remove/">삭제</a>
+<a href"/blog/">목록</a>
+{% endblock %}

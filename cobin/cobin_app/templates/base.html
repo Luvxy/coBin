@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}coB2n{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="{% static 'js/main.js' %}"></script>
 </head>
 <body>
     <!-- 공통 헤더 -->
@@ -13,21 +14,31 @@
         <nav>
             <ul>
                 <li><a href="/">COB2N</a></li>
-                <li><a href="/blog/">게시판</a></li>
-                <li><a href="/contact/">실행</a></li>
+                <li>
+                <div class="dropdown">
+                <a>게시판</a>
+                    <div class="dropdown-content">
+                      <a href="/blog/">자유게시판</a>
+                      <a href="#">정보게시판</a>
+                      <a href="#">투표게시판</a>
+                    </div>
+                  </div>
+                </li> 
+                <li><a href="/contact/">excute</a></li>
                 <li><a href="/profile/">프로필</a></li>
+                <li>
+                    {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="logout-button">{{ user.username }}(로그아웃)</button>
+                    </form>
+                    {% else %}
+                    <a href="{% url 'login' %}">로그인</a>
+                    {% endif %}
+                </li>
             </ul>
         </nav>
     </header>
-
-    <aside>
-        <h3>게시판</h3>
-        <ul>
-            <li><a href="/blog/1/">자유게시판</a></li>
-            <li><a href="/blog/2/">투표게시판</a></li>
-            <li><a href="/blog/3/">정보게시판</a></li>
-        </ul>
-
     <!-- 페이지별 내용 -->
     <main>
         {% block content %}

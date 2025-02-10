@@ -1,9 +1,13 @@
 from django.shortcuts import render
 from django.shortcuts import redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login
 from .models import Post
+from django.contrib.auth.forms import AuthenticationForm  # Django 내장 로그인 폼
 
 import firebase_admin
 from firebase_admin import credentials, firestore
+from cobin_app.forms import UserForm
 
 import os
 from django.conf import settings
@@ -28,21 +32,59 @@ def save_user_to_firestore(user_id, name, email, membership):
         "profileImage": ""
     })
 
+def save_user_to_firestore(user_id, name, email, membership):
+    user_ref = db.collection("users").document(user_id)
+    user_ref.set({
+        "name": name,
+        "email": email,
+        "membership": membership,
+        "profileImage": ""
+    })
+
+def get_user_from_firestore(user_id):
+    user_ref = db.collection("users").document(user_id)
+    user_doc = user_ref.get()
+    if user_doc.exists:
+        return user_doc.to_dict()
+    else:
+        return None
+
+def signup(request):
+    if request.method == "POST":
+        form = UserForm(request.POST)
+        if form.is_valid():
+            form.save()
+            username = form.cleaned_data.get('username')
+            raw_password = form.cleaned_data.get('password1')
+            user = authenticate(username=username, password=raw_password)  # 사용자 인증
+            login(request, user)  # 로그인
+            print("회원가입 성공")
+            return redirect('/')
+    else:
+        print("회원가입 실패")
+        form = UserForm()
+    return render(request, 'login.html', {'form': form})
+
+@login_required
 def profile(request):
     user_id = "user123"  # 예제 유저 ID
     user_ref = db.collection("users").document(user_id)
     user = user_ref.get().to_dict()
     return render(request, 'profile.html', {'user_data': user})
 
+@login_required
 def home(request):
     return render(request, 'index.html')  # index 파일 경로
 
+@login_required
 def contact(request):
     return render(request, 'contact.html')  # index 파일 경로
 
+@login_required
 def profile(request):
     return render(request, 'profile.html')  # index 파일 경로
 
+@login_required
 def blog(request):
     # 게시글을 전부 가져와 postlist에 저장
     postlist = Post.objects.all()
@@ -50,12 +92,14 @@ def blog(request):
     return render(request, 'blog.html', {'postlist':postlist})  # blog 파일 경로
 
 # blog의 게시글(posting)을 부르는 posting 함수
+@login_required
 def posting(request, pk):
     # 게시글(Post) 중 pk(primary_key)를 이용해 하나의 게시글(post)를 검색
     post = Post.objects.get(pk=pk)
     # posting.html 페이지를 열 때, 찾아낸 게시글(post)을 post라는 이름으로 가져옴
     return render(request, 'posting.html', {'post':post})
 
+@login_required
 def new_post(request):
     if request.method == 'POST':
         if request.POST['mainphoto']:
@@ -73,6 +117,7 @@ def new_post(request):
         return redirect('/blog/')
     return render(request, 'new_post.html')
 
+@login_required
 def remove_post(request, pk):
     post = Post.objects.get(pk=pk)
     if request.method == 'POST':
@@ -80,19 +125,25 @@ def remove_post(request, pk):
         return redirect('/blog/')
     return render(request, 'remove_post.html', {'post': post})
 
-def save_user_to_firestore(user_id, name, email, membership):
-    user_ref = db.collection("users").document(user_id)
-    user_ref.set({
-        "name": name,
-        "email": email,
-        "membership": membership,
-        "profileImage": ""
-    })
+def login_view(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)  # 폼 객체 생성
+        if form.is_valid():  # 폼 유효성 검사
+            username = form.cleaned_data['username']
+            password = form.cleaned_data['password']
+            user = authenticate(request, username=username, password=password)  # 사용자 인증
 
-def get_user_from_firestore(user_id):
-    user_ref = db.collection("users").document(user_id)
-    user_doc = user_ref.get()
-    if user_doc.exists:
-        return user_doc.to_dict()
+            if user is not None:
+                login(request, user)  # 로그인
+                return redirect('some_view')  # 로그인 후 리디렉션
+            else:
+                # ... 인증 실패 처리 ...
+                pass  # form.errors에 에러 메시지가 자동으로 추가됨
+        else:
+            # ... 폼 유효성 검사 실패 ...
+            pass # form.errors에 에러 메시지가 자동으로 추가됨
+
     else:
-        return None
+        form = AuthenticationForm()  # 빈 폼 객체 생성
+
+    return render(request, 'login.html', {'form': form})  # 폼 객체를 템플릿에 전달

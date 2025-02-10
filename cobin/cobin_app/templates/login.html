@@ -1,24 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login/Signup</title>
-    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="{% static 'css/login.css' %}">
 </head>
 <body>
+    {% if user.is_authenticated %}
+        <script>
+            window.location.href = "/";
+        </script>
+    {% endif %}
     <div class="container">
         <div class="form-box login">
-            <form action="#">
+            <form method="post" action="{% url 'login' %}"> {% csrf_token %}
                 <h1>로그인</h1>
                 <div class="input-box">
-                    <input type="text" placeholder="Username" required>
+                    <input type="text" placeholder="username" name="username" id="username" required >
                     <i class='bx bxs-user'></i>
                 </div>
                 <div class="input-box">
-                    <input type="password" placeholder="Password" required>
-                    <i class='bx bxs-lock-alt' ></i>
+                    <input type="password" placeholder="password" name="password" id="password" required>
+                    <i class='bx bxs-lock-alt'></i>
                 </div>
                 <div class="forgot-link">
                     <a href="#">비밀번호룰 모르시겠다고요?</a>
@@ -35,18 +40,26 @@
         </div>
 
         <div class="form-box register">
-            <form action="#">
+            <form method="post" action="{% url 'signup' %}"> {% csrf_token %}
                 <h1>회원가입</h1>
                 <div class="input-box">
-                    <input type="text" placeholder="Username" required>
+                    <input type="text" placeholder="username" required name="username" id="username"
+                    value="{{ form.username.value|default_if_none:'' }}">
                     <i class='bx bxs-user'></i>
                 </div>
                 <div class="input-box">
-                    <input type="email" placeholder="Email" required>
+                    <input type="email" placeholder="email" required name="email" id="email"
+                    value="{{ form.email.value|default_if_none:'' }}">
                     <i class='bx bxs-envelope' ></i>
                 </div>
                 <div class="input-box">
-                    <input type="password" placeholder="Password" required>
+                    <input type="password" placeholder="password" required name="password1" id="password1"
+                    value="{{ form.password1.value|default_if_none:'' }}">
+                    <i class='bx bxs-lock-alt' ></i>
+                </div>
+                <div class="input-box">
+                    <input type="password" placeholder="password2" required name="password2" id="password2"
+                    value="{{ form.password2.value|default_if_none:'' }}">
                     <i class='bx bxs-lock-alt' ></i>
                 </div>
                 <button type="submit" class="btn">완료</button>
@@ -75,6 +88,6 @@
         </div>
     </div>
 
-    <script src="main.js"></script>
+    <script src="{%static 'js/login.js' %}"></script>
 </body>
 </html>

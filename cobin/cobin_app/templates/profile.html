@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% load static %}
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js"></script>
+
+<!-- Firebase 설정 파일 추가 -->
+<script src="{% static 'js/firebaseConfig.js' %}"></script>
+{% block title %}
+profile Page
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <!-- 프로필 이미지 -->
+    <div>
+        <img id="profileImage" src="https://via.placeholder.com/150" alt="Profile Image" class="profile-image">
+        <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+        <button onclick="document.getElementById('imageUpload').click()" class="edit-button">Change Image</button>
+    </div>
+
+    <!-- 프로필 정보 -->
+    <div class="profile-info">
+        <h2 id="userName">John Doe</h2>
+        <p id="userEmail">john.doe@example.com</p>
+        <p><strong>Membership:</strong> <span id="membershipStatus">Premium</span></p>
+        <button onclick="editProfile()" class="edit-button">Edit Profile</button>
+    </div>
+</div>
+
+<!-- 성과 그래프 -->
+<div class="graph-container">
+    <canvas id="myChart"></canvas>
+</div>
+
+<script src="{% static 'js/profile.js' %}"></script>
+{% endblock %}

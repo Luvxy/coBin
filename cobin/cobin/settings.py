@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'channels',
     'cobin_app',
 ]
 
@@ -132,3 +133,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
+
+FIREBASE_CREDENTIALS = os.path.join(BASE_DIR, 'config', 'cob2n-c0ece-firebase-adminsdk-fbsvc-5d0134383a.json')
+
+# ASGI 설정 추가
+ASGI_APPLICATION = "cobin.asgi.application"
+
+# WebSocket을 위한 채널 설정
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    },
+}

@@ -8,4 +8,25 @@ Home Page
 <h1>Welcome to My Website!</h1>
 <p>This is the main content of the home page.</p>
 <a href="/about/">Learn more about us</a>
+<script>
+    const socket = new WebSocket("ws://localhost:8000/ws/trading/");
+
+    socket.onopen = function() {
+        console.log("✅ WebSocket 연결 성공!");
+        socket.send(JSON.stringify({ action: "update_settings", settings: { strategy: "scalping" }}));
+    };
+
+    socket.onmessage = function(event) {
+        console.log("📩 서버 응답:", event.data);
+    };
+
+    socket.onerror = function(error) {
+        console.error("🚨 WebSocket 오류 발생:", error);
+    };
+
+    socket.onclose = function(event) {
+        console.log("🔌 WebSocket 연결 종료:", event);
+    };
+</script>
+
 {% endblock %}

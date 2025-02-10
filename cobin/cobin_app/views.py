@@ -2,8 +2,46 @@ from django.shortcuts import render
 from django.shortcuts import redirect
 from .models import Post
 
+import firebase_admin
+from firebase_admin import credentials, firestore
+
+import os
+from django.conf import settings
+
+# Firebase 인증 정보 로드
+cred_path = settings.FIREBASE_CREDENTIALS
+if not os.path.exists(cred_path):
+    raise FileNotFoundError(f"Firebase credential file not found: {cred_path}")
+
+cred = credentials.Certificate(cred_path)
+firebase_admin.initialize_app(cred)
+
+# Firestore 인스턴스 생성
+db = firestore.client()
+
+def save_user_to_firestore(user_id, name, email, membership):
+    user_ref = db.collection("users").document(user_id)
+    user_ref.set({
+        "name": name,
+        "email": email,
+        "membership": membership,
+        "profileImage": ""
+    })
+
+def profile(request):
+    user_id = "user123"  # 예제 유저 ID
+    user_ref = db.collection("users").document(user_id)
+    user = user_ref.get().to_dict()
+    return render(request, 'profile.html', {'user_data': user})
+
 def home(request):
     return render(request, 'index.html')  # index 파일 경로
+
+def contact(request):
+    return render(request, 'contact.html')  # index 파일 경로
+
+def profile(request):
+    return render(request, 'profile.html')  # index 파일 경로
 
 def blog(request):
     # 게시글을 전부 가져와 postlist에 저장
@@ -41,3 +79,20 @@ def remove_post(request, pk):
         post.delete()
         return redirect('/blog/')
     return render(request, 'remove_post.html', {'post': post})
+
+def save_user_to_firestore(user_id, name, email, membership):
+    user_ref = db.collection("users").document(user_id)
+    user_ref.set({
+        "name": name,
+        "email": email,
+        "membership": membership,
+        "profileImage": ""
+    })
+
+def get_user_from_firestore(user_id):
+    user_ref = db.collection("users").document(user_id)
+    user_doc = user_ref.get()
+    if user_doc.exists:
+        return user_doc.to_dict()
+    else:
+        return None

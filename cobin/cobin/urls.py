@@ -37,6 +37,7 @@ urlpatterns = [
     path('blog/<int:pk>/remove/', views.remove_post),
     path('profile/', views.profile, name='profile'),
     path('signup/', views.signup, name='signup'),
+    path('webhook/', views.webhook, name='webhook'),
 ]
 
 # 이미지 URL 설정

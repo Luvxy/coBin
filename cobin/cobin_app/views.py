@@ -5,6 +5,11 @@ from django.contrib.auth import authenticate, login
 from .models import Post
 from django.contrib.auth.forms import AuthenticationForm  # Django 내장 로그인 폼
 
+# webhook 함수에 필요한 라이브러리
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+
 import firebase_admin
 from firebase_admin import credentials, firestore
 from cobin_app.forms import UserForm
@@ -64,6 +69,24 @@ def signup(request):
         print("회원가입 실패")
         form = UserForm()
     return render(request, 'login.html', {'form': form})
+
+@csrf_exempt  # CSRF 보호 비활성화 (웹훅은 보통 CSRF 토큰을 사용하지 않음)
+def webhook(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)  # 웹훅 데이터 파싱
+            print("웹훅 데이터:", data)
+
+            # 웹훅 데이터 처리 로직
+            # ... (예: 데이터베이스 저장, 다른 시스템 연동 등)
+
+            return JsonResponse({"status": "success"})  # 성공 응답
+        except json.JSONDecodeError:
+            return JsonResponse({"status": "error", "message": "Invalid JSON data"}, status=400)
+        except Exception as e:
+            print("웹훅 처리 오류:", e)
+            return JsonResponse({"status": "error", "message": "Webhook processing failed"}, status=500)
+    return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
 
 @login_required
 def profile(request):

@@ -40,10 +40,40 @@
         </nav>
     </header>
     <!-- 페이지별 내용 -->
-    <main>
-        {% block content %}
-        {% endblock %}
-    </main>
+    <div class="container">
+        <!-- 왼쪽 박스 -->
+        <aside class="left-sidebar">
+            <h3>사이드바</h3>
+            <a>sidebar 1</a><br>
+            <a>sidebar 2</a><br>
+            <a>sidebar 3</a><br>
+            <a>sidebar 4</a><br>
+            <a>sidebar 5</a><br>
+            <a>sidebar 6</a><br>
+            <a>sidebar 7</a><br>
+            <a>sidebar 8</a><br>
+            <a>sidebar 9</a><br>
+        </aside>
+
+        <!-- 본문 -->
+        <main class="content">
+            {% block content %}
+            {% endblock %}
+        </main>
+
+        <!-- 오른쪽 박스 -->
+        <aside class="right-sidebar">
+            <h3>오른쪽 사이드바</h3>
+            <a>sidebar 1</a><br>
+            <a>sidebar 2</a><br>
+            <a>sidebar 3</a><br>
+            <a>sidebar 4</a><br>
+        </aside>
+    </div>
+
+    <!-- 우측 하단 고정 버튼 -->
+    <div class="floating-btn">AI</div>
+
 
     <!-- 공통 푸터 -->
     <footer>

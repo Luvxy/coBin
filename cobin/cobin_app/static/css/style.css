@@ -1,38 +1,44 @@
 body {
-    font-family: sans-serif; /* 글꼴 설정 */
-    margin: 0; /* body 기본 margin 제거 */
-    padding: 0; /* body 기본 padding 제거 */
-    background: linear-gradient(90deg, #e2e2e2, #c9d6ff); /* 배경색 설정 */
-    color: #333; /* 기본 글자색 설정 */
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(90deg, #e2e2e2, #c9d6ff);
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
+/* 헤더 */
 header {
-    background-color: #333; /* 헤더 배경색 */
-    color: #fff; /* 헤더 글자색 */
-    padding: 1rem 0; /* 헤더 padding */
+    background-color: #333;
+    color: #fff;
+    padding: 1rem 0;
+    width: 100%;
 }
 
+/* 네비게이션 */
 nav ul {
-    list-style: none; /* 목록 스타일 제거 */
-    margin: 0; /* ul 기본 margin 제거 */
-    padding: 0; /* ul 기본 padding 제거 */
-    display: flex; /* 가로 정렬 */
-    justify-content: center; /* 가운데 정렬 */
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
 }
 
 nav li {
-    margin: 0 1rem; /* 각 메뉴 항목 간 간격 */
+    margin: 0 1rem;
 }
 
 nav a {
-    color: #fff; /* 링크 색상 */
-    text-decoration: none; /* 밑줄 제거 */
-    padding: 0.5rem 1rem; /* 링크 padding */
-    transition: background-color 0.3s; /* 호버 효과를 위한 transition */
+    color: #fff;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    transition: background-color 0.3s;
 }
 
 nav a:hover {
-    background-color: #555; /* 호버 시 배경색 변경 */
+    background-color: #555;
 }
 
 .logout-button {
@@ -47,6 +53,7 @@ nav a:hover {
     background-color: #555;
 }
 
+/* 드롭다운 */
 .dropdown {
     position: relative;
     display: inline-block;
@@ -66,61 +73,87 @@ nav a:hover {
     padding: 12px 16px;
     text-decoration: none;
     display: block;
-    text-align: left; /* 드롭다운 메뉴 텍스트 왼쪽 정렬 */
+    text-align: left;
 }
 
-.dropdown-content a:hover {background-color: #555;}
+.dropdown-content a:hover { background-color: #555; }
 
 .dropdown:hover .dropdown-content {
     display: block;
 }
 
-main {
-    min-width: 60vw; /* viewport width의 100% */
-    min-height: 100vh; /* viewport height의 100% */
-    padding: 2rem; /* main padding */
-    margin: 20px auto; /* 가운데 정렬 및 상하 여백 */
-    max-width: 960px; /* 최대 너비 설정 */
-    background-color: white; /* main 배경색 */
-    box-shadow: 0 0 30px rgba(0, 0, 0, .2); /* 그림자 효과 */
-    border-radius: 10px; /* 모서리 둥글게 */
+/* ✅ 새로운 블럭 레이아웃 */
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 20px;
+    width: 100%;
+    max-width: 1200px;
+    margin-top: 20px;
 }
 
-footer {
-    background-color: #333; /* 푸터 배경색 */
-    color: #fff; /* 푸터 글자색 */
-    text-align: center; /* 가운데 정렬 */
-    padding: 1rem 0; /* 푸터 padding */
-    position: relative; /* 푸터 위치 설정 */
-    bottom: 0; /* 푸터를 아래쪽에 고정 */
-    width: 100%; /* 푸터 너비 100% */
+/* 사이드바 & 본문 */
+aside, main {
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 8px 8px 20px rgba(0, 0, 0, 0.1), -8px -8px 20px rgba(255, 255, 255, 0.5);
 }
 
-/* 추가 스타일 (선택 사항) */
-h1, h2, h3 {
-    color: #333; /* 제목 글자색 */
+.left-sidebar {
+    width: 250px;
+    height: 60vh;
 }
 
-a {
-    color: #007bff; /* 링크 기본 색상 */
-    text-decoration: none;
+.content {
+    flex: 1;
+    min-height: 80vh;
+    max-width: 960px;
 }
 
-a:hover {
-    text-decoration: underline; /* 링크 호버 시 밑줄 */
+.right-sidebar {
+    width: 200px;
+    height: 30vh;
 }
 
-/* 반응형 디자인 (선택 사항) */
+/* 우측 하단 고정 버튼 */
+.floating-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background: black;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* 반응형 디자인 */
 @media (max-width: 768px) {
     nav ul {
-        flex-direction: column; /* 세로 정렬 */
-        text-align: center; /* 가운데 정렬 */
+        flex-direction: column;
+        text-align: center;
     }
 
     nav li {
-        margin: 0.5rem 0; /* 간격 조정 */
+        margin: 0.5rem 0;
     }
-    main {
-        padding: 1rem; /* main padding 줄이기 */
+
+    .container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .left-sidebar, .right-sidebar {
+        width: 100%;
+        height: auto;
     }
 }

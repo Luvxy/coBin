@@ -9,6 +9,17 @@
     <script src="{% static 'js/main.js' %}"></script>
 </head>
 <body>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const viewportHeight = window.innerHeight;
+            const url = new URL(window.location.href);
+            url.searchParams.set("viewport_height", viewportHeight);
+    
+            fetch(url)  // URL에 viewport 높이 추가
+                .then(response => response.text())
+                .then(data => console.log("Viewport height sent:", viewportHeight));
+        });
+    </script>
     <!-- 공통 헤더 -->
     <header>
         <nav>
@@ -24,7 +35,8 @@
                     </div>
                   </div>
                 </li> 
-                <li><a href="/contact/">excute</a></li>
+                <li><a href="/profile/">Best 파일럿</a></li>
+                <li><a href="/contact/">다운로드</a></li>
                 <li><a href="/profile/">프로필</a></li>
                 <li>
                     {% if user.is_authenticated %}
@@ -43,16 +55,16 @@
     <div class="container">
         <!-- 왼쪽 박스 -->
         <aside class="left-sidebar">
-            <h3>사이드바</h3>
-            <a>sidebar 1</a><br>
-            <a>sidebar 2</a><br>
-            <a>sidebar 3</a><br>
-            <a>sidebar 4</a><br>
-            <a>sidebar 5</a><br>
-            <a>sidebar 6</a><br>
-            <a>sidebar 7</a><br>
-            <a>sidebar 8</a><br>
-            <a>sidebar 9</a><br>
+            <h3>최신 게시물</h3>
+            <ul>
+                {% for post in postlist %}
+                    <li>
+                        <a href="{% url 'post_detail' post.id %}">{{ post.postname }}</a>
+                    </li>
+                {% empty %}
+                    <li>게시글이 없습니다.</li>
+                {% endfor %}
+            </ul>
         </aside>
 
         <!-- 본문 -->
@@ -63,7 +75,7 @@
 
         <!-- 오른쪽 박스 -->
         <aside class="right-sidebar">
-            <h3>오른쪽 사이드바</h3>
+            <h3>프로필</h3>
             <a>sidebar 1</a><br>
             <a>sidebar 2</a><br>
             <a>sidebar 3</a><br>

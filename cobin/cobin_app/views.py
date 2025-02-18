@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login
 from .models import Post
 from django.contrib.auth.forms import AuthenticationForm  # Django 내장 로그인 폼
+from django.shortcuts import render, get_object_or_404
 
 # webhook 함수에 필요한 라이브러리
 from django.http import JsonResponse
@@ -70,6 +71,10 @@ def signup(request):
         form = UserForm()
     return render(request, 'login.html', {'form': form})
 
+def post_detail(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    return render(request, 'post_detail.html', {'post': post})
+
 @csrf_exempt  # CSRF 보호 비활성화 (웹훅은 보통 CSRF 토큰을 사용하지 않음)
 def webhook(request):
     if request.method == 'POST':
@@ -97,7 +102,8 @@ def profile(request):
 
 @login_required
 def home(request):
-    return render(request, 'index.html')  # index 파일 경로
+    postlist = Post.objects.all()
+    return render(request, 'index.html', {'postlist':postlist})  # index 파일 경로
 
 @login_required
 def contact(request):

@@ -40,6 +40,7 @@ urlpatterns = [
     path('signup/', views.signup, name='signup'),
     path('webhook/', views.webhook, name='webhook'),
     path('blog/<int:post_id>/', views.post_detail, name='post_detail'),
+    path('upload_user_image/', views.upload_user_image, name='upload_user_image'),
 ]
 
 # 이미지 URL 설정

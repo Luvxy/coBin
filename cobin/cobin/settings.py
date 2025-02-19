@@ -66,6 +66,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'cobin_app.context_processors.postlist_processor',
+                'cobin_app.context_processors.user_data_processor',
             ],
         },
     },

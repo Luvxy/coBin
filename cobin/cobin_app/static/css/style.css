@@ -171,10 +171,63 @@ aside, main {
     max-width: 960px;
 }
 
+/* 오른쪽 사이드바 프로필 간단 스타일 */
 .right-sidebar {
     width: 200px;
-    height: 30vh;
+    /* 높이나 배경색 등 원하는 대로 설정 */
 }
+
+/* 이미지 + 텍스트 묶음 */
+.profile-top {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+/* 프로필 이미지 */
+.profile-image {
+    width: 80px;
+    height: 80px;
+    background-color: #ccc; /* 이미지가 없을 때 배경 */
+    border-radius: 8px; /* 모서리 둥글게 */
+    object-fit: cover;  /* 이미지 비율 유지하며 채우기 */
+    margin-right: 15px;
+}
+
+/* 프로필 텍스트 영역 */
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.profile-username {
+    font-size: 1.1rem;
+    margin: 0;
+    font-weight: bold;
+}
+
+.profile-membership {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 5px 0 0 0;
+}
+
+/* 하단 동그라미 3개 */
+.profile-footer {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 15px;
+}
+
+.profile-circle {
+    width: 40px;
+    height: 40px;
+    background-color: #ddd;
+    border-radius: 50%;
+}
+
+
 
 /* 게시글 썸네일 이미지 */
 .post-thumbnail {
@@ -223,6 +276,100 @@ aside, main {
     cursor: pointer;
     box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.2);
 }
+
+/* 게시판 */
+/* 글쓰기 버튼 */
+.post-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+}
+
+.new-post-btn {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.new-post-btn a {
+    color: white;
+    text-decoration: none;
+}
+
+.new-post-btn:hover {
+    background: #0056b3;
+}
+
+/* 게시판 테이블 */
+.post-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.post-table th, .post-table td {
+    border-bottom: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+.post-table th {
+    background: #f8f9fa;
+}
+
+/* 페이징 스타일 */
+.pagination {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.pagination a {
+    padding: 5px 10px;
+    margin: 2px;
+    border: 1px solid #ccc;
+    text-decoration: none;
+    color: black;
+}
+
+.pagination a:hover {
+    background: #007bff;
+    color: white;
+}
+
+.current-page {
+    font-weight: bold;
+    margin: 0 5px;
+}
+
+/* 검색창 스타일 */
+.search-form {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.search-form input {
+    padding: 5px;
+    width: 200px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.search-form button {
+    padding: 5px 10px;
+    background: #007bff;
+    color: white;
+    border: none;
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+.search-form button:hover {
+    background: #0056b3;
+}
+
 
 /* 반응형 디자인 */
 @media (max-width: 768px) {

@@ -7,6 +7,9 @@
     <title>{% block title %}coB2n{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <script src="{% static 'js/main.js' %}"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js"></script>
 </head>
 <body>
     <script>
@@ -75,11 +78,30 @@
 
         <!-- 오른쪽 박스 -->
         <aside class="right-sidebar">
-            <h3>프로필</h3>
-            <a>sidebar 1</a><br>
-            <a>sidebar 2</a><br>
-            <a>sidebar 3</a><br>
-            <a>sidebar 4</a><br>
+        {% if user.is_authenticated and user_data %}
+            <div class="profile-card">
+                <div class="profile-top">
+                    <img
+                    src="{{ user_data.profileImage|default_if_none:'https://via.placeholder.com/150' }}"
+                    alt="Profile Image"
+                    class="profile-image"
+                    />
+                    <div class="profile-info">
+                        <h3 class="profile-username">{{ user_data.name|default:user.username }} 님</h3>
+                        <p class="profile-membership">등급: {{ user_data.membership|default:'Basic' }}</p>
+                    </div>
+                </div>
+                <div class="profile-footer">
+                    <div class="profile-circle"></div>
+                    <div class="profile-circle"></div>
+                    <div class="profile-circle"></div>
+                </div>
+            </div>
+        {% else %}
+            <h3>오른쪽 사이드바</h3>
+            <p>로그인이 필요합니다.</p>
+        {% endif %}
+
         </aside>
     </div>
 

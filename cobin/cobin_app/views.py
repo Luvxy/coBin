@@ -5,6 +5,9 @@ from django.contrib.auth import authenticate, login
 from .models import Post
 from django.contrib.auth.forms import AuthenticationForm  # Django 내장 로그인 폼
 from django.shortcuts import render, get_object_or_404
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from django.core.paginator import Paginator
 
 # webhook 함수에 필요한 라이브러리
 from django.http import JsonResponse
@@ -37,14 +40,17 @@ def save_user_to_firestore(user_id, name, email, membership):
         "membership": membership,
         "profileImage": ""
     })
-
-def save_user_to_firestore(user_id, name, email, membership):
+    
+def set_user_image_to_firestore(user_id, image_url):
     user_ref = db.collection("users").document(user_id)
-    user_ref.set({
-        "name": name,
-        "email": email,
-        "membership": membership,
-        "profileImage": ""
+    user_ref.update({
+        "profileImage": image_url
+    })
+    
+def set_user_membership_to_firestore(user_id, membership):
+    user_ref = db.collection("users").document(user_id)
+    user_ref.update({
+        "membership": membership
     })
 
 def get_user_from_firestore(user_id):
@@ -64,6 +70,7 @@ def signup(request):
             raw_password = form.cleaned_data.get('password1')
             user = authenticate(username=username, password=raw_password)  # 사용자 인증
             login(request, user)  # 로그인
+            save_user_to_firestore(user.username, user.username, user.email, "basic")
             print("회원가입 성공")
             return redirect('/')
     else:
@@ -95,10 +102,12 @@ def webhook(request):
 
 @login_required
 def profile(request):
-    user_id = "user123"  # 예제 유저 ID
-    user_ref = db.collection("users").document(user_id)
-    user = user_ref.get().to_dict()
-    return render(request, 'profile.html', {'user_data': user})
+    user_id = request.user.username  # Django User.username을 고유 식별자로 사용
+    user_data = get_user_from_firestore(user_id)  # Firestore에서 가져오는 함수 (이미 존재)
+
+    return render(request, 'profile.html', {
+        'user_data': user_data
+    })
 
 @login_required
 def home(request):
@@ -110,15 +119,18 @@ def contact(request):
     return render(request, 'contact.html')  # index 파일 경로
 
 @login_required
-def profile(request):
-    return render(request, 'profile.html')  # index 파일 경로
-
-@login_required
 def blog(request):
-    # 게시글을 전부 가져와 postlist에 저장
-    postlist = Post.objects.all()
-    # blog.html 파일을 불러올때 postlist도 같이 불러옴
-    return render(request, 'blog.html', {'postlist':postlist})  # blog 파일 경로
+    search_query = request.GET.get('search', '')  # 검색어 가져오기
+    postlist = Post.objects.select_related('author').all().order_by('-id')  # 최신순 정렬
+
+    if search_query:
+        postlist = postlist.filter(postname__icontains=search_query)  # 제목에 검색어 포함된 글만 필터링
+
+    paginator = Paginator(postlist, 10)  # 10개씩 페이지 나누기
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'blog.html', {'page_obj': page_obj, 'search_query': search_query})
 
 # blog의 게시글(posting)을 부르는 posting 함수
 @login_required
@@ -176,3 +188,24 @@ def login_view(request):
         form = AuthenticationForm()  # 빈 폼 객체 생성
 
     return render(request, 'login.html', {'form': form})  # 폼 객체를 템플릿에 전달
+
+@csrf_exempt
+@login_required
+def upload_user_image(request):
+    if request.method == 'POST' and request.FILES.get('image'):
+        image_file = request.FILES['image']
+        user_id = request.user.username
+
+        # 파일 확장자 유지하면서 저장
+        file_path = f"profile_images/{user_id}_{image_file.name}"
+        file_name = default_storage.save(file_path, ContentFile(image_file.read()))
+
+        # 저장된 이미지의 URL 생성
+        image_url = f"{settings.MEDIA_URL}{file_name}"
+
+        # Firestore에 저장 (기존 set_user_image_to_firestore 함수 사용)
+        set_user_image_to_firestore(user_id, image_url)
+
+        return JsonResponse({'status': 'success', 'image_url': image_url})
+    else:
+        return JsonResponse({'status': 'fail', 'reason': 'No image provided'}, status=400)

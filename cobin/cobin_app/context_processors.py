@@ -1,5 +1,19 @@
 from .models import Post
+from .views import get_user_from_firestore
+
 import math
+
+from .views import get_user_from_firestore
+
+def user_data_processor(request):
+    """
+    현재 로그인된 사용자의 Firestore 데이터를 모든 템플릿에서 사용 가능하도록 반환
+    """
+    if request.user.is_authenticated:
+        user_id = request.user.username
+        data = get_user_from_firestore(user_id)  # Firestore에서 사용자 데이터 가져오기
+        return {'user_data': data}
+    return {}
 
 def postlist_processor(request):
     base_height = 60  # 기본 텍스트 높이 (px)

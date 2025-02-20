@@ -225,8 +225,6 @@ aside, main {
     border-radius: 50%;
 }
 
-
-
 /* 게시글 썸네일 이미지 */
 .post-thumbnail {
     width: 50px;
@@ -284,7 +282,7 @@ aside, main {
 }
 
 .new-post-btn {
-    background: #007bff;
+    background: #333;
     color: white;
     border: none;
     padding: 8px 12px;
@@ -298,23 +296,40 @@ aside, main {
 }
 
 .new-post-btn:hover {
-    background: #0056b3;
+    background: #333;
 }
 
 /* 게시판 테이블 */
 .post-table {
     width: 100%;
     border-collapse: collapse;
+    font-size: 14px; /* 원하는 크기로 조정 */
+}
+
+.post-table td:first-child a {
+    color: #000;
+    text-decoration: none;
+}
+
+.post-table td:first-child {
+    text-align: left;
+    padding-left: 30px; /* 살짝 들여쓰기 */
 }
 
 .post-table th, .post-table td {
     border-bottom: 1px solid #ddd;
     padding: 10px;
-    text-align: left;
+    text-align: center;
 }
 
 .post-table th {
     background: #f8f9fa;
+}
+
+.comment-count {
+    color: #f00;
+    margin-left: 5px;
+    font-size: 12px;
 }
 
 /* 페이징 스타일 */
@@ -343,21 +358,21 @@ aside, main {
 
 /* 검색창 스타일 */
 .search-form {
+    margin-top: 20px;
     display: flex;
     justify-content: center;
-    margin-top: 20px;
+    align-items: center;
 }
 
 .search-form input {
     padding: 5px;
-    width: 200px;
     border: 1px solid #ccc;
     border-radius: 5px;
 }
 
 .search-form button {
     padding: 5px 10px;
-    background: #007bff;
+    background: #333;
     color: white;
     border: none;
     margin-left: 5px;
@@ -365,7 +380,7 @@ aside, main {
 }
 
 .search-form button:hover {
-    background: #0056b3;
+    background: #333;
 }
 
 

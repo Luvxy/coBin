@@ -1,63 +1,83 @@
 {% extends 'base.html' %}
 
 {% block title %}
-게시판
+  게시판
 {% endblock %}
 
 {% block content %}
-<h1>자유 게시판</h1>
-<!-- 글쓰기 버튼 -->
-<div class="post-actions">
+  <h1>자유 게시판</h1>
+  <!-- 글쓰기 버튼 -->
+  <div class="post-actions">
     <button class="new-post-btn"><a href="new_post/">새 글 작성</a></button>
-</div>
+  </div>
 
-<!-- 게시글 목록 -->
-<table class="post-table">
+  <!-- 게시글 목록 -->
+  <table class="post-table">
     <thead>
-        <tr>
-            <th>제목</th>
-            <th>작성자</th>
-            <th>작성일</th>
-            <th>ID</th>
-        </tr>
+      <tr>
+        <th>제목</th>
+        <th>글쓴이</th>
+        <th>등록일</th>
+        <th>조회</th>
+        <th>좋아요</th>
+      </tr>
     </thead>
     <tbody>
-        {% for post in page_obj %}
+      {% for post in page_obj %}
         <tr>
-            <td><a href="{{ post.pk }}">{{ post.postname }}</a></td>
-            <td>{{ post.author }}</td>
-            <td>
-                {{ post.created_at|date:"m-d" }}
-            </td>
-            <td>{{ post.id }}</td>
+          <td>
+            <a href="{{ post.pk }}">{{ post.postname }}</a>
+            <span class="comment-count">[{{ post.comments.count }}]</span>
+          </td>
+          <td>{{ post.author }}</td>
+          <td>{{ post.created_at|date:'m-d' }}</td>
+          <td>{{ post.view_count }}</td>
+          <td>{{ post.liked_users.count }}</td>
         </tr>
-        {% empty %}
+      {% empty %}
         <tr>
-            <td colspan="2">게시글이 없습니다.</td>
+          <td colspan="2">게시글이 없습니다.</td>
         </tr>
-        {% endfor %}
+      {% endfor %}
     </tbody>
-</table>
+  </table>
 
-<!-- 페이징 -->
-<div class="pagination">
+  <!-- 페이징 -->
+  <div class="pagination">
     {% if page_obj.has_previous %}
-        <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">« 처음</a>
-        <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">‹ 이전</a>
+      <a href="?page=1{% if search_query %}
+          &search={{ search_query }}
+        {% endif %}">
+        « 처음
+      </a>
+      <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}
+          &search={{ search_query }}
+        {% endif %}">
+        ‹ 이전
+      </a>
     {% endif %}
 
     <span class="current-page">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
 
     {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">다음 ›</a>
-        <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">마지막 »</a>
+      <a href="?page={{ page_obj.next_page_number }}{% if search_query %}
+          &search={{ search_query }}
+        {% endif %}">
+        다음 ›
+      </a>
+      <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}
+          &search={{ search_query }}
+        {% endif %}">
+        마지막 »
+      </a>
     {% endif %}
-</div>
+  </div>
 
-<!-- 검색 기능 -->
-<form method="GET" action="{% url 'blog' %}" class="search-form">
-    <input type="text" name="search" value="{{ search_query }}" placeholder="게시글 검색...">
-    <button type="submit">검색</button>
-</form>
-
+  <!-- 검색 기능 -->
+  <form method="GET" action="{% url 'blog' %}" class="search-form">
+    <a>
+      <input type="text" name="search" value="{{ search_query }}" placeholder="게시글 검색..." />
+      <button type="submit">검색</button>
+    </a>
+  </form>
 {% endblock %}

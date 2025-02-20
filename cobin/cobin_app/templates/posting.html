@@ -7,7 +7,9 @@
   <div class="post-container">
     <!-- 제목 -->
     <h2 class="post-title">{{ post.postname }}</h2>
-
+    <a><span>작성자: {{ post.author }}</span></a>
+    <a>작성일: 20{{ post.created_at|date:'y-m-d' }}</a>
+    <a><hr /></a>
     <!-- 조회수, 좋아요 -->
 
     <!-- 상단 버튼들 -->

@@ -9,48 +9,43 @@
 <script src="{% static 'js/firebaseConfig.js' %}"></script>
 
 {% block title %}
-Profile Page
+  Profile Page
 {% endblock %}
 
 {% block content %}
-<div class="profile-container">
-  {% if user_data %}
-    <!-- 프로필 이미지 -->
-    <div>
+  <div class="profile-container">
+    {% if user_data %}
+      <!-- 프로필 이미지 -->
+      <div>
         <!-- 프로필 이미지 표시 -->
-        <img id="profileImage" 
-        src="{{ user_data.profileImage|default_if_none:'/static/default-profile.jpg' }}" 
-        alt="Profile Image" 
-        class="profile-image">
-   
+        <img id="profileImage" src="{{ user_data.profileImage|default_if_none:'/static/default-profile.jpg' }}" alt="Profile Image" class="profile-image" />
+
         <!-- 숨겨진 file input -->
-        <input type="file" id="imageUpload" accept="image/*" style="display: none;">
-        
+        <input type="file" id="imageUpload" accept="image/*" style="display: none;" />
+
         <!-- Change Image 버튼 -->
-        <button onclick="document.getElementById('imageUpload').click()" class="edit-button">
-            Change Image
-        </button>
-    </div>
+        <button onclick="document.getElementById('imageUpload').click()" class="edit-button">Change Image</button>
+      </div>
 
-    <!-- 프로필 정보 -->
-    <div class="profile-info">
-      <h2 id="userName">{{ user_data.name }}</h2>
-      <p id="userEmail">{{ user_data.email }}</p>
-      <p>
-        <strong>Membership:</strong>
-        <span id="membershipStatus">{{ user_data.membership }}</span>
-      </p>
-      <button onclick="editProfile()" class="edit-button">Edit Profile</button>
-    </div>
-  {% else %}
-    <p>유저 정보를 불러올 수 없습니다.</p>
-  {% endif %}
-</div>
+      <!-- 프로필 정보 -->
+      <div class="profile-info">
+        <h2 id="userName">{{ user_data.name }}</h2>
+        <p id="userEmail">{{ user_data.email }}</p>
+        <p>
+          <strong>Membership:</strong>
+          <span id="membershipStatus">{{ user_data.membership }}</span>
+        </p>
+        <button onclick="editProfile()" class="edit-button">Edit Profile</button>
+      </div>
+    {% else %}
+      <p>유저 정보를 불러올 수 없습니다.</p>
+    {% endif %}
+  </div>
 
-<!-- 성과 그래프 -->
-<div class="graph-container">
-  <canvas id="myChart"></canvas>
-</div>
+  <!-- 성과 그래프 -->
+  <div class="graph-container">
+    <canvas id="myChart"></canvas>
+  </div>
 
-<script src="{% static 'js/profile.js' %}"></script>
+  <script src="{% static 'js/profile.js' %}"></script>
 {% endblock %}

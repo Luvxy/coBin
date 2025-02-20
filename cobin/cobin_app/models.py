@@ -48,6 +48,14 @@ class Like(models.Model):
     def __str__(self):
         return f"{self.user} likes {self.post}"    
 
+class PostView(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    viewed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'post')  # 유저별 1번만 기록
+
 # 정보게시판
 class infoPost(models.Model):
     postname = models.CharField(max_length=50)

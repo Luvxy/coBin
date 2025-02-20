@@ -1,117 +1,127 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     {% load static %}
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}coB2n{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      {% block title %}
+        coB2n
+      {% endblock %}
+    </title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
     <script src="{% static 'js/main.js' %}"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js"></script>
-</head>
-<body>
+  </head>
+  <body>
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const viewportHeight = window.innerHeight;
-            const url = new URL(window.location.href);
-            url.searchParams.set("viewport_height", viewportHeight);
-    
-            fetch(url)  // URL에 viewport 높이 추가
-                .then(response => response.text())
-                .then(data => console.log("Viewport height sent:", viewportHeight));
-        });
+      document.addEventListener('DOMContentLoaded', function () {
+        const viewportHeight = window.innerHeight
+        const url = new URL(window.location.href)
+        url.searchParams.set('viewport_height', viewportHeight)
+      
+        fetch(url) // URL에 viewport 높이 추가
+          .then((response) => response.text())
+          .then((data) => console.log('Viewport height sent:', viewportHeight))
+      })
     </script>
     <!-- 공통 헤더 -->
     <header>
-        <nav>
-            <ul>
-                <li><a href="/">COB2N</a></li>
-                <li>
-                <div class="dropdown">
-                <a>게시판</a>
-                    <div class="dropdown-content">
-                      <a href="/blog/">자유게시판</a>
-                      <a href="#">정보게시판</a>
-                      <a href="#">투표게시판</a>
-                    </div>
-                  </div>
-                </li> 
-                <li><a href="/profile/">Best 파일럿</a></li>
-                <li><a href="/contact/">다운로드</a></li>
-                <li><a href="/profile/">프로필</a></li>
-                <li>
-                    {% if user.is_authenticated %}
-                    <form method="post" action="{% url 'logout' %}">
-                        {% csrf_token %}
-                        <button type="submit" class="logout-button">{{ user.username }}(로그아웃)</button>
-                    </form>
-                    {% else %}
-                        <a href="{% url 'login' %}">로그인</a>
-                    {% endif %}
-                </li>
-            </ul>
-        </nav>
+      <nav>
+        <ul>
+          <li>
+            <a href="/">COB2N</a>
+          </li>
+          <li>
+            <div class="dropdown">
+              <a>게시판</a>
+              <div class="dropdown-content">
+                <a href="/blog/">자유게시판</a>
+                <a href="#">정보게시판</a>
+                <a href="#">투표게시판</a>
+              </div>
+            </div>
+          </li>
+          <li>
+            <a href="/contact/">Best 파일럿</a>
+          </li>
+          <li>
+            <a href="/contact/">다운로드</a>
+          </li>
+          <li>
+            <a href="/profile/">프로필</a>
+          </li>
+          <li>
+            <a href="/contact/">구매하기</a>
+          </li>
+          <li>
+            {% if user.is_authenticated %}
+              <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="logout-button">{{ user.username }}(로그아웃)</button>
+              </form>
+            {% else %}
+              <a href="{% url 'login' %}">로그인</a>
+            {% endif %}
+          </li>
+        </ul>
+      </nav>
     </header>
     <!-- 페이지별 내용 -->
     <div class="container">
-        <!-- 왼쪽 박스 -->
-        <aside class="left-sidebar">
-            <h3>최신 게시물</h3>
-            <ul>
-                {% for post in postlist %}
-                    <li>
-                        <a href="{% url 'post_detail' post.id %}">{{ post.postname }}</a>
-                    </li>
-                {% empty %}
-                    <li>게시글이 없습니다.</li>
-                {% endfor %}
-            </ul>
-        </aside>
+      <!-- 왼쪽 박스 -->
+      <aside class="left-sidebar">
+        <h3>최신 게시물</h3>
+        <ul>
+          {% for post in postlist %}
+            <li>
+              <a href="{% url 'post_detail' post.id %}">{{ post.postname }}</a>
+            </li>
+          {% empty %}
+            <li>게시글이 없습니다.</li>
+          {% endfor %}
+        </ul>
+      </aside>
 
-        <!-- 본문 -->
-        <main class="content">
-            {% block content %}
-            {% endblock %}
-        </main>
+      <!-- 본문 -->
+      <main class="content">
+        {% block content %}
 
-        <!-- 오른쪽 박스 -->
-        <aside class="right-sidebar">
+        {% endblock %}
+      </main>
+
+      <!-- 오른쪽 박스 -->
+      <aside class="right-sidebar">
         {% if user.is_authenticated and user_data %}
-            <div class="profile-card">
-                <div class="profile-top">
-                    <img
-                    src="{{ user_data.profileImage|default_if_none:'https://via.placeholder.com/150' }}"
-                    alt="Profile Image"
-                    class="profile-image"
-                    />
-                    <div class="profile-info">
-                        <h3 class="profile-username">{{ user_data.name|default:user.username }} 님</h3>
-                        <p class="profile-membership">등급: {{ user_data.membership|default:'Basic' }}</p>
-                    </div>
-                </div>
-                <div class="profile-footer">
-                    <div class="profile-circle"></div>
-                    <div class="profile-circle"></div>
-                    <div class="profile-circle"></div>
-                </div>
+          <div class="profile-card">
+            <div class="profile-top">
+              <img src="{{ user_data.profileImage|default_if_none:'https://via.placeholder.com/150' }}" alt="Profile Image" class="profile-image" />
+              <div class="profile-info">
+                <h3 class="profile-username">{{ user_data.name|default:user.username }} 님</h3>
+                <p class="profile-membership">등급: {{ user_data.membership|default:'Basic' }}</p>
+              </div>
             </div>
+            <div class="profile-footer">
+              <div class="profile-circle"></div>
+              <div class="profile-circle"></div>
+              <div class="profile-circle"></div>
+            </div>
+          </div>
         {% else %}
-            <h3>오른쪽 사이드바</h3>
-            <p>로그인이 필요합니다.</p>
+          <h3>오른쪽 사이드바</h3>
+          <p>로그인이 필요합니다.</p>
         {% endif %}
-
-        </aside>
+      </aside>
     </div>
 
     <!-- 우측 하단 고정 버튼 -->
     <div class="floating-btn">AI</div>
 
-
     <!-- 공통 푸터 -->
     <footer>
-        <p>&copy; 2025 coB2n. All rights reserved.</p>
+      <p>&copy; 2025 coB2n. All rights reserved.</p>
     </footer>
-</body>
+  </body>
 </html>

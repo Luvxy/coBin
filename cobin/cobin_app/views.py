@@ -8,6 +8,7 @@ from django.shortcuts import render, get_object_or_404
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.core.paginator import Paginator
+from django.db.models import F
 
 # webhook 함수에 필요한 라이브러리
 from django.http import JsonResponse
@@ -78,8 +79,10 @@ def signup(request):
         form = UserForm()
     return render(request, 'login.html', {'form': form})
 
+@login_required
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
+
     return render(request, 'post_detail.html', {'post': post})
 
 @csrf_exempt  # CSRF 보호 비활성화 (웹훅은 보통 CSRF 토큰을 사용하지 않음)
@@ -137,6 +140,19 @@ def blog(request):
 def posting(request, pk):
     post = get_object_or_404(Post, pk=pk)
 
+    # 해당 유저가 이 포스트를 조회했는지 확인
+    has_viewed = PostView.objects.filter(user=request.user, post=post).exists()
+
+    if not has_viewed:
+        # 조회수 +1
+        post.view_count = F('view_count') + 1
+        post.save()
+
+        # 조회 기록 저장
+        PostView.objects.create(user=request.user, post=post)
+
+    # 조회수 최신화
+    post.refresh_from_db()
     if request.method == 'POST':
         # form에서 name="content"로 댓글 내용을 받아옴
         content = request.POST.get('content')
@@ -147,7 +163,7 @@ def posting(request, pk):
                 content=content
             )
         return redirect('posting', pk=pk)
-
+    
     return render(request, 'posting.html', {'post': post})
 
 @login_required

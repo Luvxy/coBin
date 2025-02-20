@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login
-from .models import Post
+from .models import *
 from django.contrib.auth.forms import AuthenticationForm  # Django 내장 로그인 폼
 from django.shortcuts import render, get_object_or_404
 from django.core.files.storage import default_storage
@@ -126,7 +126,7 @@ def blog(request):
     if search_query:
         postlist = postlist.filter(postname__icontains=search_query)  # 제목에 검색어 포함된 글만 필터링
 
-    paginator = Paginator(postlist, 10)  # 10개씩 페이지 나누기
+    paginator = Paginator(postlist, 50)  # 10개씩 페이지 나누기
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -135,10 +135,35 @@ def blog(request):
 # blog의 게시글(posting)을 부르는 posting 함수
 @login_required
 def posting(request, pk):
-    # 게시글(Post) 중 pk(primary_key)를 이용해 하나의 게시글(post)를 검색
-    post = Post.objects.get(pk=pk)
-    # posting.html 페이지를 열 때, 찾아낸 게시글(post)을 post라는 이름으로 가져옴
-    return render(request, 'posting.html', {'post':post})
+    post = get_object_or_404(Post, pk=pk)
+
+    if request.method == 'POST':
+        # form에서 name="content"로 댓글 내용을 받아옴
+        content = request.POST.get('content')
+        if content:
+            Comment.objects.create(
+                post=post,
+                author=request.user,
+                content=content
+            )
+        return redirect('posting', pk=pk)
+
+    return render(request, 'posting.html', {'post': post})
+
+@login_required
+def like(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+    # 이미 좋아요한 경우는 중복 방지
+    if Like.objects.filter(user=request.user, post=post).exists():
+        # 이미 좋아요한 상태라면, 그냥 리다이렉트 또는 좋아요 취소 처리
+        return redirect('posting', pk=pk)
+    else:
+        # 새로 Like 객체 생성
+        Like.objects.create(user=request.user, post=post)
+        # 동시에 Post 모델의 like_count를 1 증가
+        post.like_count += 1
+        post.save()
+        return redirect('posting', pk=pk)
 
 @login_required
 def new_post(request):
@@ -148,12 +173,14 @@ def new_post(request):
                 postname=request.POST['postname'],
                 contents=request.POST['contents'],
                 mainphoto=request.POST['mainphoto'],
+                author=request.user
             )
         else:
             new_article=Post.objects.create(
                 postname=request.POST['postname'],
                 contents=request.POST['contents'],
                 mainphoto=request.POST['mainphoto'],
+                author=request.user
             )
         return redirect('/blog/')
     return render(request, 'new_post.html')

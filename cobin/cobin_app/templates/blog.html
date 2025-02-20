@@ -6,7 +6,6 @@
 
 {% block content %}
 <h1>자유 게시판</h1>
-
 <!-- 글쓰기 버튼 -->
 <div class="post-actions">
     <button class="new-post-btn"><a href="new_post/">새 글 작성</a></button>
@@ -18,6 +17,7 @@
         <tr>
             <th>제목</th>
             <th>작성자</th>
+            <th>작성일</th>
             <th>ID</th>
         </tr>
     </thead>
@@ -26,6 +26,9 @@
         <tr>
             <td><a href="{{ post.pk }}">{{ post.postname }}</a></td>
             <td>{{ post.author }}</td>
+            <td>
+                {{ post.created_at|date:"m-d" }}
+            </td>
             <td>{{ post.id }}</td>
         </tr>
         {% empty %}

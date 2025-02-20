@@ -1,17 +1,65 @@
 {% extends 'base.html' %}
-
 {% block title %}
-posting Page
+  posting Page
 {% endblock %}
 
 {% block content %}
-<h2>{{post.postname}}</h2>
-<p>{{post.contents}}</p>
-<!-- 이미지 보여주기 -->
-{% if post.mainphoto %}
-<img src = "{{ post.mainphoto.url }}" alt="" height="600">
-<br>
-{% endif %}
-<a href="/blog/{{post.pk}}/remove/">삭제</a>
-<a href"/blog/">목록</a>
+  <div class="post-container">
+    <!-- 제목 -->
+    <h2 class="post-title">{{ post.postname }}</h2>
+
+    <!-- 조회수, 좋아요 -->
+
+    <!-- 상단 버튼들 -->
+    <div class="post-header">
+      <div class="post-meta">
+        <span>조회수: {{ post.view_count }}</span>
+        <span>좋아요: {{ post.liked_users.count }}</span>
+      </div>
+      <div>
+        <a href="/blog/">목록</a>
+        {% if user.username == post.author.username %}
+          <a href="/blog/{{ post.pk }}/remove/">삭제</a>
+          <a href="/blog/{{ post.pk }}/edit/">수정</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- 메인 이미지 -->
+    {% if post.mainphoto %}
+      <img src="{{ post.mainphoto.url }}" alt="" class="post-image" />
+    {% endif %}
+
+    <!-- 본문 내용 -->
+    <div class="post-content">{{ post.contents }}</div>
+
+    <div class="post-footer">
+      <!-- 좋아요 버튼 -->
+      <form action="{% url 'like' post.pk %}" method="POST">
+        {% csrf_token %}
+        <button type="submit">좋아요</button>
+      </form>
+    </div>
+
+    <!-- 댓글 목록 -->
+    <h3>댓글</h3>
+    <div class="comment-list">
+      {% for comment in post.comments.all %}
+        <div class="comment-item">
+          <div class="comment-author">{{ comment.author }}</div>
+          <div class="comment-content">{{ comment.content }}</div>
+          <div class="comment-date">{{ comment.created_at }}</div>
+        </div>
+      {% empty %}
+        <p>첫 댓글을 남겨보세요!</p>
+      {% endfor %}
+    </div>
+
+    <!-- 댓글 작성 폼 -->
+    <form method="POST">
+      {% csrf_token %}
+      <textarea name="content" rows="3" placeholder="댓글을 입력하세요"></textarea><br />
+      <button type="submit">댓글 작성</button>
+    </form>
+  </div>
 {% endblock %}

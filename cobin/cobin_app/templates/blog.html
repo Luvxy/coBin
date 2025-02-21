@@ -5,10 +5,23 @@
 {% endblock %}
 
 {% block content %}
-  <h1>자유 게시판</h1>
+  <h1>
+    <!-- 카테고리에 따라 제목을 바꿈 -->
+    {% if category == 'free' %}
+      자유게시판
+    {% elif category == 'info' %}
+      정보게시판
+    {% elif category == 'proposal' %}
+      제안게시판
+    {% else %}
+      ???
+    {% endif %}
+  </h1>
   <!-- 글쓰기 버튼 -->
   <div class="post-actions">
-    <button class="new-post-btn"><a href="new_post/">새 글 작성</a></button>
+    <button class="new-post-btn">
+      <a href="{% url 'new_post' category=category %}">새 글 작성</a>
+    </button>
   </div>
 
   <!-- 게시글 목록 -->
@@ -26,7 +39,9 @@
       {% for post in page_obj %}
         <tr>
           <td>
-            <a href="{{ post.pk }}">{{ post.postname }}</a>
+            <a href="{% url 'post_detail' category=category pk=post.pk %}">
+              {{ post.postname }}
+            </a>
             <span class="comment-count">[{{ post.comments.count }}]</span>
           </td>
           <td>{{ post.author }}</td>

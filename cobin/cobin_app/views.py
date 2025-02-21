@@ -9,6 +9,7 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.core.paginator import Paginator
 from django.db.models import F
+from django.http import HttpResponseForbidden
 
 # webhook 함수에 필요한 라이브러리
 from django.http import JsonResponse
@@ -80,10 +81,19 @@ def signup(request):
     return render(request, 'login.html', {'form': form})
 
 @login_required
-def post_detail(request, post_id):
-    post = get_object_or_404(Post, id=post_id)
+def post_list(request, category):
+    posts = Post.objects.filter(category=category).order_by('-created_at')
+    search_query = request.GET.get('search', '')
+    if search_query:
+        posts = posts.filter(title__icontains=search_query)
 
-    return render(request, 'post_detail.html', {'post': post})
+    context = {
+        'page_obj': posts,  # 페이징 대신 전체 리스트 전달
+        'category': category,
+        'search_query': search_query
+    }
+    
+    return render(request, 'blog.html', context)
 
 @csrf_exempt  # CSRF 보호 비활성화 (웹훅은 보통 CSRF 토큰을 사용하지 않음)
 def webhook(request):
@@ -118,6 +128,10 @@ def home(request):
     return render(request, 'index.html', {'postlist':postlist})  # index 파일 경로
 
 @login_required
+def best(request):
+    return render(request, 'best.html')  # index 파일 경로
+
+@login_required
 def contact(request):
     return render(request, 'contact.html')  # index 파일 경로
 
@@ -134,6 +148,28 @@ def blog(request):
     page_obj = paginator.get_page(page_number)
 
     return render(request, 'blog.html', {'page_obj': page_obj, 'search_query': search_query})
+
+@login_required
+def post_detail(request, category, pk):
+    post = get_object_or_404(Post, pk=pk)
+    comments = post.comments.all()
+
+    # 댓글 작성 처리
+    if request.method == 'POST':
+        content = request.POST.get('content')
+        if content:
+            Comment.objects.create(
+                post=post,
+                author=request.user,
+                content=content
+            )
+        return redirect('post_detail', category=category, pk=pk)
+
+    context = {
+        'post': post,
+        'comments': comments,
+    }
+    return render(request, 'posting.html', context)
 
 # blog의 게시글(posting)을 부르는 posting 함수
 @login_required
@@ -167,47 +203,48 @@ def posting(request, pk):
     return render(request, 'posting.html', {'post': post})
 
 @login_required
-def like(request, pk):
-    post = get_object_or_404(Post, pk=pk)
-    # 이미 좋아요한 경우는 중복 방지
-    if Like.objects.filter(user=request.user, post=post).exists():
-        # 이미 좋아요한 상태라면, 그냥 리다이렉트 또는 좋아요 취소 처리
-        return redirect('posting', pk=pk)
+def like(request, category, pk):
+    post = get_object_or_404(Post, pk=pk, category=category)
+
+    if request.user in post.liked_users.all():
+        post.liked_users.remove(request.user)
     else:
-        # 새로 Like 객체 생성
-        Like.objects.create(user=request.user, post=post)
-        # 동시에 Post 모델의 like_count를 1 증가
-        post.like_count += 1
-        post.save()
-        return redirect('posting', pk=pk)
+        post.liked_users.add(request.user)
+
+    return redirect('post_detail', category=category, pk=pk)
 
 @login_required
-def new_post(request):
+def new_post(request, category):
     if request.method == 'POST':
-        if request.POST['mainphoto']:
-            new_article=Post.objects.create(
-                postname=request.POST['postname'],
-                contents=request.POST['contents'],
-                mainphoto=request.POST['mainphoto'],
-                author=request.user
-            )
-        else:
-            new_article=Post.objects.create(
-                postname=request.POST['postname'],
-                contents=request.POST['contents'],
-                mainphoto=request.POST['mainphoto'],
-                author=request.user
-            )
-        return redirect('/blog/')
-    return render(request, 'new_post.html')
+        new_article = Post.objects.create(
+            postname=request.POST['postname'],
+            contents=request.POST['contents'],
+            mainphoto=request.FILES.get('mainphoto'),
+            author=request.user,
+            category=category  # 카테고리 저장
+        )
+        return redirect('post_list', category=category)
+    return render(request, 'new_post.html', {'category': category})
 
 @login_required
-def remove_post(request, pk):
-    post = Post.objects.get(pk=pk)
-    if request.method == 'POST':
-        post.delete()
-        return redirect('/blog/')
-    return render(request, 'remove_post.html', {'post': post})
+def delete_post(request, category, pk):
+    post = get_object_or_404(Post, pk=pk)
+
+    if request.user != post.author:
+        return HttpResponseForbidden("권한이 없습니다.")
+
+    post.delete()
+    return redirect('post_list', category=category)
+
+@login_required
+def delete_comment(request, category, post_pk, comment_pk):
+    comment = get_object_or_404(Comment, pk=comment_pk)
+
+    if request.user != comment.author:
+        return HttpResponseForbidden("권한이 없습니다.")
+
+    comment.delete()
+    return redirect('post_detail', category=category, pk=post_pk)
 
 def login_view(request):
     if request.method == 'POST':

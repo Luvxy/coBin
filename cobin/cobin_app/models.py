@@ -10,11 +10,18 @@ class Profile(models.Model):
 
 # 자유게시판
 class Post(models.Model):
+    CATEGORY_CHOICES = [
+        ('free', '자유'),
+        ('info', '정보'),
+        ('proposal', '제안'),
+    ]
+    
     postname = models.CharField(max_length=50)
     mainphoto = models.ImageField(blank=True, null=True)
     contents = models.TextField()
     author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='free')
     
     # 조회수, 좋아요(숫자)
     view_count = models.PositiveIntegerField(default=0)
@@ -30,7 +37,7 @@ class Post(models.Model):
     )
 
     def __str__(self):
-        return self.postname
+        return f"[{self.get_category_display()}] {self.postname}"
     
 # 실제 중개 모델
 # 위에서 through='Like' 로 지정했으면, 클래스명도 'Like'로 통일
@@ -55,17 +62,6 @@ class PostView(models.Model):
 
     class Meta:
         unique_together = ('user', 'post')  # 유저별 1번만 기록
-
-# 정보게시판
-class infoPost(models.Model):
-    postname = models.CharField(max_length=50)
-    # 게시글 Post에 이미지 추가
-    mainphoto = models.ImageField(blank=True, null=True)
-    contents = models.TextField()
-
-    # postname이 Post object 대신 나오기
-    def __str__(self):
-        return self.postname
     
 # 댓글
 class Comment(models.Model):
@@ -76,3 +72,13 @@ class Comment(models.Model):
 
     def __str__(self):
         return f"{self.author} - {self.content}"
+    
+class infoPost(models.Model):
+    postname = models.CharField(max_length=50)
+    mainphoto = models.ImageField(blank=True, null=True)
+    contents = models.TextField()
+    author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    
+    def __str__(self):
+        return self.postname

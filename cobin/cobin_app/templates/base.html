@@ -38,14 +38,14 @@
             <div class="dropdown">
               <a>게시판</a>
               <div class="dropdown-content">
-                <a href="/blog/">자유게시판</a>
-                <a href="#">정보게시판</a>
-                <a href="#">투표게시판</a>
+                <a href="/blog/free/">자유게시판</a>
+                <a href="/blog/info/">정보게시판</a>
+                <a href="/blog/proposal/">투표게시판</a>
               </div>
             </div>
           </li>
           <li>
-            <a href="/contact/">Best 파일럿</a>
+            <a href="/best/">Best 파일럿</a>
           </li>
           <li>
             <a href="/contact/">다운로드</a>
@@ -77,7 +77,7 @@
         <ul>
           {% for post in postlist %}
             <li>
-              <a href="{% url 'post_detail' post.id %}">{{ post.postname }}</a>
+              <a href="{% url 'post_detail' category=post.category pk=post.id %}">{{ post.postname }}</a>
             </li>
           {% empty %}
             <li>게시글이 없습니다.</li>

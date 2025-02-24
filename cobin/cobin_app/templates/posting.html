@@ -19,7 +19,7 @@
         <span>좋아요: {{ post.liked_users.count }}</span>
       </div>
       <div>
-        <a href="/blog/">목록</a>
+        <a href="{% url 'post_list' category=post.category %}">목록</a>
         {% if user == post.author %}
           <a href="{% url 'delete_post' category=post.category pk=post.pk %}" onclick="return confirm('정말 삭제하시겠습니까?');">삭제</a>
       {% endif %}

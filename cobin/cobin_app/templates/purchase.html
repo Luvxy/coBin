@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}
+구매하기
+{% endblock %}
+
+{% block content %}
+<h1>구독하기</h1>
+<div class="subscription-container">
+    <div class="subscription-card">
+        <h2>coB2n 구독</h2>
+        <ul>
+            <li>유료 포인트 1440포인트 지급</li>
+            <li>매일 960포인트 자동 지급</li>
+            <li>사이트 접속 및 활동 포인트 획득 시 최대 24시간 자동매매 가능</li>
+        </ul>
+        <p class="price">₩9,900/1개월</p>
+        <button>구매하기</button>
+    </div>
+    <div class="subscription-card">
+        <h2>coB1n 구독</h2>
+        <ul>
+            <li>유료 포인트 1440포인트 지급</li>
+            <li>매일 1440포인트 자동 지급</li>
+            <li>사이트 접속 없이도 24시간 자동매매 가능</li>
+        </ul>
+        <p class="price">₩19,900/1개월</p>
+        <button>구매하기</button>
+    </div>
+    <div class="subscription-card">
+        <h2>coB0n 구독</h2>
+        <ul>
+            <li>유료 포인트 1440포인트 지급</li>
+            <li>매일 1440포인트 자동 지급</li>
+            <li>사이트 접속 없이도 24시간 자동매매 가능</li>
+            <li>사용자 이름이 포함된 전용 자동매매 전략 제공</li>
+        </ul>
+        <p class="price">₩698,000/1년</p>
+        <button>구매하기</button>
+    </div>
+</div>
+
+<h1>포인트 구매</h1>
+<div class="point-purchase">
+    {% for point in points %}
+    <div class="point-option">
+        <a>{{ point }} 포인트</a>
+        <a class="blank"></a>
+        <a class="price">₩ 10,000</a>
+        <button>구매하기</button>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

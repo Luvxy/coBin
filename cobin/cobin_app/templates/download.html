@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Download Page
+{% endblock %}
+{% load static %}
+{% block content %}
+<h1>프로그램 다운로드</h1>
+<p>현재 버전: v1.0.0</p>
+<a href="/static/downloads/program_v1.0.0.zip" download>다운로드</a>
+
+<h2>프로그램 사용법</h2>
+<section class="instruction">
+    <div>
+        <a>프로그램을 다운로드한 후 압축을 풀고 실행하세요.</a><br>
+        <img src="{% static 'images/upbit_example.png' %}" alt="프로그램 사용법1">
+    </div>
+    <div>
+        <a>api 키를 생성하세요.</a><br>
+        <img src="{% static 'images/upbit_example.png' %}" alt="프로그램 사용법1">
+    </div>
+    <div>
+        <a>프로그램에 api키를 붙여 넣으세요.</a><br>
+        <img src="{% static 'images/upbit_example.png' %}" alt="프로그램 사용법1">
+    </div>
+    <div>
+        <a>자동매매를 실행합니다.</a><br>
+        <img src="{% static 'images/upbit_example.png' %}" alt="프로그램 사용법1">
+    </div>
+</section>
+
+<h2>패치내역</h2>
+<ul>
+    <li><strong>v1.0.0</strong> - 초기 릴리즈</li>
+    <li><strong>v0.9.0</strong> - 베타 테스트 버전</li>
+    <li><strong>v0.8.0</strong> - 내부 테스트 버전</li>
+</ul>
+{% endblock %}

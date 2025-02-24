@@ -128,6 +128,14 @@ def home(request):
     return render(request, 'index.html', {'postlist':postlist})  # index 파일 경로
 
 @login_required
+def download(request):
+    return render(request, 'download.html')  # download 파일 경로
+
+def purchase(request):
+    points = [480 * i for i in range(3, 10)]  # 480 ~ 4320 포인트
+    return render(request, 'purchase.html', {'points': points})
+
+@login_required
 def best(request):
     return render(request, 'best.html')  # index 파일 경로
 
@@ -181,7 +189,7 @@ def posting(request, pk):
 
     if not has_viewed:
         # 조회수 +1
-        post.view_count = F('view_count') + 1
+        post.view_count += 1
         post.save()
 
         # 조회 기록 저장

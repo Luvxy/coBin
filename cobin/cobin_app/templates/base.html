@@ -14,6 +14,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js"></script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5322425731380321"
+     crossorigin="anonymous"></script>
   </head>
   <body>
     <script>
@@ -48,13 +50,13 @@
             <a href="/best/">Best 파일럿</a>
           </li>
           <li>
-            <a href="/contact/">다운로드</a>
+            <a href="/download/">다운로드</a>
           </li>
           <li>
             <a href="/profile/">프로필</a>
           </li>
           <li>
-            <a href="/contact/">구매하기</a>
+            <a href="{% url 'purchase' %}">구매하기</a>
           </li>
           <li>
             {% if user.is_authenticated %}

@@ -37,6 +37,8 @@ urlpatterns = [
     path('signup/', views.signup, name='signup'),
     path('webhook/', views.webhook, name='webhook'),
     path('best/', views.best, name='best'),
+    path('download/', views.download, name='download'),
+    path('purchase/', views.purchase, name='purchase'),
     
     # 게시판 URL
     path('blog/', views.blog, name='blog'),

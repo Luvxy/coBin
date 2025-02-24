@@ -526,3 +526,179 @@ form input[type="submit"]:hover {
     color: #999;
   }
   
+  .instruction {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 2개의 컬럼 */
+    gap: 20px; /* 블록 간 간격 */
+    margin-top: 20px;
+}
+
+.instruction div {
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.instruction div a {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.instruction img {
+    width: 100%;
+    height: auto;
+    border-radius: 5px;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .instruction {
+        grid-template-columns: 1fr; /* 모바일에서는 1열로 변경 */
+    }
+}
+
+/* 구독 카드 스타일 */
+.subscription-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.subscription-card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    padding: 20px;
+    text-align: left;
+    width: 30%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+}
+
+.subscription-card h2 {
+    margin-top: 0;
+}
+
+.subscription-card .price {
+    font-size: 1.5rem;
+    color: #007BFF;
+    margin: 10px 0;
+}
+
+.subscription-card button {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+}
+
+.subscription-card button:hover {
+    background-color: #0056b3;
+}
+/* 구독 카드 스타일 */
+.subscription-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.subscription-card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    padding: 20px;
+    text-align: left;
+    width: 30%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+}
+
+.subscription-card h2 {
+    margin-top: 0;
+}
+
+.subscription-card .price {
+    font-size: 1.5rem;
+    color: #007BFF;
+    margin: 10px 0;
+}
+
+.subscription-card button {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+}
+
+.subscription-card button:hover {
+    background-color: #0056b3;
+}
+
+/* 포인트 구매 섹션 */
+.point-purchase {
+    gap: 10px;
+}
+
+.point-option {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    position: relative;
+}
+
+.point-option p {
+    margin: 10px;
+    margin-left: 50px;
+}
+
+.point-option button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-left: 3%;
+}
+
+.point-option button:hover {
+    background-color: #218838;
+}
+
+.price {
+    margin-left: 70%;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .subscription-container, .point-purchase {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .subscription-card, .point-option {
+        width: 80%;
+    }
+} 

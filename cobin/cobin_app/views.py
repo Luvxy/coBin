@@ -11,6 +11,11 @@ from django.core.paginator import Paginator
 from django.db.models import F
 from django.http import HttpResponseForbidden
 
+# api 관련 라이브러리
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
 # webhook 함수에 필요한 라이브러리
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -62,6 +67,12 @@ def get_user_from_firestore(user_id):
         return user_doc.to_dict()
     else:
         return None
+
+# cobin app api connet
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def protected_api(request):
+    return Response({"message": "API 접근 성공", "user": request.user.username})
 
 def signup(request):
     if request.method == "POST":

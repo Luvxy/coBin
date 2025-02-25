@@ -22,6 +22,7 @@ from django.shortcuts import render
 from django.conf.urls.static import static
 from django.conf import settings
 from django.contrib.auth import views as auth_views
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 app_name = 'cobin_app'
 
@@ -48,6 +49,11 @@ urlpatterns = [
     path('blog/<str:category>/<int:pk>/like/', views.like, name='like'),
     path('blog/<str:category>/<int:pk>/delete/', views.delete_post, name='delete_post'),
     path('blog/<str:category>/<int:post_pk>/comment/<int:comment_pk>/delete/', views.delete_comment, name='delete_comment'),
+    
+    # app URL
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('protected-api/', views.protected_api, name='protected_api'),
 ]
 
 # 이미지 URL 설정

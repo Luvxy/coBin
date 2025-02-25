@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'channels',
     'cobin_app',
+    'rest_framework', 
+    'rest_framework_simplejwt',
 ]
 
 MIDDLEWARE = [
@@ -151,3 +153,9 @@ CHANNEL_LAYERS = {
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
 SESSION_COOKIE_AGE = 86400  # 24시간
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}

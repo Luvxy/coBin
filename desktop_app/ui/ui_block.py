@@ -39,34 +39,36 @@ class ConditionRegistry:
 # ---------------------
 # 샘플 자식 조건    
 # ---------------------
-@ConditionRegistry.register("캔들 검사")
+@ConditionRegistry.register("캔들 비교")
 class CandleCheckCondition(Condition):
     config_fields = {
-        "candle_type": {"label": "캔들 종류", "type": str, "default": "양봉", "ui_type": "dropdown", "options": ["양봉", "음봉"]},
-        "threshold": {"label": "기준값", "type": float, "default": 100.0, "ui_type": "line_edit"},
-        "strict_mode": {"label": "엄격 모드", "type": bool, "default": False, "ui_type": "checkbox"}
+        "candle1": {"label": "candle1", "type": int, "default": 1, "ui_type": "line_edit"},
+        "candle2": {"label": "candle2", "type": int, "default": 2, "ui_type": "line_edit"},
+        "candle3": {"label": "candle3", "type": int, "default": 3, "ui_type": "line_edit"},
     }
 
-    def __init__(self, candle_type="양봉", threshold=100.0, strict_mode=False):
+    def __init__(self, candle1=1, candle2=2, candle3=3):
         super().__init__()
-        self.candle_type = candle_type
-        self.threshold = threshold
-        self.strict_mode = strict_mode
+        self.name = "캔들 검사"
+        self.candle1 = candle1
+        self.candle2 = candle2
+        self.candle3 = candle3
 
     def check_condition(self) -> bool:
-        print(f"캔들 타입: {self.candle_type}, 기준값: {self.threshold}, 엄격 모드: {self.strict_mode}")
-        return self.threshold > 50  # 예시 로직
+        print(f"캔들 타입: {self.candle1}, 기준값: {self.candle2}, 엄격 모드: {self.candle3}")
+        return self.candle1 > self.candle2   # 예시 로직
     
 @ConditionRegistry.register("캔들 확인")
 class CandleCheckCondition(Condition):
     config_fields = {
         "quantity": {"label": "구매 수량", "type": int, "default": 1, "ui_type": "line_edit"},
-        "price_limit": {"label": "최대 구매가", "type": float, "default": 10000.0, "ui_type": "line_edit"},
+        "price_limit": {"label": "1번 캔들 번호", "type": str, "default": "양봉", "ui_type": "dropdown", "options": ["양봉", "음봉"]},
         "urgent": {"label": "긴급 구매", "type": bool, "default": False, "ui_type": "checkbox"}
     }
 
     def __init__(self, candle_type="양봉", threshold=100.0, strict_mode=False):
         super().__init__()
+        self.name = "캔들 확인"
         self.candle_type = candle_type
         self.threshold = threshold
         self.strict_mode = strict_mode
@@ -125,6 +127,7 @@ class PurchaseAction(Action):
 
     def __init__(self, quantity=1, price_limit=10000.0, urgent=False):
         super().__init__()
+        self.name = "매수 액션"
         self.quantity = quantity
         self.price_limit = price_limit
         self.urgent = urgent
@@ -141,6 +144,7 @@ class SellAction(Action):
 
     def __init__(self, quantity=1):
         super().__init__()
+        self.name = "매도 액션"
         self.quantity = quantity
 
     def run_action(self):
@@ -397,11 +401,11 @@ class BlockMain(QWidget):
 
             if config_type == "조건":
                 block.conditions.append(obj)
-                block_content_widget.addItem("조건: " + obj.__class__.__name__)
+                block_content_widget.addItem("조건: " + obj.name)
             elif config_type == "액션":
                 if block.action is None:
                     block.action = obj
-                    block_content_widget.addItem("액션: " + obj.__class__.__name__)
+                    block_content_widget.addItem("액션: " + obj.name)
                 else:
                     print("이 블록에는 이미 액션이 있습니다.")
 

@@ -182,7 +182,26 @@ class Ui_MainWindow(object):
         self.tabWidget.setCurrentIndex(1)
 
 
+        # Close Button 추가
+        self.close_button = QPushButton('X', MainWindow)
+        self.close_button.setGeometry(1897, 5, 16, 16)  # 위치와 크기 조절
+        self.close_button.setStyleSheet("""
+            QPushButton {
+                color: black;
+                border: none;
+                font-weight: bold;
+                font-size: 16px;
+            }
+            QPushButton:hover {
+                background-color: gray;
+            }
+        """)
+        self.close_button.clicked.connect(QApplication.quit)
+        
+        
         QMetaObject.connectSlotsByName(MainWindow)
+        
+        # X 버튼
     # setupUi
 
     def retranslateUi(self, MainWindow):

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'CoB2n appxNIeAs.ui'
+## Form generated from reading UI file 'CoB2n appbDGqdG.ui'
 ##
 ## Created by: Qt User Interface Compiler version 5.14.1
 ##
@@ -14,6 +14,7 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor, QFont,
     QFontDatabase, QIcon, QLinearGradient, QPalette, QPainter, QPixmap,
     QRadialGradient)
 from PySide6.QtWidgets import *
+from ui.ui_block import BlockMain
 
 
 class Ui_MainWindow(object):
@@ -160,80 +161,15 @@ class Ui_MainWindow(object):
         self.pushButton.setGeometry(QRect(230, 10, 75, 23))
         self.groupBox_2 = QGroupBox(self.scrollAreaWidgetContents)
         self.groupBox_2.setObjectName(u"groupBox_2")
-        self.groupBox_2.setGeometry(QRect(0, 40, 891, 971))
+        self.groupBox_2.setGeometry(QRect(0, 40, 1901, 971))
         self.verticalLayout = QVBoxLayout(self.groupBox_2)
         self.verticalLayout.setObjectName(u"verticalLayout")
-        self.scrollArea_3 = QScrollArea(self.groupBox_2)
-        self.scrollArea_3.setObjectName(u"scrollArea_3")
-        self.scrollArea_3.setWidgetResizable(True)
-        self.scrollAreaWidgetContents_3 = QWidget()
-        self.scrollAreaWidgetContents_3.setObjectName(u"scrollAreaWidgetContents_3")
-        self.scrollAreaWidgetContents_3.setGeometry(QRect(0, 0, 869, 228))
-        self.scrollArea_3.setWidget(self.scrollAreaWidgetContents_3)
-
-        self.verticalLayout.addWidget(self.scrollArea_3)
-
-        self.scrollArea_4 = QScrollArea(self.groupBox_2)
-        self.scrollArea_4.setObjectName(u"scrollArea_4")
-        self.scrollArea_4.setWidgetResizable(True)
-        self.scrollAreaWidgetContents_4 = QWidget()
-        self.scrollAreaWidgetContents_4.setObjectName(u"scrollAreaWidgetContents_4")
-        self.scrollAreaWidgetContents_4.setGeometry(QRect(0, 0, 869, 229))
-        self.scrollArea_4.setWidget(self.scrollAreaWidgetContents_4)
-
-        self.verticalLayout.addWidget(self.scrollArea_4)
-
-        self.scrollArea_2 = QScrollArea(self.groupBox_2)
-        self.scrollArea_2.setObjectName(u"scrollArea_2")
-        self.scrollArea_2.setWidgetResizable(True)
-        self.scrollAreaWidgetContents_2 = QWidget()
-        self.scrollAreaWidgetContents_2.setObjectName(u"scrollAreaWidgetContents_2")
-        self.scrollAreaWidgetContents_2.setGeometry(QRect(0, 0, 869, 228))
-        self.scrollArea_2.setWidget(self.scrollAreaWidgetContents_2)
-
-        self.verticalLayout.addWidget(self.scrollArea_2)
-
-        self.scrollArea_5 = QScrollArea(self.groupBox_2)
-        self.scrollArea_5.setObjectName(u"scrollArea_5")
-        self.scrollArea_5.setWidgetResizable(True)
-        self.scrollAreaWidgetContents_5 = QWidget()
-        self.scrollAreaWidgetContents_5.setObjectName(u"scrollAreaWidgetContents_5")
-        self.scrollAreaWidgetContents_5.setGeometry(QRect(0, 0, 869, 228))
-        self.scrollArea_5.setWidget(self.scrollAreaWidgetContents_5)
-
-        self.verticalLayout.addWidget(self.scrollArea_5)
-
-        self.groupBox_3 = QGroupBox(self.scrollAreaWidgetContents)
-        self.groupBox_3.setObjectName(u"groupBox_3")
-        self.groupBox_3.setGeometry(QRect(890, 40, 1021, 671))
-        self.horizontalLayout = QHBoxLayout(self.groupBox_3)
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.scrollArea_7 = QScrollArea(self.groupBox_3)
-        self.scrollArea_7.setObjectName(u"scrollArea_7")
-        self.scrollArea_7.setWidgetResizable(True)
-        self.scrollAreaWidgetContents_7 = QWidget()
-        self.scrollAreaWidgetContents_7.setObjectName(u"scrollAreaWidgetContents_7")
-        self.scrollAreaWidgetContents_7.setGeometry(QRect(0, 0, 496, 637))
-        self.scrollArea_7.setWidget(self.scrollAreaWidgetContents_7)
-
-        self.horizontalLayout.addWidget(self.scrollArea_7)
-
-        self.scrollArea_6 = QScrollArea(self.groupBox_3)
-        self.scrollArea_6.setObjectName(u"scrollArea_6")
-        self.scrollArea_6.setWidgetResizable(True)
-        self.scrollAreaWidgetContents_6 = QWidget()
-        self.scrollAreaWidgetContents_6.setObjectName(u"scrollAreaWidgetContents_6")
-        self.scrollAreaWidgetContents_6.setGeometry(QRect(0, 0, 495, 637))
-        self.scrollArea_6.setWidget(self.scrollAreaWidgetContents_6)
-
-        self.horizontalLayout.addWidget(self.scrollArea_6)
+        self.block_system_frame = BlockMain()
+        self.verticalLayout.addWidget(self.block_system_frame)
 
         self.pushButton_2 = QPushButton(self.scrollAreaWidgetContents)
         self.pushButton_2.setObjectName(u"pushButton_2")
         self.pushButton_2.setGeometry(QRect(1810, 10, 75, 23))
-        self.histoty = QListView(self.scrollAreaWidgetContents)
-        self.histoty.setObjectName(u"histoty")
-        self.histoty.setGeometry(QRect(900, 710, 1001, 291))
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         self.tabWidget.addTab(self.tab_2, "")
         MainWindow.setCentralWidget(self.centralwidget)
@@ -286,7 +222,6 @@ class Ui_MainWindow(object):
 
         self.pushButton.setText(QCoreApplication.translate("MainWindow", u"\uc2e4\ud589", None))
         self.groupBox_2.setTitle(QCoreApplication.translate("MainWindow", u"\uc2e4\ud589 \ubc15\uc2a4", None))
-        self.groupBox_3.setTitle(QCoreApplication.translate("MainWindow", u"\uc870\uac74 \ube14\ub85d", None))
         self.pushButton_2.setText(QCoreApplication.translate("MainWindow", u"\ub3c4\uc6c0\ub9d0", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), QCoreApplication.translate("MainWindow", u"\uc2e4\ud589", None))
     # retranslateUi

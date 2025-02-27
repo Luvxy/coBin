@@ -11,6 +11,7 @@ from PySide6.QtWidgets import *
 
 from ui.ui_login import Ui_login
 from ui.ui_main import Ui_MainWindow
+from upbit.get_data_upbit import *
 from upbit.execute_upbit import *
 
 class User():
@@ -46,7 +47,31 @@ class MainWindow(QMainWindow):
         # tab2 (블록 선택 & 배치 영역에 스크롤 추가)
         ###########################################################
         
+        
+        
+        
+        
+        
+        
+        ###########################################################
+        # tab1 그래프 추가 
+        # self.ui.chart groupBox에 Chart 클래스 추가
+        ###########################################################
+        self.chart = ChartWidget()
+        self.chart_layout = QVBoxLayout()
+        self.chart_layout.addWidget(self.chart)
+        self.ui.chart.setLayout(self.chart_layout)
+        
+        # 코인 리스트 콤보박스
+        self.ui.coin_selete.addItems(["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-DOGE"])
+        self.ui.coin_selete.currentTextChanged.connect(self.update_chart)
+        
 
+        
+    def update_chart(self):
+        """선택된 코인으로 차트를 변경"""
+        new_coin = self.ui.coin_selete.currentText()
+        self.chart.change_coin(new_coin) 
 
 
 # 로그인 윈도우 클래스

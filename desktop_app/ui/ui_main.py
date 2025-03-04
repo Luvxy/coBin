@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'CoB2n appbDGqdG.ui'
+## Form generated from reading UI file 'CoB2n appvUVzLM.ui'
 ##
 ## Created by: Qt User Interface Compiler version 5.14.1
 ##
@@ -14,7 +14,6 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor, QFont,
     QFontDatabase, QIcon, QLinearGradient, QPalette, QPainter, QPixmap,
     QRadialGradient)
 from PySide6.QtWidgets import *
-from ui.ui_block import BlockMain
 
 
 class Ui_MainWindow(object):
@@ -68,34 +67,10 @@ class Ui_MainWindow(object):
         self.coin_selete = QComboBox(self.buy_sell)
         self.coin_selete.addItem("")
         self.coin_selete.setObjectName(u"coin_selete")
-        self.coin_selete.setGeometry(QRect(10, 10, 181, 22))
-        self.groupBox = QGroupBox(self.buy_sell)
-        self.groupBox.setObjectName(u"groupBox")
-        self.groupBox.setGeometry(QRect(10, 40, 471, 241))
-        self.checkBox_10 = QCheckBox(self.buy_sell)
-        self.checkBox_10.setObjectName(u"checkBox_10")
-        self.checkBox_10.setGeometry(QRect(10, 290, 51, 16))
-        self.checkBox_25 = QCheckBox(self.buy_sell)
-        self.checkBox_25.setObjectName(u"checkBox_25")
-        self.checkBox_25.setGeometry(QRect(60, 290, 51, 16))
-        self.checkBox_50 = QCheckBox(self.buy_sell)
-        self.checkBox_50.setObjectName(u"checkBox_50")
-        self.checkBox_50.setGeometry(QRect(110, 290, 51, 16))
-        self.checkBox_75 = QCheckBox(self.buy_sell)
-        self.checkBox_75.setObjectName(u"checkBox_75")
-        self.checkBox_75.setGeometry(QRect(160, 290, 51, 16))
-        self.checkBox_max = QCheckBox(self.buy_sell)
-        self.checkBox_max.setObjectName(u"checkBox_max")
-        self.checkBox_max.setGeometry(QRect(210, 290, 51, 16))
-        self.label_3 = QLabel(self.buy_sell)
-        self.label_3.setObjectName(u"label_3")
-        self.label_3.setGeometry(QRect(260, 290, 61, 16))
-        self.direct_input = QLineEdit(self.buy_sell)
-        self.direct_input.setObjectName(u"direct_input")
-        self.direct_input.setGeometry(QRect(320, 290, 161, 16))
+        self.coin_selete.setGeometry(QRect(10, 10, 151, 22))
         self.buy_button = QPushButton(self.buy_sell)
         self.buy_button.setObjectName(u"buy_button")
-        self.buy_button.setGeometry(QRect(410, 310, 75, 23))
+        self.buy_button.setGeometry(QRect(320, 830, 75, 23))
         self.checkBox_11 = QCheckBox(self.buy_sell)
         self.checkBox_11.setObjectName(u"checkBox_11")
         self.checkBox_11.setGeometry(QRect(10, 810, 51, 16))
@@ -116,16 +91,32 @@ class Ui_MainWindow(object):
         self.checkBox_max_2.setGeometry(QRect(210, 810, 51, 16))
         self.groupBox_4 = QGroupBox(self.buy_sell)
         self.groupBox_4.setObjectName(u"groupBox_4")
-        self.groupBox_4.setGeometry(QRect(10, 380, 471, 421))
+        self.groupBox_4.setGeometry(QRect(10, 70, 471, 731))
         self.checkBox_76 = QCheckBox(self.buy_sell)
         self.checkBox_76.setObjectName(u"checkBox_76")
         self.checkBox_76.setGeometry(QRect(160, 810, 51, 16))
         self.checkBox_26 = QCheckBox(self.buy_sell)
         self.checkBox_26.setObjectName(u"checkBox_26")
         self.checkBox_26.setGeometry(QRect(60, 810, 51, 16))
-        self.label_6 = QLabel(self.buy_sell)
-        self.label_6.setObjectName(u"label_6")
-        self.label_6.setGeometry(QRect(10, 360, 101, 16))
+        self.coin_selete_2 = QComboBox(self.buy_sell)
+        self.coin_selete_2.addItem("")
+        self.coin_selete_2.addItem("")
+        self.coin_selete_2.addItem("")
+        self.coin_selete_2.addItem("")
+        self.coin_selete_2.addItem("")
+        self.coin_selete_2.setObjectName(u"coin_selete_2")
+        self.coin_selete_2.setGeometry(QRect(170, 10, 151, 22))
+        self.coin_selete_3 = QComboBox(self.buy_sell)
+        self.coin_selete_3.addItem("")
+        self.coin_selete_3.addItem("")
+        self.coin_selete_3.addItem("")
+        self.coin_selete_3.addItem("")
+        self.coin_selete_3.addItem("")
+        self.coin_selete_3.setObjectName(u"coin_selete_3")
+        self.coin_selete_3.setGeometry(QRect(330, 10, 151, 22))
+        self.label_3 = QLabel(self.buy_sell)
+        self.label_3.setObjectName(u"label_3")
+        self.label_3.setGeometry(QRect(10, 40, 471, 21))
         self.graph = QFrame(self.tab)
         self.graph.setObjectName(u"graph")
         self.graph.setGeometry(QRect(0, 750, 1401, 261))
@@ -156,20 +147,24 @@ class Ui_MainWindow(object):
         self.strategy_combo.addItem("")
         self.strategy_combo.setObjectName(u"strategy_combo")
         self.strategy_combo.setGeometry(QRect(10, 10, 211, 22))
-        self.pushButton = QPushButton(self.scrollAreaWidgetContents)
-        self.pushButton.setObjectName(u"pushButton")
-        self.pushButton.setGeometry(QRect(230, 10, 75, 23))
+        self.start_button = QPushButton(self.scrollAreaWidgetContents)
+        self.start_button.setObjectName(u"start_button")
+        self.start_button.setGeometry(QRect(1640, 10, 75, 23))
         self.groupBox_2 = QGroupBox(self.scrollAreaWidgetContents)
         self.groupBox_2.setObjectName(u"groupBox_2")
         self.groupBox_2.setGeometry(QRect(0, 40, 1901, 971))
         self.verticalLayout = QVBoxLayout(self.groupBox_2)
         self.verticalLayout.setObjectName(u"verticalLayout")
-        self.block_system_frame = BlockMain()
-        self.verticalLayout.addWidget(self.block_system_frame)
-
         self.pushButton_2 = QPushButton(self.scrollAreaWidgetContents)
         self.pushButton_2.setObjectName(u"pushButton_2")
         self.pushButton_2.setGeometry(QRect(1810, 10, 75, 23))
+        self.stop_button = QPushButton(self.scrollAreaWidgetContents)
+        self.stop_button.setObjectName(u"stop_button")
+        self.stop_button.setGeometry(QRect(1720, 10, 81, 23))
+        self.strategy_combo_2 = QComboBox(self.scrollAreaWidgetContents)
+        self.strategy_combo_2.addItem("")
+        self.strategy_combo_2.setObjectName(u"strategy_combo_2")
+        self.strategy_combo_2.setGeometry(QRect(230, 10, 151, 20))
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         self.tabWidget.addTab(self.tab_2, "")
         MainWindow.setCentralWidget(self.centralwidget)
@@ -182,26 +177,7 @@ class Ui_MainWindow(object):
         self.tabWidget.setCurrentIndex(0)
 
 
-        # Close Button 추가
-        self.close_button = QPushButton('X', MainWindow)
-        self.close_button.setGeometry(1897, 5, 16, 16)  # 위치와 크기 조절
-        self.close_button.setStyleSheet("""
-            QPushButton {
-                color: black;
-                border: none;
-                font-weight: bold;
-                font-size: 16px;
-            }
-            QPushButton:hover {
-                background-color: gray;
-            }
-        """)
-        self.close_button.clicked.connect(QApplication.quit)
-        
-        
         QMetaObject.connectSlotsByName(MainWindow)
-        
-        # X 버튼
     # setupUi
 
     def retranslateUi(self, MainWindow):
@@ -215,13 +191,6 @@ class Ui_MainWindow(object):
         self.buy_sell.setTitle("")
         self.coin_selete.setItemText(0, QCoreApplication.translate("MainWindow", u"\uc120\ud0dd", None))
 
-        self.groupBox.setTitle("")
-        self.checkBox_10.setText(QCoreApplication.translate("MainWindow", u"10%", None))
-        self.checkBox_25.setText(QCoreApplication.translate("MainWindow", u"25%", None))
-        self.checkBox_50.setText(QCoreApplication.translate("MainWindow", u"50%", None))
-        self.checkBox_75.setText(QCoreApplication.translate("MainWindow", u"75%", None))
-        self.checkBox_max.setText(QCoreApplication.translate("MainWindow", u"\ucd5c\ub300", None))
-        self.label_3.setText(QCoreApplication.translate("MainWindow", u"\uc9c1\uc811\uc785\ub825", None))
         self.buy_button.setText(QCoreApplication.translate("MainWindow", u"\ub9e4\uc218", None))
         self.checkBox_11.setText(QCoreApplication.translate("MainWindow", u"10%", None))
         self.label_5.setText(QCoreApplication.translate("MainWindow", u"\uc9c1\uc811\uc785\ub825", None))
@@ -231,7 +200,19 @@ class Ui_MainWindow(object):
         self.groupBox_4.setTitle("")
         self.checkBox_76.setText(QCoreApplication.translate("MainWindow", u"75%", None))
         self.checkBox_26.setText(QCoreApplication.translate("MainWindow", u"25%", None))
-        self.label_6.setText(QCoreApplication.translate("MainWindow", u"\ud604\uc7ac \ubcf4\uc720 \ud604\ud669", None))
+        self.coin_selete_2.setItemText(0, QCoreApplication.translate("MainWindow", u"1\ubd84", None))
+        self.coin_selete_2.setItemText(1, QCoreApplication.translate("MainWindow", u"5\ubd84", None))
+        self.coin_selete_2.setItemText(2, QCoreApplication.translate("MainWindow", u"15\ubd84", None))
+        self.coin_selete_2.setItemText(3, QCoreApplication.translate("MainWindow", u"30\ubd84", None))
+        self.coin_selete_2.setItemText(4, QCoreApplication.translate("MainWindow", u"1\uc2dc\uac04", None))
+
+        self.coin_selete_3.setItemText(0, QCoreApplication.translate("MainWindow", u"50", None))
+        self.coin_selete_3.setItemText(1, QCoreApplication.translate("MainWindow", u"100", None))
+        self.coin_selete_3.setItemText(2, QCoreApplication.translate("MainWindow", u"150", None))
+        self.coin_selete_3.setItemText(3, QCoreApplication.translate("MainWindow", u"200", None))
+        self.coin_selete_3.setItemText(4, QCoreApplication.translate("MainWindow", u"300", None))
+
+        self.label_3.setText(QCoreApplication.translate("MainWindow", u"\ud604\uc7ac \ubcf4\uc720\ub7c9 : 0.0", None))
         self.label.setText(QCoreApplication.translate("MainWindow", u"COB2N", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), QCoreApplication.translate("MainWindow", u"\ucc28\ud2b8", None))
         self.strategy_combo.setItemText(0, QCoreApplication.translate("MainWindow", u"\uae30\ubcf8\uc804\ub7b5", None))
@@ -239,9 +220,12 @@ class Ui_MainWindow(object):
         self.strategy_combo.setItemText(2, QCoreApplication.translate("MainWindow", u"Custom 2", None))
         self.strategy_combo.setItemText(3, QCoreApplication.translate("MainWindow", u"Custom 3", None))
 
-        self.pushButton.setText(QCoreApplication.translate("MainWindow", u"\uc2e4\ud589", None))
+        self.start_button.setText(QCoreApplication.translate("MainWindow", u"\uc2e4\ud589", None))
         self.groupBox_2.setTitle(QCoreApplication.translate("MainWindow", u"\uc2e4\ud589 \ubc15\uc2a4", None))
         self.pushButton_2.setText(QCoreApplication.translate("MainWindow", u"\ub3c4\uc6c0\ub9d0", None))
+        self.stop_button.setText(QCoreApplication.translate("MainWindow", u"\uc911\uc9c0", None))
+        self.strategy_combo_2.setItemText(0, QCoreApplication.translate("MainWindow", u"\uac70\ub798 \ucf54\uc778 \uc120\ud0dd", None))
+
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), QCoreApplication.translate("MainWindow", u"\uc2e4\ud589", None))
     # retranslateUi
 

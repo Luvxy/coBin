@@ -368,15 +368,6 @@ class BlockMain(QWidget):
 
         self.layout = QVBoxLayout(self)
 
-        # 실행/중지 버튼
-        self.run_all_button = QPushButton("실행")
-        self.run_all_button.clicked.connect(self.run_all_blocks)
-        self.layout.addWidget(self.run_all_button)
-
-        self.stop_all_button = QPushButton("중지")
-        self.stop_all_button.clicked.connect(self.stop_all_blocks)
-        self.layout.addWidget(self.stop_all_button)
-
         # 블록 추가 버튼
         self.add_block_button = QPushButton("+ 블록 추가")
         self.add_block_button.clicked.connect(self.add_block)

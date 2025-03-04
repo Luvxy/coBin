@@ -11,8 +11,10 @@ from PySide6.QtWidgets import *
 
 from ui.ui_login import Ui_login
 from ui.ui_main import Ui_MainWindow
+from ui.ui_block import BlockMain
 from upbit.get_data_upbit import *
 from upbit.execute_upbit import *
+import finplot as fplt
 
 class User():
     def __init__(self, username, password):
@@ -35,10 +37,12 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         
+        # ✅ Esc 키 방지
+        self.installEventFilter(self)
+        
         ###################
         # 타이틀바 삭제
         ###################
-        
         
         self.setWindowFlag(QtCore.Qt.FramelessWindowHint)
         
@@ -47,31 +51,78 @@ class MainWindow(QMainWindow):
         # tab2 (블록 선택 & 배치 영역에 스크롤 추가)
         ###########################################################
         
-        
-        
-        
-        
-        
+        self.blockFrame = BlockMain()
+        self.ui.verticalLayout.addWidget(self.blockFrame)
+        self.ui.strategy_combo_2.addItems(["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-DOGE"])
+        self.ui.start_button.clicked.connect(self.blockFrame.run_all_blocks)
+        self.ui.stop_button.clicked.connect(self.blockFrame.stop_all_blocks)
         
         ###########################################################
         # tab1 그래프 추가 
         # self.ui.chart groupBox에 Chart 클래스 추가
-        ###########################################################
-        self.chart = ChartWidget()
-        self.chart_layout = QVBoxLayout()
+        ###########################################################        
+        # finplot 기반 ChartWidget 생성
+        self.chart = ChartWidget(coin="KRW-BTC")
+        self.chart_layout = QVBoxLayout(self.ui.chart)  # self.ui.chart는 QFrame or QWidget
         self.chart_layout.addWidget(self.chart)
-        self.ui.chart.setLayout(self.chart_layout)
         
         # 코인 리스트 콤보박스
         self.ui.coin_selete.addItems(["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-DOGE"])
         self.ui.coin_selete.currentTextChanged.connect(self.update_chart)
         
+        # ✅ 그래프 UI 레이아웃 설정
+        self.graph_layout = QVBoxLayout(self.ui.graph)
+        self.ui.graph.setLayout(self.graph_layout)
 
+        # ✅ 거래량 차트만 생성 (ax0 없이 ax1만 사용)
+        self.ax1 = fplt.create_plot_widget(master=self.ui.graph, rows=1)
+        self.graph_layout.addWidget(self.ax1.ax_widget)
         
+        # ✅ order book widget 추가
+        self.order = OrderBookWidget()
+        self.order.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)  # ✅ 크기 자동 조정
+
+        self.order_layout = QVBoxLayout(self.ui.groupBox_4)  # ✅ 부모 위젯의 레이아웃 설정
+        self.order_layout.addWidget(self.order)
+        self.order_layout.setContentsMargins(0, 0, 0, 0)  # ✅ 여백 제거
+        self.order_layout.setStretch(0, 1)  # ✅ 레이아웃 내 OrderBookWidget이 최대한 확장되도록 설정
+
+        # ✅ 초기 차트 로드
+        self.current_coin = "KRW-BTC"
+        self.update_chart()
+
     def update_chart(self):
-        """선택된 코인으로 차트를 변경"""
         new_coin = self.ui.coin_selete.currentText()
-        self.chart.change_coin(new_coin) 
+        if new_coin == "선택":
+            new_coin = "KRW-BTC"
+
+        self.chart.change_coin(new_coin)
+        self.order.change_coin(new_coin)  # ✅ OrderBook 변경
+        self.current_coin = new_coin
+        df = pyupbit.get_ohlcv(new_coin, interval='minute1', count=100)
+
+        if df is None or df.empty:
+            print(f"코인 데이터 로드 실패: {new_coin}")
+            return
+
+        df.columns = df.columns.str.lower()
+        if not {'open', 'close', 'volume'}.issubset(df.columns):
+            print(f"필요한 컬럼이 없음: {df.columns}")
+            return
+
+        # ✅ 기존 차트 초기화 & 새 데이터 적용
+        if hasattr(self, "ax1"):
+            self.ax1.reset()
+            fplt.volume_ocv(df[['open', 'close', 'volume']], ax=self.ax1)
+            
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            event.ignore()  # ✅ Esc 키를 무시하여 창이 닫히지 않도록 함
+        else:
+            super().keyPressEvent(event)  # 기본 동작 유지
+
+
+
 
 
 # 로그인 윈도우 클래스

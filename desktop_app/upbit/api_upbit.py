@@ -4,25 +4,25 @@ class Upbit_api:
     def __init__(self, access_key, secret_key):
         self.access_key = access_key
         self.secret_key = secret_key
+        self.user = self.create_user()
         
-    def save_api_keys(self):
+    def create_user(self):
         try:
-            with open("api_keys.txt", "w") as f:
-                f.write(f"{self.access_key}\n{self.secret_key}")
-            
-            return True
+            self.user = pyupbit.Upbit(self.access_key, self.secret_key)
+        except:
+            self.user = None
         
-        except Exception as e:
-            return False
-            
-    def load_api_keys(self):
+    def get_balance(self, ticker):
         try:
-            with open("api_keys.txt", "r") as f:
-                keys = f.readlines()
-                self.access_key = keys[0].strip()
-                self.secret_key = keys[1].strip()
-            
-            return self.access_key, self.secret_key
-        
-        except Exception as e:
-            return None, None
+            return self.user.get_balance(ticker)
+        except:
+            return None
+    
+    def get_order(self):
+        return self.user.get_order()
+    
+    def buy_market_order(self, ticker, cash):
+        return self.user.buy_market_order(ticker, cash)
+    
+    def sell_market_order(self, ticker, volume):
+        return self.user.sell_market_order(ticker, volume)

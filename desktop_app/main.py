@@ -8,12 +8,12 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor, QFont,
     QFontDatabase, QIcon, QLinearGradient, QPalette, QPainter, QPixmap,
     QRadialGradient)
 from PySide6.QtWidgets import *
-
 from ui.ui_login import Ui_login
 from ui.ui_main import Ui_MainWindow
 from ui.ui_block import BlockMain
 from upbit.get_data_upbit import *
-from upbit.execute_upbit import *
+from upbit.configer import *
+from upbit.api_upbit import *
 import finplot as fplt
 
 class User():
@@ -37,6 +37,34 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         
+        ###########################################################
+        # 기본 설정
+        ###########################################################
+        
+        # 설정 파일 생성
+        config_generator()
+        self.ui.access_key.setEchoMode(QLineEdit.Password)
+        self.ui.secret_key.setEchoMode(QLineEdit.Password)
+        
+        # load api keys
+        config = config_read()
+        self.access_key = config['API']['access_key']
+        self.secret_key = config['API']['secret_key']
+        
+        self.ui.access_key.setText(self.access_key)
+        self.ui.secret_key.setText(self.secret_key)
+        
+        # api 저장
+        self.ui.save_button.clicked.connect(self.save_api)
+        
+        # upbit user 생성
+        self.upbit = Upbit_api(self.access_key, self.secret_key)
+        self.upbit.create_user()
+        
+        # button mapping
+        self.ui.buy_button.clicked.connect(self.buy_market_order) # 매수
+        self.ui.buy_button_2.clicked.connect(self.sell_market_order) # 매도
+        
         # ✅ Esc 키 방지
         self.installEventFilter(self)
         
@@ -51,7 +79,9 @@ class MainWindow(QMainWindow):
         # tab2 (블록 선택 & 배치 영역에 스크롤 추가)
         ###########################################################
         
-        self.blockFrame = BlockMain()
+        self.blockFrame = BlockMain(self.upbit)
+        self.ui.pushButton.clicked.connect(self.blockFrame.add_block)
+        self.blockFrame.history = self.ui.history
         self.ui.verticalLayout.addWidget(self.blockFrame)
         self.ui.strategy_combo_2.addItems(["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-DOGE"])
         self.ui.start_button.clicked.connect(self.blockFrame.run_all_blocks)
@@ -70,15 +100,22 @@ class MainWindow(QMainWindow):
         self.ui.coin_selete.addItems(["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-DOGE"])
         self.ui.coin_selete.currentTextChanged.connect(self.update_chart)
         
-        # ✅ 그래프 UI 레이아웃 설정
+        # 그래프 UI 레이아웃 설정
         self.graph_layout = QVBoxLayout(self.ui.graph)
         self.ui.graph.setLayout(self.graph_layout)
 
-        # ✅ 거래량 차트만 생성 (ax0 없이 ax1만 사용)
+        # 거래량 차트만 생성 (ax0 없이 ax1만 사용)
         self.ax1 = fplt.create_plot_widget(master=self.ui.graph, rows=1)
-        self.graph_layout.addWidget(self.ax1.ax_widget)
+
+        # ✅ PlotWidget을 QWidget으로 감싸서 추가
+        self.graph_container = QWidget()
+        self.graph_container_layout = QVBoxLayout(self.graph_container)
+        self.graph_container_layout.addWidget(self.ax1.ax_widget)
+        self.graph_container.setLayout(self.graph_container_layout)
+
+        self.graph_layout.addWidget(self.graph_container)  # ✅ 감싼 위젯을 추가
         
-        # ✅ order book widget 추가
+        # order book widget 추가
         self.order = OrderBookWidget()
         self.order.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)  # ✅ 크기 자동 조정
 
@@ -87,17 +124,20 @@ class MainWindow(QMainWindow):
         self.order_layout.setContentsMargins(0, 0, 0, 0)  # ✅ 여백 제거
         self.order_layout.setStretch(0, 1)  # ✅ 레이아웃 내 OrderBookWidget이 최대한 확장되도록 설정
 
-        # ✅ 초기 차트 로드
+        # 초기 차트 로드
         self.current_coin = "KRW-BTC"
         self.update_chart()
 
+    # 차트 업데이트 함수
     def update_chart(self):
         new_coin = self.ui.coin_selete.currentText()
         if new_coin == "선택":
             new_coin = "KRW-BTC"
 
         self.chart.change_coin(new_coin)
-        self.order.change_coin(new_coin)  # ✅ OrderBook 변경
+        self.order.change_coin(new_coin)  # OrderBook 변경
+        self.ui.label_3.setText(f"보유량: {self.upbit.get_balance(new_coin)}")
+        self.ui.label_6.setText(f"KRW: {self.upbit.get_balance('KRW')}")
         self.current_coin = new_coin
         df = pyupbit.get_ohlcv(new_coin, interval='minute1', count=100)
 
@@ -110,16 +150,59 @@ class MainWindow(QMainWindow):
             print(f"필요한 컬럼이 없음: {df.columns}")
             return
 
-        # ✅ 기존 차트 초기화 & 새 데이터 적용
+        #  기존 차트 초기화 & 새 데이터 적용
         if hasattr(self, "ax1"):
             self.ax1.reset()
             fplt.volume_ocv(df[['open', 'close', 'volume']], ax=self.ax1)
-            
+    
+    #  esc 버튼 클릭 시
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
             event.ignore()  # ✅ Esc 키를 무시하여 창이 닫히지 않도록 함
         else:
             super().keyPressEvent(event)  # 기본 동작 유지
+            
+    # 버장 버튼 클릭 시
+    def save_api(self):
+        self.access_key = self.ui.access_key.text()
+        self.secret_key = self.ui.secret_key.text()
+        
+        self.upbit.access_key = self.access_key
+        self.upbit.secret_key = self.secret_key
+        
+        config_edit('API', 'access_key', self.access_key)
+        config_edit('API', 'secret_key', self.secret_key)
+        config_edit('API', 'update', strftime('%Y-%m-%d %H:%M:%S'))
+        
+        QMessageBox.information(self, 'API 저장', 'API 키가 저장되었습니다.')
+        
+        self.upbit.create_user()
+        if self.upbit.user is None:
+            QMessageBox.critical(self, 'API 연결 실패', 'API 키가 올바르지 않습니다.')
+
+        
+    def buy_market_order(self):
+        ticker = self.ui.coin_selete.currentText()
+        cash = self.ui.direct_input_2.text()
+        
+        self.upbit.buy_market_order(ticker, cash)
+        
+        QMessageBox.information(self, '매수 주문', '주문이 완료되었습니다.')
+        
+        self.blance = self.upbit.get_balance(ticker)
+        self.ui.label_3.setText(f"보유량: {self.blance}")
+        self.ui.label_6.setText(f"KRW: {self.upbit.get_balance('KRW')}")
+    
+    def sell_market_order(self):
+        ticker = self.ui.coin_selete.currentText()
+        volume = self.ui.direct_input_2.text()
+        
+        self.upbit.sell_market_order(ticker, volume)
+        
+        QMessageBox.information(self, '매도 주문', '주문이 완료되었습니다.')
+        self.blance = self.upbit.get_balance(ticker)
+        self.ui.label_3.setText(f"보유량: {self.blance}")
+        self.ui.label_6.setText(f"KRW: {self.upbit.get_balance('KRW')}")
 
 
 

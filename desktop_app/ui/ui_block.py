@@ -1,5 +1,6 @@
 import sys
 import time
+import pyupbit
 from PySide6.QtCore import Qt, QThread, Signal, QObject, QMutex, QWaitCondition
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QLabel,
@@ -125,14 +126,16 @@ class PurchaseAction(Action):
         "urgent": {"label": "긴급 구매", "type": bool, "default": False, "ui_type": "checkbox"}
     }
 
-    def __init__(self, quantity=1, price_limit=10000.0, urgent=False):
+    def __init__(self, upbit, quantity=1, price_limit=10000.0, urgent=False):
         super().__init__()
+        self.upbit = upbit
         self.name = "매수 액션"
         self.quantity = quantity
         self.price_limit = price_limit
         self.urgent = urgent
 
     def run_action(self):
+        print(self.upbit.get_balance("KRW"))
         urgency = " (긴급)" if self.urgent else ""
         return f"{self.quantity}개 구매 완료 (최대 가격 {self.price_limit}){urgency}"
 
@@ -142,12 +145,14 @@ class SellAction(Action):
         "quantity": {"label": "판매 수량%", "type": int, "default": 1, "ui_type": "line_edit"},
     }
 
-    def __init__(self, quantity=1):
+    def __init__(self, upbit, quantity=1):
         super().__init__()
+        self.upbit = upbit
         self.name = "매도 액션"
         self.quantity = quantity
 
     def run_action(self):
+        print(self.upbit.get_balance("KRW"))
         return f"{self.quantity}개 판매 완료"
 
 
@@ -218,9 +223,10 @@ from PySide6.QtWidgets import QCheckBox, QComboBox
 from PySide6.QtWidgets import QCheckBox, QComboBox
 
 class BlockConfigDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, upbit=None):
         super().__init__(parent)
         self.setWindowTitle("조건/액션 추가")
+        self.upbit = upbit
 
         self.layout = QHBoxLayout()
         self.setLayout(self.layout)
@@ -350,7 +356,7 @@ class BlockConfigDialog(QDialog):
                 kwargs[field_name] = field_type()  # 기본값 사용
 
         # ✅ 조건/액션에 따라 객체 생성
-        new_object = registry.create_condition(name, **kwargs) if mode == "조건 추가" else registry.create_action(name, **kwargs)
+        new_object = registry.create_condition(name, **kwargs) if mode == "조건 추가" else registry.create_action(name, self.upbit,**kwargs)
         return mode[:-3], new_object  # "조건 추가" → "조건", "액션 추가" → "액션"
 
    
@@ -362,22 +368,16 @@ class BlockConfigDialog(QDialog):
 class BlockMain(QWidget):
     log_signal = Signal(str)
 
-    def __init__(self):
+    def __init__(self, upbit):
         super().__init__()
         self.setWindowTitle("PyQt5 Block System as Frame")
+        self.upbit = upbit
 
         self.layout = QVBoxLayout(self)
 
-        # 블록 추가 버튼
-        self.add_block_button = QPushButton("+ 블록 추가")
-        self.add_block_button.clicked.connect(self.add_block)
-        self.layout.addWidget(self.add_block_button)
-
         # History (결과 출력)
         self.history = QListWidget()
-        self.layout.addWidget(QLabel("History"))
-        self.layout.addWidget(self.history)
-
+        
         self.blocks = []
         self.max_blocks = 4
 
@@ -386,7 +386,7 @@ class BlockMain(QWidget):
         self.history.scrollToBottom()
 
     def open_add_dialog(self, block, block_content_widget):
-        dialog = BlockConfigDialog(self)
+        dialog = BlockConfigDialog(parent=self, upbit=self.upbit)
         if dialog.exec_() == QDialog.Accepted:
             config_type, obj = dialog.get_config_data()
 
@@ -405,33 +405,60 @@ class BlockMain(QWidget):
             print("더 이상 블록을 추가할 수 없습니다 (최대 4개).")
             return
 
-        new_block = Block(None, [], 10)  # 빈 블록 생성
+        # 새 블록 생성
+        new_block = Block(None, [], 10)
         self.blocks.append(new_block)
 
-        # 🔹 블록 Frame 생성
         block_frame = QFrame()
         block_frame.setFrameShape(QFrame.StyledPanel)
         block_layout = QHBoxLayout(block_frame)
 
-        # 블록 제목
+        # ─── 왼쪽 (라벨 & 리스트) ───
+        left_layout = QVBoxLayout()
+        
         block_label = QLabel(f"Block {len(self.blocks)}")
-        block_layout.addWidget(block_label)
+        left_layout.addWidget(block_label)
 
-        # 조건/액션 표시용 리스트
         block_content = QListWidget()
-        block_layout.addWidget(block_content)
+        left_layout.addWidget(block_content)
 
-        # 조건/액션 추가 버튼
+        block_layout.addLayout(left_layout)
+
+        # ─── 오른쪽 (주기 입력 & 버튼) ───
+        right_layout = QVBoxLayout()
+
+        interval_label = QLabel(f"실행 주기 설정 (초)")
+        right_layout.addWidget(interval_label)
+        
+        interval_edit = QLineEdit()
+        interval_edit.setPlaceholderText("주기 (초)")
+        right_layout.addWidget(interval_edit)
+
         add_config_btn = QPushButton("+ 조건/액션 추가")
         add_config_btn.clicked.connect(lambda: self.open_add_dialog(new_block, block_content))
-        block_layout.addWidget(add_config_btn)
+        right_layout.addWidget(add_config_btn)
 
-        # 블록 UI 배치
+        # 버튼 하단에 추가 여유 공간
+        right_layout.addStretch()
+
+        block_layout.addLayout(right_layout)
+
+        # ➡ 왼쪽 레이아웃(0번)에 더 큰 비율(예: 3), 오른쪽 레이아웃(1번)에 더 작은 비율(예: 1)
+        block_layout.setStretch(0, 3)
+        block_layout.setStretch(1, 1)
+
+        new_block.interval_edit = interval_edit
         self.layout.addWidget(block_frame)
 
     def run_all_blocks(self):
         for block in self.blocks:
             if block.action is not None and block.conditions:
+                # ➡ 사용자가 입력한 주기가 있으면 숫자로 변환
+                if hasattr(block, "interval_edit"):
+                    text = block.interval_edit.text()
+                    if text.strip().isdigit():
+                        block.interval_sec = int(text.strip())
+
                 if block.worker is None:
                     block.worker = BlockWorker(block, block.interval_sec)
                     block.worker.log_signal.connect(self.add_to_history)

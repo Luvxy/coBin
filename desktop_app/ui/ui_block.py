@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QFrame, QDialog, QDialogButtonBox, QComboBox, QLineEdit, QCheckBox, QHBoxLayout
 )
 
+
 # ---------------------
 # 부모 조건 클래스
 # ---------------------
@@ -38,46 +39,161 @@ class ConditionRegistry:
 
 
 # ---------------------
-# 샘플 자식 조건    
+# 조건 등록
 # ---------------------
-@ConditionRegistry.register("캔들 비교")
-class CandleCheckCondition(Condition):
+
+
+
+
+
+@ConditionRegistry.register("지정 캔들 양봉/음봉 확인")
+class CheckCandleTypeCondition(Condition):
     config_fields = {
-        "candle1": {"label": "candle1", "type": int, "default": 1, "ui_type": "line_edit"},
-        "candle2": {"label": "candle2", "type": int, "default": 2, "ui_type": "line_edit"},
-        "candle3": {"label": "candle3", "type": int, "default": 3, "ui_type": "line_edit"},
+        "candle_index": {"label": "캔들 번호", "type": int, "default": 0, "ui_type": "line_edit"},
+        "target_type": {"label": "캔들 유형", "type": str, "default": "양봉", "ui_type": "dropdown", "options": ["양봉", "음봉"]},
+        "interval": {"label": "캔들 시간 간격", "type": str, "default": "minute30", "ui_type": "line_edit"},
     }
 
-    def __init__(self, candle1=1, candle2=2, candle3=3):
+    def __init__(self, candle_index=0, target_type="양봉", coin="KRW-BTC", interval="minute30"):
         super().__init__()
-        self.name = "캔들 검사"
-        self.candle1 = candle1
-        self.candle2 = candle2
-        self.candle3 = candle3
+        self.name = f"지정 캔들 {candle_index}번째 {target_type} 확인"
+        self.candle_index = candle_index
+        self.target_type = target_type
+        self.coin = coin
+        self.interval = interval
 
     def check_condition(self) -> bool:
-        print(f"캔들 타입: {self.candle1}, 기준값: {self.candle2}, 엄격 모드: {self.candle3}")
-        return self.candle1 > self.candle2   # 예시 로직
+        df = pyupbit.get_ohlcv(self.coin, interval=self.interval, count=self.candle_index + 1)
+        if df is None or df.empty or len(df) <= self.candle_index:
+            print("캔들 데이터를 가져올 수 없음")
+            return False
+
+        target_candle = df.iloc[-(self.candle_index + 1)]
+        is_bullish = target_candle['open'] < target_candle['close']
+
+        return is_bullish if self.target_type == "양봉" else not is_bullish
+
+@ConditionRegistry.register("거래량 확인")
+class CheckVolumeCondition(Condition):
+    config_fields = {
+        "volume_threshold": {"label": "거래량 기준", "type": float, "default": 1000.0, "ui_type": "line_edit"},
+        "check_type": {"label": "비교 유형", "type": str, "default": "이상", "ui_type": "dropdown", "options": ["이상", "이하"]},
+        "interval": {"label": "캔들 시간 간격", "type": str, "default": "minute30", "ui_type": "line_edit"},
+    }
+
+    def __init__(self, volume_threshold=1000.0, check_type="이상", coin="KRW-BTC", interval="minute30"):
+        super().__init__()
+        self.name = f"거래량 {volume_threshold} {check_type} 확인"
+        self.volume_threshold = volume_threshold
+        self.check_type = check_type
+        self.coin = coin
+        self.interval = interval
+
+    def check_condition(self) -> bool:
+        df = pyupbit.get_ohlcv(self.coin, interval=self.interval, count=1)
+        if df is None or df.empty:
+            print("거래량 데이터를 가져올 수 없음")
+            return False
+
+        current_volume = df.iloc[-1]['volume']
+        print(f"현재 거래량: {current_volume:.2f}")
+
+        return current_volume >= self.volume_threshold if self.check_type == "이상" else current_volume <= self.volume_threshold
+
+@ConditionRegistry.register("현재 가격 확인")
+class CheckPriceCondition(Condition):
+    config_fields = {
+        "price_threshold": {"label": "가격 기준", "type": float, "default": 50000.0, "ui_type": "line_edit"},
+        "check_type": {"label": "비교 유형", "type": str, "default": "이상", "ui_type": "dropdown", "options": ["이상", "이하"]}
+    }
+
+    def __init__(self, price_threshold=50000.0, check_type="이상", coin="KRW-BTC"):
+        super().__init__()
+        self.name = f"현재 가격이 {price_threshold} {check_type} 확인"
+        self.price_threshold = price_threshold
+        self.check_type = check_type
+        self.coin = coin
+
+    def check_condition(self) -> bool:
+        current_price = pyupbit.get_current_price(self.coin)
+        print(f"현재 가격: {current_price:.2f}")
+
+        return current_price >= self.price_threshold if self.check_type == "이상" else current_price <= self.price_threshold
+
+@ConditionRegistry.register("가격 변동률 확인")
+class CheckPriceChangeCondition(Condition):
+    config_fields = {
+        "change_threshold": {"label": "변동률 기준 (%)", "type": float, "default": 3.0, "ui_type": "line_edit"},
+        "check_type": {"label": "비교 유형", "type": str, "default": "이상", "ui_type": "dropdown", "options": ["이상", "이하"]}
+    }
+
+    def __init__(self, change_threshold=3.0, check_type="이상", coin="KRW-BTC"):
+        super().__init__()
+        self.name = f"가격 변동률이 {change_threshold}% {check_type} 확인"
+        self.change_threshold = change_threshold
+        self.check_type = check_type
+        self.coin = coin
+
+    def check_condition(self) -> bool:
+        df = pyupbit.get_ohlcv(self.coin, interval='minute30', count=2)
+        if df is None or df.empty or len(df) < 2:
+            print("가격 데이터를 가져올 수 없음")
+            return False
+
+        prev_close = df.iloc[-2]['close']
+        current_close = df.iloc[-1]['close']
+        price_change = (current_close - prev_close) / prev_close * 100
+        print(f"가격 변동률: {price_change:.2f}%")
+
+        return price_change >= self.change_threshold if self.check_type == "이상" else price_change <= self.change_threshold
+
+
+@ConditionRegistry.register("이동평균선 돌파/하회 확인")
+class CheckMovingAverageCondition(Condition):
+    config_fields = {
+        "ma_days": {"label": "이동평균 일수", "type": int, "default": 5, "ui_type": "line_edit"},
+        "check_type": {"label": "확인 유형", "type": str, "default": "상향 돌파", "ui_type": "dropdown", "options": ["상향 돌파", "하향 돌파"]}
+    }
+
+    def __init__(self, ma_days=5, check_type="상향 돌파", coin="KRW-BTC"):
+        super().__init__()
+        self.name = f"{ma_days}일 동안 이동평균선 {check_type}"
+        self.ma_days = ma_days
+        self.check_type = check_type
+        self.coin = coin
+
+    def check_condition(self) -> bool:
+        df = pyupbit.get_ohlcv(self.coin, interval='minute30', count=self.ma_days + 1)
+        if df is None or df.empty or len(df) < self.ma_days + 1:
+            print("가격 데이터를 가져올 수 없음")
+            return False
+
+        ma = df['close'].rolling(window=self.ma_days).mean()
+        current_price = df.iloc[-1]['close']
+        current_ma = ma.iloc[-1]
+        prev_ma = ma.iloc[-2]
+
+        is_break_up = current_price > current_ma > prev_ma
+        is_break_down = current_price < current_ma < prev_ma
+
+        return is_break_up if self.check_type == "상향 돌파" else is_break_down
     
-@ConditionRegistry.register("캔들 확인")
-class CandleCheckCondition(Condition):
+@ConditionRegistry.register("시간 범위 선택")
+class CheckTimeRangeCondition(Condition):
     config_fields = {
-        "quantity": {"label": "구매 수량", "type": int, "default": 1, "ui_type": "line_edit"},
-        "price_limit": {"label": "1번 캔들 번호", "type": str, "default": "양봉", "ui_type": "dropdown", "options": ["양봉", "음봉"]},
-        "urgent": {"label": "긴급 구매", "type": bool, "default": False, "ui_type": "checkbox"}
+        "start_hour": {"label": "시작 시간 (시)", "type": int, "default": 9, "ui_type": "line_edit"},
+        "end_hour": {"label": "종료 시간 (시)", "type": int, "default": 15, "ui_type": "line_edit"},
     }
 
-    def __init__(self, candle_type="양봉", threshold=100.0, strict_mode=False):
+    def __init__(self, start_hour=9, end_hour=15):
         super().__init__()
-        self.name = "캔들 확인"
-        self.candle_type = candle_type
-        self.threshold = threshold
-        self.strict_mode = strict_mode
+        self.name = f"{start_hour}시 ~ {end_hour}시 사이"
+        self.start_hour = start_hour
+        self.end_hour = end_hour
 
     def check_condition(self) -> bool:
-        print(f"캔들 타입: {self.candle_type}, 기준값: {self.threshold}, 엄격 모드: {self.strict_mode}")
-        return self.threshold > 50  # 예시 로직
-
+        current_hour = time.localtime().tm_hour
+        return self.start_hour <= current_hour <= self.end_hour
 
 
 
@@ -110,6 +226,54 @@ class ActionRegistry:
         else:
             raise ValueError(f"{name}은(는) 등록되지 않은 Action입니다.")
 
+@ConditionRegistry.register("최고가/최저가 비교")
+class HighLowComparisonCondition(Condition):
+    config_fields = {
+        "candle1": {"label": "첫 번째 캔들 인덱스", "type": int, "default": 1, "ui_type": "line_edit"},
+        "candle2": {"label": "두 번째 캔들 인덱스", "type": int, "default": 2, "ui_type": "line_edit"},
+        "compare_type": {"label": "비교 유형", "type": str, "default": "최고가vs최저가", "ui_type": "dropdown", 
+                         "options": ["최고가vs최저가", "최고가vs최고가", "최저가vs최저가", "최고가vs현재가", "최저가vs현재가", "현재가vs최고가", "현재가vs최저가"]},
+        "interval": {"label": "캔들 시간 간격", "type": str, "default": "minute30", "ui_type": "line_edit"},
+    }
+
+    def __init__(self, candle1=1, candle2=2, compare_type="최고가vs최저가", coin="KRW-BTC", interval="minute30"):
+        super().__init__()
+        self.candle1 = candle1
+        self.candle2 = candle2
+        self.compare_type = compare_type
+        self.coin = coin
+        self.interval = interval
+        self.name = f"{candle1}번째와 {candle2}번째 캔들 {compare_type} 비교"
+
+    def check_condition(self) -> bool:
+        df = pyupbit.get_ohlcv(self.coin, interval=self.interval, count=max(self.candle1, self.candle2) + 1)
+        if df is None or df.empty or len(df) <= max(self.candle1, self.candle2):
+            print("캔들 데이터를 가져올 수 없음")
+            return False
+
+        high1 = df.iloc[-(self.candle1 + 1)]['high']
+        low1 = df.iloc[-(self.candle1 + 1)]['low']
+        high2 = df.iloc[-(self.candle2 + 1)]['high']
+        low2 = df.iloc[-(self.candle2 + 1)]['low']
+        current_price = pyupbit.get_current_price(self.coin)
+
+        if self.compare_type == "최고가vs최저가":
+            return high1 > low2
+        elif self.compare_type == "최고가vs최고가":
+            return high1 > high2
+        elif self.compare_type == "최저가vs최저가":
+            return low1 > low2
+        elif self.compare_type == "최고가vs현재가":
+            return high1 > current_price
+        elif self.compare_type == "최저가vs현재가":
+            return low1 > current_price
+        elif self.compare_type == "현재가vs최고가":
+            return high1 < current_price
+        elif self.compare_type == "현재가vs최저가":
+            return low1 < current_price
+        else:
+            return False
+
 
 
 
@@ -118,46 +282,222 @@ class ActionRegistry:
 # ---------------------
 # 샘플 액션 등록
 # ---------------------
-@ActionRegistry.register("매수 액션")
-class PurchaseAction(Action):
+@ActionRegistry.register("시장가 매수")
+class MarketBuyAction(Action):
     config_fields = {
-        "quantity": {"label": "구매 수량", "type": int, "default": 1, "ui_type": "line_edit"},
-        "price_limit": {"label": "최대 구매가", "type": float, "default": 10000.0, "ui_type": "line_edit"},
-        "urgent": {"label": "긴급 구매", "type": bool, "default": False, "ui_type": "checkbox"}
+        "amount": {"label": "매수 금액 (KRW 또는 %)", "type": str, "default": "10000", "ui_type": "line_edit"},
     }
 
-    def __init__(self, upbit, quantity=1, price_limit=10000.0, urgent=False):
+    def __init__(self, upbit, amount="10000", coin="KRW-BTC"):
         super().__init__()
         self.upbit = upbit
-        self.name = "매수 액션"
-        self.quantity = quantity
-        self.price_limit = price_limit
-        self.urgent = urgent
+        self.amount = amount  # 문자열로 입력받아 % 처리 가능
+        self.coin = coin
+        self.name = f"시장가 매수: {coin} - {amount} KRW"
 
     def run_action(self):
-        print(self.upbit.get_balance("KRW"))
-        urgency = " (긴급)" if self.urgent else ""
-        return f"{self.quantity}개 구매 완료 (최대 가격 {self.price_limit}){urgency}"
+        balance = self.upbit.get_balance("KRW")  # 현재 보유 KRW
+        if self.amount.endswith("%"):  # % 입력 처리
+            percent = float(self.amount.strip('%')) / 100
+            order_amount = balance * percent
+        else:
+            order_amount = float(self.amount)
+        
+        if order_amount > balance:
+            return "보유 KRW 부족"
+        
+        order_result = self.upbit.buy_market_order(self.coin, order_amount)
+        return f"시장가 매수 실행: {self.coin} - {order_amount:.2f} KRW" if order_result else "매수 실패"
 
-@ActionRegistry.register("매도 액션")
-class SellAction(Action):
+@ActionRegistry.register("시장가 매도")
+class MarketSellAction(Action):
     config_fields = {
-        "quantity": {"label": "판매 수량%", "type": int, "default": 1, "ui_type": "line_edit"},
+        "quantity": {"label": "판매 수량 (개 또는 %)", "type": str, "default": "1", "ui_type": "line_edit"},
     }
 
-    def __init__(self, upbit, quantity=1):
+    def __init__(self, upbit, quantity="1", coin="KRW-BTC"):
         super().__init__()
         self.upbit = upbit
-        self.name = "매도 액션"
-        self.quantity = quantity
+        self.quantity = quantity  # 문자열로 입력받아 % 처리 가능
+        self.coin = coin
+        self.name = f"시장가 매도: {coin} - {quantity}개"
 
     def run_action(self):
-        print(self.upbit.get_balance("KRW"))
-        return f"{self.quantity}개 판매 완료"
+        balance = self.upbit.get_balance(self.coin)  # 현재 보유 수량
+        if self.quantity.endswith("%"):  # % 입력 처리
+            percent = float(self.quantity.strip('%')) / 100
+            order_quantity = balance * percent
+        else:
+            order_quantity = float(self.quantity)
+        
+        if order_quantity > balance:
+            return "보유 수량 부족"
+        
+        order_result = self.upbit.sell_market_order(self.coin, order_quantity)
+        return f"시장가 매도 실행: {self.coin} - {order_quantity:.6f}개" if order_result else "매도 실패"
 
 
+@ActionRegistry.register("지정가 매수")
+class LimitBuyAction(Action):
+    config_fields = {
+        "price": {"label": "매수 가격", "type": float, "default": 10000.0, "ui_type": "line_edit"},
+        "quantity": {"label": "구매 수량", "type": float, "default": 1.0, "ui_type": "line_edit"},
+    }
+
+    def __init__(self, upbit, price=10000.0, quantity=1.0, coin="KRW-BTC"):
+        super().__init__()
+        self.upbit = upbit
+        self.price = price
+        self.quantity = quantity
+        self.coin = coin
+        self.name = f"지정가 매수: {coin} - {quantity}개 @ {price} KRW"
+
+    def run_action(self):
+        order_result = self.upbit.buy_limit_order(self.coin, self.price, self.quantity)
+        return f"지정가 매수 실행: {self.coin} - {self.quantity}개 @ {self.price} KRW" if order_result else "매수 실패"
+
+@ActionRegistry.register("지정가 매도")
+class LimitSellAction(Action):
+    config_fields = {
+        "price": {"label": "매도 가격", "type": float, "default": 10000.0, "ui_type": "line_edit"},
+        "quantity": {"label": "판매 수량", "type": float, "default": 1.0, "ui_type": "line_edit"},
+    }
+
+    def __init__(self, upbit, price=10000.0, quantity=1.0, coin="KRW-BTC"):
+        super().__init__()
+        self.upbit = upbit
+        self.price = price
+        self.quantity = quantity
+        self.coin = coin
+        self.name = f"지정가 매도: {coin} - {quantity}개 @ {price} KRW"
+
+    def run_action(self):
+        order_result = self.upbit.sell_limit_order(self.coin, self.price, self.quantity)
+        return f"지정가 매도 실행: {self.coin} - {self.quantity}개 @ {self.price} KRW" if order_result else "매도 실패"
 
 
+import pyupbit
+
+@ActionRegistry.register("스탑로스(손절)")
+class StopLossAction(Action):
+    config_fields = {
+        "stop_loss_percent": {"label": "손절 기준 수익률 (%)", "type": str, "default": "-5%", "ui_type": "line_edit"},
+        "quantity_percent": {"label": "판매 수량 (%)", "type": str, "default": "100%", "ui_type": "line_edit"},
+    }
+
+    def __init__(self, upbit, stop_loss_percent="-5%", quantity_percent="100%", coin="KRW-BTC"):
+        super().__init__()
+        self.upbit = upbit
+        self.stop_loss_percent = stop_loss_percent
+        self.quantity_percent = quantity_percent
+        self.coin = coin
+        self.buy_price = self.get_buy_price()
+        self.name = f"스탑로스(손절): {coin} - {stop_loss_percent} 손절"
+
+    def get_buy_price(self):
+        """ 최근 매수 체결 내역에서 매수가 가져오기 """
+        orders = self.upbit.get_order(self.coin, state="done")  # 완료된 주문 조회
+        if not orders:
+            return None
+
+        for order in orders:
+            if order['side'] == 'bid':  # 매수 체결된 주문 확인
+                return float(order['price'])
+        
+        return None
+
+    def run_action(self):
+        if self.buy_price is None:
+            return "매수가격을 가져올 수 없음"
+
+        current_price = pyupbit.get_current_price(self.coin)
+        if current_price is None:
+            return "현재 가격을 가져올 수 없음"
+
+        # 손절가 계산 (수익률 기준)
+        if self.stop_loss_percent.endswith("%"):
+            percent = float(self.stop_loss_percent.strip('%')) / 100
+            stop_loss_price = self.buy_price * (1 + percent)
+        else:
+            stop_loss_price = float(self.stop_loss_percent)
+
+        # 현재 가격이 손절가 이하인지 확인
+        if current_price <= stop_loss_price:
+            balance = self.upbit.get_balance(self.coin)
+            if self.quantity_percent.endswith("%"):
+                percent = float(self.quantity_percent.strip('%')) / 100
+                sell_quantity = balance * percent
+            else:
+                sell_quantity = float(self.quantity_percent)
+
+            if sell_quantity > balance:
+                return "보유 수량 부족"
+            
+            order_result = self.upbit.sell_market_order(self.coin, sell_quantity)
+            return f"손절 실행: {self.coin} - {sell_quantity:.6f}개 @ {current_price} KRW" if order_result else "손절 실패"
+        
+        return f"손절 조건 미충족: 현재가 {current_price} KRW, 손절가 {stop_loss_price} KRW"
+    
+    
+@ActionRegistry.register("테이크프로핏(익절)")
+class TakeProfitAction(Action):
+    config_fields = {
+        "take_profit_percent": {"label": "익절 기준 수익률 (%)", "type": str, "default": "10%", "ui_type": "line_edit"},
+        "quantity_percent": {"label": "판매 수량 (%)", "type": str, "default": "100%", "ui_type": "line_edit"},
+    }
+
+    def __init__(self, upbit, take_profit_percent="10%", quantity_percent="100%", coin="KRW-BTC"):
+        super().__init__()
+        self.upbit = upbit
+        self.take_profit_percent = take_profit_percent
+        self.quantity_percent = quantity_percent
+        self.coin = coin
+        self.buy_price = self.get_buy_price()
+        self.name = f"테이크프로핏(익절): {coin} - {take_profit_percent} 익절"
+
+    def get_buy_price(self):
+        """ 최근 매수 체결 내역에서 매수가 가져오기 """
+        orders = self.upbit.get_order(self.coin, state="done")  # 완료된 주문 조회
+        if not orders:
+            return None
+
+        for order in orders:
+            if order['side'] == 'bid':  # 매수 체결된 주문 확인
+                return float(order['price'])
+        
+        return None
+
+    def run_action(self):
+        if self.buy_price is None:
+            return "매수가격을 가져올 수 없음"
+
+        current_price = pyupbit.get_current_price(self.coin)
+        if current_price is None:
+            return "현재 가격을 가져올 수 없음"
+
+        # 익절가 계산 (수익률 기준)
+        if self.take_profit_percent.endswith("%"):
+            percent = float(self.take_profit_percent.strip('%')) / 100
+            take_profit_price = self.buy_price * (1 + percent)
+        else:
+            take_profit_price = float(self.take_profit_percent)
+
+        # 현재 가격이 익절가 이상인지 확인
+        if current_price >= take_profit_price:
+            balance = self.upbit.get_balance(self.coin)
+            if self.quantity_percent.endswith("%"):
+                percent = float(self.quantity_percent.strip('%')) / 100
+                sell_quantity = balance * percent
+            else:
+                sell_quantity = float(self.quantity_percent)
+
+            if sell_quantity > balance:
+                return "보유 수량 부족"
+            
+            order_result = self.upbit.sell_market_order(self.coin, sell_quantity)
+            return f"익절 실행: {self.coin} - {sell_quantity:.6f}개 @ {current_price} KRW" if order_result else "익절 실패"
+        
+        return f"익절 조건 미충족: 현재가 {current_price} KRW, 익절가 {take_profit_price} KRW"
 
 
 
@@ -233,7 +573,6 @@ class BlockConfigDialog(QDialog):
 
         # 조건/액션 선택
         self.mode_combo = QComboBox()
-        self.mode_combo.addItem("선택")
         self.mode_combo.addItem("조건 추가")
         self.mode_combo.addItem("액션 추가")
         self.layout.addWidget(QLabel("추가할 항목 선택"))
@@ -356,7 +695,7 @@ class BlockConfigDialog(QDialog):
                 kwargs[field_name] = field_type()  # 기본값 사용
 
         # ✅ 조건/액션에 따라 객체 생성
-        new_object = registry.create_condition(name, **kwargs) if mode == "조건 추가" else registry.create_action(name, self.upbit,**kwargs)
+        new_object = registry.create_condition(name, **kwargs) if mode == "조건 추가" else registry.create_action(name, self.upbit, **kwargs)
         return mode[:-3], new_object  # "조건 추가" → "조건", "액션 추가" → "액션"
 
    

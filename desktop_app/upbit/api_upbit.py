@@ -18,11 +18,17 @@ class Upbit_api:
         except:
             return None
     
-    def get_order(self):
-        return self.user.get_order()
+    def get_order(self, ticker, state="wait"):
+        return self.user.get_order(ticker, state=state)
     
     def buy_market_order(self, ticker, cash):
         return self.user.buy_market_order(ticker, cash)
     
     def sell_market_order(self, ticker, volume):
         return self.user.sell_market_order(ticker, volume)
+    
+    def buy_limit_order(self, ticker, price, volume):
+        return self.user.buy_limit_order(ticker, price, volume)
+
+    def sell_limit_order(self, ticker, price, volume):
+        return self.user.sell_limit_order(ticker, price, volume)

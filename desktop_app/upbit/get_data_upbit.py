@@ -34,10 +34,13 @@ class Worker(QThread):
 
 
 class ChartWidget(QWidget):
-    def __init__(self, parent=None, coin="KRW-BTC"):
+    def __init__(self, parent=None, coin="KRW-BTC", interval='minute30', count=80):
         super().__init__(parent)
         self.coin = coin
+        self.interval = interval
+        self.count = count
         self.axis_y = QValueAxis()
+        self.ticks = {}
         self.init_ui()
 
     def init_ui(self):
@@ -45,15 +48,9 @@ class ChartWidget(QWidget):
         self.worker.price.connect(self.get_price)
         self.worker.start()
 
-        self.minute_cur = QDateTime.currentDateTime()   # current
-        self.minute_pre = self.minute_cur.addSecs(-60)  # 1 minute ago
-        self.ticks = Series(dtype='float64')
-
         self.series = QCandlestickSeries()
         self.series.setIncreasingColor(Qt.red)
         self.series.setDecreasingColor(Qt.blue)
-        
-        self.load_data()
 
         self.chart = QChart()
         self.chart.legend().hide()
@@ -67,6 +64,8 @@ class ChartWidget(QWidget):
         self.axis_y.setLabelFormat("%i")
         self.chart.addAxis(self.axis_y, Qt.AlignLeft)
         self.series.attachAxis(self.axis_y)
+        
+        self.load_data(self.interval, self.count)
 
         self.chart.layout().setContentsMargins(0, 0, 0, 0)
         self.chart_view = QChartView(self.chart)
@@ -76,14 +75,14 @@ class ChartWidget(QWidget):
         layout.addWidget(self.chart_view)
         self.setLayout(layout)
 
-    def load_data(self):
+    def load_data(self, interval='minute30', count=80):
         """코인 차트 데이터를 로드"""
-        df = pyupbit.get_ohlcv(self.coin, interval='minute1', count=80)
+        df = pyupbit.get_ohlcv(self.coin, interval=interval, count=count)
         if df is None:
             print(f"코인 데이터 로드 실패: {self.coin}")
             return
 
-        self.series.clear()  # 👉 기존 차트 데이터 삭제
+        self.series.clear()
         for index in df.index:
             open_price = df.loc[index, 'open']
             high = df.loc[index, 'high']
@@ -98,9 +97,52 @@ class ChartWidget(QWidget):
             elem = QCandlestickSet(open_price, high, low, close, ts)
             self.series.append(elem)
         
-        min_val = df['low'].min()
-        max_val = df['high'].max()
-        self.axis_y.setRange(min_val, max_val)
+        self.update_axis_y(df['low'].min(), df['high'].max())
+        self.update_axis_x()
+    
+    def load_data(self, interval='minute30', count=80):
+        """코인 차트 데이터를 로드"""
+        df = pyupbit.get_ohlcv(self.coin, interval=interval, count=count)
+        if df is None or df.empty:
+            print(f"코인 데이터 로드 실패: {self.coin}")
+            return
+
+        self.series.clear()
+        for index in df.index:
+            open_price = df.loc[index, 'open']
+            high = df.loc[index, 'high']
+            low = df.loc[index, 'low']
+            close = df.loc[index, 'close']
+
+            format = "%Y-%m-%d %H:%M:%S"
+            str_time = index.strftime(format)
+            dt = QDateTime.fromString(str_time, "yyyy-MM-dd hh:mm:ss")
+            ts = dt.toMSecsSinceEpoch()
+
+            elem = QCandlestickSet(open_price, high, low, close, ts)
+            self.series.append(elem)
+        
+        self.update_axis_y(df['low'].min(), df['high'].max())
+        self.update_axis_x()
+    
+    def update_axis_x(self):
+        """X축 범위를 interval과 count에 맞게 조정"""
+        if not self.series.sets():
+            print("차트 데이터가 없어 X축을 설정할 수 없습니다.")
+            return
+        
+        first_time = int(self.series.sets()[0].timestamp())
+        last_time = int(self.series.sets()[-1].timestamp())
+        
+        first_time = max(first_time, -9223372036854775808)  # 최소값 제한
+        last_time = min(last_time, 9223372036854775807)  # 최대값 제한
+        
+        self.axis_x.setRange(QDateTime.fromMSecsSinceEpoch(first_time), QDateTime.fromMSecsSinceEpoch(last_time))
+    
+    def update_axis_y(self, min_val, max_val):
+        """Y축 범위를 설정"""
+        margin = max((max_val - min_val) * 0.05, 1)  # 최소 마진 설정
+        self.axis_y.setRange(min_val - margin, max_val + margin)
 
     def get_price(self, cur_price):
         """실시간 가격 업데이트"""
@@ -118,23 +160,22 @@ class ChartWidget(QWidget):
             new_set = QCandlestickSet(open_price, high, low, cur_price, last_set.timestamp())
             self.series.remove(last_set)
             self.series.append(new_set)
-
-    def change_coin(self, new_coin):
+            
+    def change_coin(self, new_coin, interval='minute30', count=80):
         """코인을 변경하고 새로운 차트를 로드"""
         if self.coin == new_coin:
-            return  # 👉 같은 코인 선택 시 무시
+            return
         
         print(f"코인 변경: {self.coin} → {new_coin}")
 
-        # ✅ 기존 쓰레드 안전 종료
         self.worker.stop()
 
-        # ✅ 새로운 코인으로 차트 업데이트
         self.coin = new_coin
-        self.series.clear()  # 👉 기존 차트 데이터 삭제
-        self.load_data()  # 👉 새 코인 데이터 로드
+        self.interval = interval
+        self.count = count
+        self.series.clear()
+        self.load_data(interval, count)
 
-        # ✅ 새 워커 쓰레드 시작
         self.worker = Worker(new_coin)
         self.worker.price.connect(self.get_price)
         self.worker.start()

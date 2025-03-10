@@ -54,6 +54,14 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('protected-api/', views.protected_api, name='protected_api'),
+    
+    # emali
+    path('verify/email/send/', views.send_email_verification, name='send_email_verification'),
+    path('verify/email/', views.verify_email, name='verify_email'),
+    
+    # 휴대전화(SMS) 인증
+    path('verify/sms/send/', views.send_sms_verification, name='send_sms_verification'),
+    path('verify/sms/', views.verify_sms, name='verify_sms'),
 ]
 
 # 이미지 URL 설정

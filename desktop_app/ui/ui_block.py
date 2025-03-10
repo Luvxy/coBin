@@ -296,7 +296,7 @@ class MarketBuyAction(Action):
         self.name = f"시장가 매수: {coin} - {amount} KRW"
 
     def run_action(self):
-        balance = self.upbit.get_balance("KRW")  # 현재 보유 KRW
+        balance = self.upbit.get_balance("KRW") * 0.9995  # 현재 보유 KRW
         if self.amount.endswith("%"):  # % 입력 처리
             percent = float(self.amount.strip('%')) / 100
             order_amount = balance * percent
@@ -517,13 +517,16 @@ class BlockWorker(QThread):
 
     def run(self):
         while self.running:
-            results = [cond.check_condition() for cond in self.block.conditions]
-            self.log_signal.emit(f"Block 실행 결과: {results}")
-
-            # 모든 조건이 True일 경우 액션 실행 (원하시는 로직대로)
-            if all(results):
+            if self.block.conditions:
+                results = [cond.check_condition() for cond in self.block.conditions]
+                self.log_signal.emit(f"Block 실행 결과: {results}")
+                
+                if all(results):  # 모든 조건이 True일 경우 액션 실행
+                    action_result = self.block.action.run_action()
+                    self.log_signal.emit(action_result)
+            else:
+                # ✅ 조건이 없을 경우 액션 바로 실행
                 action_result = self.block.action.run_action()
-                # 액션이 반환한 메시지를 history에 표시
                 self.log_signal.emit(action_result)
 
             self.msleep(int(self.interval_sec * 1000))

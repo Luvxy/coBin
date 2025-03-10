@@ -21,6 +21,14 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 
+# email verification 함수에 필요한 라이브러리
+from django.core.mail import send_mail
+from django.contrib import messages
+from django.utils.crypto import get_random_string
+from .models import UserProfile
+import random
+import requests
+
 import firebase_admin
 from firebase_admin import credentials, firestore
 from cobin_app.forms import UserForm
@@ -90,6 +98,83 @@ def signup(request):
         print("회원가입 실패")
         form = UserForm()
     return render(request, 'login.html', {'form': form})
+
+
+# email verification 함수
+@login_required
+def send_email_verification(request):
+    user = request.user
+    profile, created = UserProfile.objects.get_or_create(user=user)  # ✅ UserProfile 자동 생성
+
+    verification_code = get_random_string(length=6, allowed_chars='0123456789')
+    profile.email_verification_code = verification_code
+    profile.save()
+
+    send_mail(
+        '이메일 인증 코드',
+        f'인증 코드: {verification_code}',
+        'no-reply@yourdomain.com',
+        [user.email],
+        fail_silently=False,
+    )
+
+    messages.success(request, "이메일로 인증 코드가 발송되었습니다.")
+    return redirect('profile')
+
+@login_required
+def verify_email(request):
+    if request.method == "POST":
+        code = request.POST.get('code')
+        profile, created = UserProfile.objects.get_or_create(user=request.user)  # ✅ UserProfile 자동 생성
+
+        if profile.email_verification_code == code:
+            profile.email_verified = True
+            profile.save()
+            messages.success(request, "이메일 인증이 완료되었습니다.")
+        else:
+            messages.error(request, "인증 코드가 틀립니다.")
+
+        return redirect('profile')
+
+#문자 인증
+# 휴대전화(SMS) 인증
+@login_required
+def send_sms_verification(request):
+    user = request.user
+    profile, created = UserProfile.objects.get_or_create(user=user)
+
+    verification_code = str(random.randint(100000, 999999))
+    profile.sms_verification_code = verification_code
+    profile.save()
+
+    # SMS API를 이용한 인증 코드 전송 (Twilio 예제)
+    requests.post(
+        "https://api.twilio.com/2010-04-01/Accounts/YOUR_ACCOUNT_SID/Messages.json",
+        data={
+            "To": profile.phone_number,
+            "From": "YOUR_TWILIO_NUMBER",
+            "Body": f"인증 코드: {verification_code}"
+        },
+        auth=("YOUR_ACCOUNT_SID", "YOUR_AUTH_TOKEN")
+    )
+
+    messages.success(request, "휴대전화로 인증 코드가 발송되었습니다.")
+    return redirect('profile')
+
+@login_required
+def verify_sms(request):
+    if request.method == "POST":
+        code = request.POST.get('code')
+        profile, created = UserProfile.objects.get_or_create(user=request.user)
+
+        if profile.sms_verification_code == code:
+            profile.phone_verified = True
+            profile.save()
+            messages.success(request, "휴대전화 인증이 완료되었습니다.")
+        else:
+            messages.error(request, "인증 코드가 틀립니다.")
+
+    return redirect('profile')
 
 @login_required
 def post_list(request, category):
@@ -274,14 +359,16 @@ def login_view(request):
             user = authenticate(request, username=username, password=password)  # 사용자 인증
 
             if user is not None:
-                login(request, user)  # 로그인
-                return redirect('some_view')  # 로그인 후 리디렉션
-            else:
-                # ... 인증 실패 처리 ...
-                pass  # form.errors에 에러 메시지가 자동으로 추가됨
+                profile, created = UserProfile.objects.get_or_create(user=user)  # ✅ UserProfile 자동 생성
+
+            if not (profile.email_verified and profile.phone_verified):
+                messages.error(request, "이메일과 휴대전화 인증을 완료해야 합니다.")
+                return redirect('profile')
+
+            login(request, user)
+            return redirect('home')
         else:
-            # ... 폼 유효성 검사 실패 ...
-            pass # form.errors에 에러 메시지가 자동으로 추가됨
+            messages.error(request, "아이디 또는 비밀번호가 잘못되었습니다.")
 
     else:
         form = AuthenticationForm()  # 빈 폼 객체 생성

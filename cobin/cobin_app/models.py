@@ -1,12 +1,16 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-# user와 1:1로 연결
-class Profile(models.Model):
+class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    bio = models.TextField(max_length=500, blank=True)
-    location = models.CharField(max_length=30, blank=True)
-    birth_date = models.DateField(null=True, blank=True)
+    phone_number = models.CharField(max_length=15, blank=True, null=True)  # 휴대전화 번호
+    email_verified = models.BooleanField(default=False)  # 이메일 인증 여부
+    phone_verified = models.BooleanField(default=False)  # 휴대전화 인증 여부
+    email_verification_code = models.CharField(max_length=6, blank=True, null=True)  # 이메일 인증 코드
+    sms_verification_code = models.CharField(max_length=6, blank=True, null=True)  # SMS 인증 코드
+
+    def __str__(self):
+        return self.user.username
 
 # 자유게시판
 class Post(models.Model):

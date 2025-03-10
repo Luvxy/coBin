@@ -99,6 +99,8 @@ class MainWindow(QMainWindow):
         # 코인 리스트 콤보박스
         self.ui.coin_selete.addItems(["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-DOGE"])
         self.ui.coin_selete.currentTextChanged.connect(self.update_chart)
+        self.ui.coin_selete_2.currentTextChanged.connect(self.update_chart)
+        self.ui.coin_selete_3.currentTextChanged.connect(self.update_chart)
         
         # 그래프 UI 레이아웃 설정
         self.graph_layout = QVBoxLayout(self.ui.graph)
@@ -134,7 +136,25 @@ class MainWindow(QMainWindow):
         if new_coin == "선택":
             new_coin = "KRW-BTC"
 
-        self.chart.change_coin(new_coin)
+        interval = self.ui.coin_selete_2.currentText()
+        count = int(self.ui.coin_selete_3.currentText())
+        
+        if interval == "1분":
+            interval = 'minute1'
+        elif interval == "3분":
+            interval = 'minute3'
+        elif interval == "5분":
+            interval = 'minute5'
+        elif interval == "15분":
+            interval = 'minute15'
+        elif interval == "30분":
+            interval = 'minute30'
+        elif interval == "1시간":
+            interval = 'minute60'
+        else:
+            interval = 'minute30'
+
+        self.chart.change_coin(new_coin, interval, count)  # ChartWidget 변경
         self.order.change_coin(new_coin)  # OrderBook 변경
         self.ui.label_3.setText(f"보유량: {self.upbit.get_balance(new_coin)}")
         self.ui.label_6.setText(f"KRW: {self.upbit.get_balance('KRW')}")
@@ -283,6 +303,17 @@ class SpleshScreen(QMainWindow):
         
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    app.setStyleSheet("""
+    QWidget {
+        background-color: #2e2e2e;
+        color: #ffffff;
+    }
+    QLineEdit, QComboBox, QPushButton {
+        background-color: #3b3b3b;
+        border: 1px solid #555;
+        border-radius: 5px;
+    }
+""")
     # window = SpleshScreen()
     # window.show()
     main = MainWindow()

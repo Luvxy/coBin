@@ -226,60 +226,126 @@ aside, main {
 }
 
 /* 프로필 페이지 */
-.profile-container {
-    width: 50%;
-    margin: 50px auto;
-    background: white;
+/* 프로필 페이지 그리드 레이아웃 */
+.profile-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: repeat(12, auto);
+    gap: 10px;
+    max-width: 1200px;
+    margin: auto;
     padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.profile-image {
-    width: 120px;
-    height: 120px;
+/* 프로필 이미지 */
+.profile-image-container {
+    grid-column: 1 / span 4;
+    grid-row: 1 / span 4;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.profile-image-container img {
+    width: 150px;
+    height: 150px;
     border-radius: 50%;
-    display: block;
-    margin: 10px auto;
     object-fit: cover;
     border: 3px solid #007bff;
 }
 
-.edit-button {
-    display: block;
-    margin: 10px auto;
+/* 프로필 이미지 변경 버튼 */
+.profile-edit-button {
+    grid-column: 1 / span 4;
+    grid-row: 5;
+    display: flex;
+    justify-content: center;
+}
+
+.profile-edit-button button {
+    padding: 10px 15px;
     background-color: #007bff;
     color: white;
     border: none;
-    padding: 8px 12px;
     border-radius: 5px;
     cursor: pointer;
 }
 
-.edit-button:hover {
+.profile-edit-button button:hover {
     background-color: #0056b3;
 }
 
-input {
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+/* 사용자 정보 */
+.user-info {
+    grid-column: 5 / span 2;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
-button {
-    padding: 8px 12px;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
+.user-info p {
+    margin: 5px 0;
+    font-size: 14px;
+    font-weight: bold;
 }
 
-button:hover {
-    background-color: #218838;
+/* 미션 진행도 */
+.mission-container {
+    grid-column: 1  / span 7;
+    grid-row: 7;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
 }
 
+.mission-status {
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+    font-weight: bold;
+    gap: 5px;
+}
 
+.mission-status .completed {
+    color: green;
+}
+
+.mission-status .not-completed {
+    color: red;
+}
+
+/* 사용자 활동 로그 */
+.user-acting-log {
+    grid-column: 1 / span 7;
+    grid-row: 8 / span 4;
+    overflow-y: auto;
+    max-height: 200px;
+    background: #fff;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.graph-title {
+    grid-column: 1 / span 7;
+    grid-row: 13 / span 10;
+    text-align: center;
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+/* 수익 그래프 */
+.profit-graph {
+    align-items: center;
+    text-align: center;
+    grid-column: 1 / span 7;
+    grid-row: 14 / span 10;
+    height: 500px;
+    overflow: hidden;
+    display: flex;
+}
 
 /* 게시글 썸네일 이미지 */
 .post-thumbnail {

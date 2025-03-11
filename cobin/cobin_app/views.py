@@ -47,13 +47,16 @@ firebase_admin.initialize_app(cred)
 # Firestore 인스턴스 생성
 db = firestore.client()
 
-def save_user_to_firestore(user_id, name, email, membership):
+def save_user_to_firestore(user_id, name, email, membership, point1=0, point2=0):
     user_ref = db.collection("users").document(user_id)
     user_ref.set({
         "name": name,
         "email": email,
         "membership": membership,
-        "profileImage": ""
+        "profileImage": "",
+        "point1": point1,
+        "point2": point2,
+        "profileImage": "/media/default_profile.png"
     })
     
 def set_user_image_to_firestore(user_id, image_url):
@@ -75,6 +78,55 @@ def get_user_from_firestore(user_id):
         return user_doc.to_dict()
     else:
         return None
+    
+@login_required
+def profile_view(request):
+    user_id = str(request.user.username)  # Django 유저 ID를 문자열로 변환 (Firebase UID와 일치해야 함)
+    
+    # Firestore에서 사용자 정보 가져오기
+    user_data = get_user_from_firestore(user_id)  
+    
+    if not user_data:
+        return redirect('logout')  # Firebase에 사용자 정보가 없으면 로그아웃 처리
+
+    # Firestore에서 투자 기록 가져오기
+    investment_ref = db.collection("users").document(user_id).collection("investmentHistory")
+    investment_data = investment_ref.stream()  # Firestore에서 데이터 가져오기
+
+    profit_data = []
+    for doc in investment_data:
+        data = doc.to_dict()
+        profit_data.append({
+            "date": data.get("date"),
+            "amount": data.get("amount"),
+            "profitRate": data.get("profitRate")
+        })
+
+    # 날짜순 정렬
+    profit_data.sort(key=lambda x: x["date"])
+
+    # Firestore에서 활동 로그 가져오기
+    act_log_ref = db.collection("users").document(user_id).collection("actLog")
+    act_log_data = act_log_ref.stream()
+
+    user_acting_log = []
+    for doc in act_log_data:
+        data = doc.to_dict()
+        user_acting_log.append({
+            "date": data.get("date"),
+            "type": data.get("type"),
+            "address": data.get("address")
+        })
+
+    # 날짜순 정렬
+    user_acting_log.sort(key=lambda x: x["date"], reverse=True)  # 최신 로그가 위로 오도록 정렬
+
+    return render(request, "profile.html", {
+        "profit_data": profit_data,
+        "user_data": user_data,
+        "user_acting_log": user_acting_log
+    })
+
 
 # cobin app api connet
 @api_view(['GET'])

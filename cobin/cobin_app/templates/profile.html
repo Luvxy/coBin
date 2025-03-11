@@ -6,32 +6,155 @@
 {% endblock %}
 
 {% block content %}
-  <div class="profile-container">
-    <h2>내 프로필</h2>
-    <div class="profile-info">
-      <img id="profileImage" src="{{ profile.profile_image.url|default:'/static/default-profile.jpg' }}" alt="Profile Image" class="profile-image" />
-      <input type="file" id="imageUpload" accept="image/*" style="display: none;" />
-      <button onclick="document.getElementById('imageUpload').click()" class="edit-button">이미지 변경</button>
+<div class="profile-grid">
+  
+  <!-- 프로필 이미지 -->
+  <div class="profile-image-container">
+    <img id="profileImage" src="{{ user_data.profileImage|default_if_none:'/medias/default_profile.png' }}" alt="Profile Image" class="profile-image" />
+  </div>
 
-      <p><strong>이메일:</strong> {{ profile.user.email }}</p>
-      <p><strong>전화번호:</strong> {{ profile.phone_number|default:'등록되지 않음' }}</p>
-      <p>
-        <strong>이메일 인증:</strong> 
-        {% if profile.email_verified %}
-          ✅ 완료
+  <!-- 프로필 이미지 변경 버튼 -->
+  <div class="profile-edit-button">
+    <!-- 숨겨진 file input -->
+    <input type="file" id="imageUpload" accept="image/*" style="display: none;" />
+
+    <!-- Change Image 버튼 -->
+    <button onclick="document.getElementById('imageUpload').click()" class="edit-button">
+      프로필 이미지 변경
+    </button>
+  </div>
+
+  <!-- 사용자 정보 -->
+  <div class="user-info" style="grid-row: 1;">
+    <p><strong>ID:</strong> {{ user_data.name }}</p>
+  </div>
+  <div class="user-info" style="grid-row: 2;">
+    <p><strong>이메일:</strong> {{ user_data.email }}</p>
+  </div>
+  <div class="user-info" style="grid-row: 3;">
+    <p><strong>휴대전화:</strong> {{ user_data.number }}</p>
+  </div>
+  <div class="user-info" style="grid-row: 4;">
+    <p><strong>멤버십:</strong> {{ user_data.membership }}</p>
+  </div>
+  <div class="user-info" style="grid-row: 5;">
+    <p><strong>무료 포인트:</strong> {{ user_data.point1 }}</p>
+  </div>
+  <div class="user-info" style="grid-row: 5; grid-column: 6;">
+    <p><strong>유료 포인트:</strong> {{ user_data.point2 }}</p>
+  </div>
+
+    <!-- 미션 완료 여부 (한 줄 정렬) -->
+    <div class="mission-container">
+      <div class="mission-status">
+        <p>게시글 작성하기:</p>
+        {% if mission_1_completed %}
+          <span class="completed">✅ 완료</span>
         {% else %}
-          ❌ 미완료
-          <form method="post" action="{% url 'send_email_verification' %}">
-            {% csrf_token %}
-            <button type="submit">인증 코드 발송</button>
-          </form>
-          <form method="post" action="{% url 'verify_email' %}">
-            {% csrf_token %}
-            <input type="text" name="code" placeholder="인증 코드 입력">
-            <button type="submit">인증</button>
-          </form>
+          <span class="not-completed">❌ 미완료</span>
         {% endif %}
-      </p>
+      </div>
+      
+      <div class="mission-status">
+        <p>댓글 3회 작성하기:</p>
+        {% if mission_2_completed %}
+          <span class="completed">✅ 완료</span>
+        {% else %}
+          <span class="not-completed">❌ 미완료</span>
+        {% endif %}
+      </div>
+      
+      <div class="mission-status">
+        <p>게시글 3개 좋아요 누르기:</p>
+        {% if mission_3_completed %}
+          <span class="completed">✅ 완료</span>
+        {% else %}
+          <span class="not-completed">❌ 미완료</span>
+        {% endif %}
+      </div>
+    </div>
+
+  <!-- 사용자 활동 로그 -->
+  <div class="user-acting-log">
+    <h2>최근 활동 내역</h2>
+    <div class="log-container">
+      {% for log in user_acting_log %}
+      <div class="border-b border-gray-200 py-2">
+        <a href={{log.address}}>{{ log.date }} 
+          {% if log.type == "comment"%}
+            댓글을 남겼습니다.
+          {% elif log.type == "like"%}
+            좋아요를 눌렀습니다.
+          {% elif log.type == "post"%}
+            게시글을 작성했습니다.
+          {% endif %}
+        </a>
+      </div>
+      {% empty %}
+      <p>No activity logs available.</p>
+      {% endfor %}
     </div>
   </div>
+
+  <h2 class="graph-title">수익 그래프</h2>
+  <!-- 수익 그래프 -->
+  <div class="profit-graph">
+
+    <canvas id="profitChart"></canvas>
+  </div>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const ctx = document.getElementById('profitChart').getContext('2d');
+
+      const profitData = {
+        labels: [
+          {% for data in profit_data %}
+            "{{ data.date }}",
+          {% endfor %}
+        ],
+        datasets: [{
+          label: '수익',
+          data: [
+            {% for data in profit_data %}
+              {{ data.amount }},
+            {% endfor %}
+          ],
+          borderColor: 'blue',
+          backgroundColor: 'rgba(0, 0, 255, 0.2)',
+          borderWidth: 2,
+          tension: 0.4  // 곡선 부드럽게
+        }]
+      };
+
+      new Chart(ctx, {
+        type: 'line',
+        data: profitData,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              display: true,
+              grid: { display: false },  // X축 격자 제거
+              ticks: { autoSkip: true, maxTicksLimit: 10 } // X축 텍스트 간격 조정
+            },
+            y: {
+              display: true,
+              grid: { display: false },  // Y축 격자 제거
+              ticks: { beginAtZero: true }
+            }
+          },
+          plugins: {
+            legend: { display: false }  // 범례 숨김
+          }
+        }
+      });
+    });
+  </script>
+  <script src="{% static 'js/profile.js' %}"></script>
+
+</div>
 {% endblock %}

@@ -303,17 +303,6 @@ class SpleshScreen(QMainWindow):
         
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    app.setStyleSheet("""
-    QWidget {
-        background-color: #2e2e2e;
-        color: #ffffff;
-    }
-    QLineEdit, QComboBox, QPushButton {
-        background-color: #3b3b3b;
-        border: 1px solid #555;
-        border-radius: 5px;
-    }
-""")
     # window = SpleshScreen()
     # window.show()
     main = MainWindow()

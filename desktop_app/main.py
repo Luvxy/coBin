@@ -133,6 +133,7 @@ class MainWindow(QMainWindow):
         # 초기 차트 로드
         self.current_coin = "KRW-BTC"
         self.update_chart()
+        self.load_custom_strategy("default")
 
     # 차트 업데이트 함수
     def update_chart(self):
@@ -234,7 +235,6 @@ class MainWindow(QMainWindow):
         file_name = f"{strategy_name.lower().replace(' ', '')}.json"
 
         if not os.path.exists(file_name):
-            print(f"{strategy_name} 전략이 존재하지 않음. 블록 초기화")
             self.blockFrame.clear_blocks()
             return
 
@@ -270,8 +270,6 @@ class MainWindow(QMainWindow):
             # 주기 설정 적용
             if hasattr(block, "interval_edit"):
                 block.interval_edit.setText(block_data.get("주기", "10"))
-
-        print(f"{strategy_name} 전략을 불러왔습니다.")
 
     
     def load_strategy(self, strategy_name):
@@ -320,7 +318,7 @@ class MainWindow(QMainWindow):
         with open(file_name, "w", encoding="utf-8") as f:
             json.dump(strategy_data, f, ensure_ascii=False, indent=4)
 
-        print(f"{strategy_name} 전략이 저장되었습니다.")
+        QMessageBox.information(self, '저장', f'{strategy_name} 전략이 저장되었습니다.')
 
 
 

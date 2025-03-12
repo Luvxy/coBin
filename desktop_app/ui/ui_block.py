@@ -303,7 +303,7 @@ class MarketBuyAction(Action):
         self.upbit = upbit
         self.amount = amount  # 문자열로 입력받아 % 처리 가능
         self.coin = coin
-        self.name = f"시장가 매수: {coin} - {amount} KRW"
+        self.name = f"시장가 매수: {coin} {amount} KRW"
 
     def run_action(self):
         balance = self.upbit.get_balance("KRW") * 0.9995  # 현재 보유 KRW
@@ -362,11 +362,11 @@ class LimitBuyAction(Action):
         self.price = price
         self.quantity = quantity
         self.coin = coin
-        self.name = f"지정가 매수: {coin} - {quantity}개 @ {price} KRW"
+        self.name = f"지정가 매수: {coin} {quantity}개  {price} KRW"
 
     def run_action(self):
         order_result = self.upbit.buy_limit_order(self.coin, self.price, self.quantity)
-        return f"지정가 매수 실행: {self.coin} - {self.quantity}개 @ {self.price} KRW" if order_result else "매수 실패"
+        return f"지정가 매수 실행: {self.coin} {self.quantity}개  {self.price} KRW" if order_result else "매수 실패"
 
 @ActionRegistry.register("지정가 매도")
 class LimitSellAction(Action):
@@ -382,11 +382,11 @@ class LimitSellAction(Action):
         self.price = price
         self.quantity = quantity
         self.coin = coin
-        self.name = f"지정가 매도: {coin} - {quantity}개 @ {price} KRW"
+        self.name = f"지정가 매도: {coin} {quantity}개 @ {price} KRW"
 
     def run_action(self):
         order_result = self.upbit.sell_limit_order(self.coin, self.price, self.quantity)
-        return f"지정가 매도 실행: {self.coin} - {self.quantity}개 @ {self.price} KRW" if order_result else "매도 실패"
+        return f"지정가 매도 실행: {self.coin} {self.quantity}개 @ {self.price} KRW" if order_result else "매도 실패"
 
 
 import pyupbit
@@ -406,7 +406,7 @@ class StopLossAction(Action):
         self.quantity_percent = quantity_percent
         self.coin = coin
         self.buy_price = self.get_buy_price()
-        self.name = f"스탑로스(손절): {coin} - {stop_loss_percent} 손절"
+        self.name = f"스탑로스(손절): {coin} {stop_loss_percent} 손절"
 
     def get_buy_price(self):
         """ 최근 매수 체결 내역에서 매수가 가져오기 """
@@ -468,7 +468,7 @@ class TakeProfitAction(Action):
         self.quantity_percent = quantity_percent
         self.coin = coin
         self.buy_price = self.get_buy_price()
-        self.name = f"테이크프로핏(익절): {coin} - {take_profit_percent} 익절"
+        self.name = f"테이크프로핏(익절): {coin} {take_profit_percent} 익절"
 
     def get_buy_price(self):
         """ 최근 매수 체결 내역에서 매수가 가져오기 """

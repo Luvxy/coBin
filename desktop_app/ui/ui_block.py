@@ -1,5 +1,7 @@
 import sys
 import time
+import os
+import json
 import pyupbit
 from PySide6.QtCore import Qt, QThread, Signal, QObject, QMutex, QWaitCondition
 from PySide6.QtWidgets import (
@@ -56,6 +58,7 @@ class CheckCandleTypeCondition(Condition):
 
     def __init__(self, candle_index=0, target_type="양봉", coin="KRW-BTC", interval="minute30"):
         super().__init__()
+        self.obj_name = "지정 캔들 양봉/음봉 확인"
         self.name = f"지정 캔들 {candle_index}번째 {target_type} 확인"
         self.candle_index = candle_index
         self.target_type = target_type
@@ -83,6 +86,7 @@ class CheckVolumeCondition(Condition):
 
     def __init__(self, volume_threshold=1000.0, check_type="이상", coin="KRW-BTC", interval="minute30"):
         super().__init__()
+        self.obj_name = "거래량 확인"
         self.name = f"거래량 {volume_threshold} {check_type} 확인"
         self.volume_threshold = volume_threshold
         self.check_type = check_type
@@ -109,6 +113,7 @@ class CheckPriceCondition(Condition):
 
     def __init__(self, price_threshold=50000.0, check_type="이상", coin="KRW-BTC"):
         super().__init__()
+        self.obj_name = "현재 가격 확인"
         self.name = f"현재 가격이 {price_threshold} {check_type} 확인"
         self.price_threshold = price_threshold
         self.check_type = check_type
@@ -129,6 +134,7 @@ class CheckPriceChangeCondition(Condition):
 
     def __init__(self, change_threshold=3.0, check_type="이상", coin="KRW-BTC"):
         super().__init__()
+        self.obj_name = "가격 변동률 확인"
         self.name = f"가격 변동률이 {change_threshold}% {check_type} 확인"
         self.change_threshold = change_threshold
         self.check_type = check_type
@@ -157,6 +163,7 @@ class CheckMovingAverageCondition(Condition):
 
     def __init__(self, ma_days=5, check_type="상향 돌파", coin="KRW-BTC"):
         super().__init__()
+        self.obj_name = "이동평균선 돌파/하회 확인"
         self.name = f"{ma_days}일 동안 이동평균선 {check_type}"
         self.ma_days = ma_days
         self.check_type = check_type
@@ -187,6 +194,7 @@ class CheckTimeRangeCondition(Condition):
 
     def __init__(self, start_hour=9, end_hour=15):
         super().__init__()
+        self.obj_name = "시간 범위 선택"
         self.name = f"{start_hour}시 ~ {end_hour}시 사이"
         self.start_hour = start_hour
         self.end_hour = end_hour
@@ -238,6 +246,7 @@ class HighLowComparisonCondition(Condition):
 
     def __init__(self, candle1=1, candle2=2, compare_type="최고가vs최저가", coin="KRW-BTC", interval="minute30"):
         super().__init__()
+        self.obj_name = "최고가/최저가 비교"
         self.candle1 = candle1
         self.candle2 = candle2
         self.compare_type = compare_type
@@ -290,6 +299,7 @@ class MarketBuyAction(Action):
 
     def __init__(self, upbit, amount="10000", coin="KRW-BTC"):
         super().__init__()
+        self.obj_name = "시장가 매수"
         self.upbit = upbit
         self.amount = amount  # 문자열로 입력받아 % 처리 가능
         self.coin = coin
@@ -317,6 +327,7 @@ class MarketSellAction(Action):
 
     def __init__(self, upbit, quantity="1", coin="KRW-BTC"):
         super().__init__()
+        self.obj_name = "시장가 매도"
         self.upbit = upbit
         self.quantity = quantity  # 문자열로 입력받아 % 처리 가능
         self.coin = coin
@@ -346,6 +357,7 @@ class LimitBuyAction(Action):
 
     def __init__(self, upbit, price=10000.0, quantity=1.0, coin="KRW-BTC"):
         super().__init__()
+        self.obj_name = "지정가 매수"
         self.upbit = upbit
         self.price = price
         self.quantity = quantity
@@ -365,6 +377,7 @@ class LimitSellAction(Action):
 
     def __init__(self, upbit, price=10000.0, quantity=1.0, coin="KRW-BTC"):
         super().__init__()
+        self.obj_name = "지정가 매도"
         self.upbit = upbit
         self.price = price
         self.quantity = quantity
@@ -387,6 +400,7 @@ class StopLossAction(Action):
 
     def __init__(self, upbit, stop_loss_percent="-5%", quantity_percent="100%", coin="KRW-BTC"):
         super().__init__()
+        self.obj_name = "스탑로스(손절)"
         self.upbit = upbit
         self.stop_loss_percent = stop_loss_percent
         self.quantity_percent = quantity_percent
@@ -448,6 +462,7 @@ class TakeProfitAction(Action):
 
     def __init__(self, upbit, take_profit_percent="10%", quantity_percent="100%", coin="KRW-BTC"):
         super().__init__()
+        self.obj_name = "테이크프로핏(익절)"
         self.upbit = upbit
         self.take_profit_percent = take_profit_percent
         self.quantity_percent = quantity_percent
@@ -715,6 +730,7 @@ class BlockMain(QWidget):
         self.setWindowTitle("PyQt5 Block System as Frame")
         self.upbit = upbit
 
+        self.blocks = []
         self.layout = QVBoxLayout(self)
 
         # History (결과 출력)
@@ -727,7 +743,27 @@ class BlockMain(QWidget):
         self.history.addItem(message)
         self.history.scrollToBottom()
 
-    def open_add_dialog(self, block, block_content_widget):
+    def open_add_dialog(self, block, block_content_widget, pre_selected=None):
+        """
+        블록에 조건/액션 추가하는 대화상자 호출
+        pre_selected가 있을 경우, 해당 조건/액션을 자동으로 추가.
+        """
+        if pre_selected:
+            registry = ConditionRegistry if pre_selected in ConditionRegistry._registry else ActionRegistry
+            obj = registry.create_condition(pre_selected) if registry == ConditionRegistry else registry.create_action(pre_selected, self.upbit)
+
+            if isinstance(obj, Condition):
+                block.conditions.append(obj)
+                block_content_widget.addItem("조건: " + obj.name)
+            elif isinstance(obj, Action):
+                if block.action is None:
+                    block.action = obj
+                    block_content_widget.addItem("액션: " + obj.name)
+                else:
+                    print("이 블록에는 이미 액션이 있습니다.")
+            return
+
+        # 기존 방식 (사용자가 직접 추가)
         dialog = BlockConfigDialog(parent=self, upbit=self.upbit)
         if dialog.exec_() == QDialog.Accepted:
             config_type, obj = dialog.get_config_data()
@@ -791,6 +827,8 @@ class BlockMain(QWidget):
 
         new_block.interval_edit = interval_edit
         self.layout.addWidget(block_frame)
+        
+        return new_block  # ✅ 생성된 블록 객체 반환
 
     def run_all_blocks(self):
         for block in self.blocks:
@@ -814,4 +852,13 @@ class BlockMain(QWidget):
     def closeEvent(self, event):
         self.stop_all_blocks()
         super().closeEvent(event)
+        
+    def clear_blocks(self):
+        """ 기존 블록 초기화 """
+        for i in reversed(range(self.layout.count())):
+            widget = self.layout.itemAt(i).widget()
+            if widget:
+                widget.setParent(None)
+        self.blocks.clear()
+            
 

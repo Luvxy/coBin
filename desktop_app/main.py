@@ -1,6 +1,7 @@
 import sys
 import platform
 import requests
+import json
 from PySide6 import QtCore
 from PySide6.QtCore import (QCoreApplication, QMetaObject, QObject, QPoint,
     QRect, QSize, QUrl, Qt)
@@ -10,7 +11,7 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor, QFont,
 from PySide6.QtWidgets import *
 from ui.ui_login import Ui_login
 from ui.ui_main import Ui_MainWindow
-from ui.ui_block import BlockMain
+from ui.ui_block import *
 from upbit.get_data_upbit import *
 from upbit.configer import *
 from upbit.api_upbit import *
@@ -82,10 +83,13 @@ class MainWindow(QMainWindow):
         self.blockFrame = BlockMain(self.upbit)
         self.ui.pushButton.clicked.connect(self.blockFrame.add_block)
         self.blockFrame.history = self.ui.history
+        self.ui.strategy_combo.currentTextChanged.connect(self.load_strategy)
         self.ui.verticalLayout.addWidget(self.blockFrame)
         self.ui.strategy_combo_2.addItems(["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-DOGE"])
         self.ui.start_button.clicked.connect(self.blockFrame.run_all_blocks)
         self.ui.stop_button.clicked.connect(self.blockFrame.stop_all_blocks)
+        self.ui.start_button_2.clicked.connect(self.save_custom_strategy)
+        self.ui.clear_button.clicked.connect(self.blockFrame.clear_blocks)
         
         ###########################################################
         # tab1 그래프 추가 
@@ -223,6 +227,100 @@ class MainWindow(QMainWindow):
         self.blance = self.upbit.get_balance(ticker)
         self.ui.label_3.setText(f"보유량: {self.blance}")
         self.ui.label_6.setText(f"KRW: {self.upbit.get_balance('KRW')}")
+        
+    def load_custom_strategy(self, strategy_name):
+        """ JSON 파일에서 Custom 전략 불러오기 """
+
+        file_name = f"{strategy_name.lower().replace(' ', '')}.json"
+
+        if not os.path.exists(file_name):
+            print(f"{strategy_name} 전략이 존재하지 않음. 블록 초기화")
+            self.blockFrame.clear_blocks()
+            return
+
+        with open(file_name, "r", encoding="utf-8") as f:
+            strategy_data = json.load(f)
+
+        self.blockFrame.clear_blocks()
+        for block_data in strategy_data:
+            block = self.blockFrame.add_block()
+            if block is None:
+                continue
+
+            block_widget = self.blockFrame.layout.itemAt(self.blockFrame.layout.count() - 1).widget().findChild(QListWidget)
+
+            # 조건 불러오기
+            for condition_data in block_data["조건"]:
+                condition_name = condition_data["이름"]
+                condition_settings = condition_data["설정값"]
+                condition = ConditionRegistry.create_condition(condition_name, **condition_settings)
+                block.conditions.append(condition)
+                if block_widget:
+                    block_widget.addItem(f"조건: {condition.name}")
+
+            # 액션 불러오기
+            if block_data["액션"]:
+                action_name = block_data["액션"]["이름"]
+                action_settings = block_data["액션"]["설정값"]
+                action = ActionRegistry.create_action(action_name, self.blockFrame.upbit, **action_settings)
+                block.action = action
+                if block_widget:
+                    block_widget.addItem(f"액션: {action.name}")
+
+            # 주기 설정 적용
+            if hasattr(block, "interval_edit"):
+                block.interval_edit.setText(block_data.get("주기", "10"))
+
+        print(f"{strategy_name} 전략을 불러왔습니다.")
+
+    
+    def load_strategy(self, strategy_name):
+        """ 기본 전략 불러오기 """
+        self.blockFrame.clear_blocks()
+
+        if strategy_name == "기본전략":
+            self.load_custom_strategy("default")
+        else:
+            self.load_custom_strategy(strategy_name)
+
+    def save_custom_strategy(self):
+        """ 현재 블록 상태를 JSON 파일로 저장 """
+        strategy_name = self.ui.strategy_combo.currentText()
+        if strategy_name not in ["Custom 1", "Custom 2", "Custom 3"]:
+            print("저장 가능한 Custom 전략이 아닙니다.")
+            return
+
+        file_name = f"{strategy_name.lower().replace(' ', '')}.json"
+
+        strategy_data = []
+        for block in self.blockFrame.blocks:
+            block_data = {
+                "조건": [],
+                "액션": None,
+                "주기": block.interval_edit.text() if hasattr(block, "interval_edit") else "10"
+            }
+
+            # 조건 저장 (이름 + 설정값)
+            for condition in block.conditions:
+                condition_data = {
+                    "이름": condition.obj_name,
+                    "설정값": {key: getattr(condition, key) for key in condition.config_fields}
+                }
+                block_data["조건"].append(condition_data)
+
+            # 액션 저장 (이름 + 설정값)
+            if block.action:
+                block_data["액션"] = {
+                    "이름": block.action.obj_name,
+                    "설정값": {key: getattr(block.action, key) for key in block.action.config_fields}
+                }
+
+            strategy_data.append(block_data)
+
+        with open(file_name, "w", encoding="utf-8") as f:
+            json.dump(strategy_data, f, ensure_ascii=False, indent=4)
+
+        print(f"{strategy_name} 전략이 저장되었습니다.")
 
 
 

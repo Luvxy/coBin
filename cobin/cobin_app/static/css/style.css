@@ -249,9 +249,7 @@ aside, main {
 .profile-image-container img {
     width: 150px;
     height: 150px;
-    border-radius: 50%;
     object-fit: cover;
-    border: 3px solid #007bff;
 }
 
 /* 프로필 이미지 변경 버튼 */

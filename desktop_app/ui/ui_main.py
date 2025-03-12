@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'CoB2n appLvSRBL.ui'
+## Form generated from reading UI file 'CoB2n appsTNtLV.ui'
 ##
 ## Created by: Qt User Interface Compiler version 5.14.1
 ##
@@ -36,6 +36,7 @@ class Ui_MainWindow(object):
         self.tabWidget.setStyleSheet(u"")
         self.tab = QWidget()
         self.tab.setObjectName(u"tab")
+        self.tab.setStyleSheet(u"")
         self.chart = QGroupBox(self.tab)
         self.chart.setObjectName(u"chart")
         self.chart.setGeometry(QRect(0, 50, 1401, 691))
@@ -155,6 +156,7 @@ class Ui_MainWindow(object):
         self.groupBox_2 = QGroupBox(self.scrollAreaWidgetContents)
         self.groupBox_2.setObjectName(u"groupBox_2")
         self.groupBox_2.setGeometry(QRect(0, 40, 1311, 971))
+        self.groupBox_2.setStyleSheet(u"")
         self.verticalLayout = QVBoxLayout(self.groupBox_2)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.pushButton_2 = QPushButton(self.scrollAreaWidgetContents)
@@ -165,7 +167,7 @@ class Ui_MainWindow(object):
         self.stop_button.setGeometry(QRect(1720, 10, 81, 23))
         self.strategy_combo_2 = QComboBox(self.scrollAreaWidgetContents)
         self.strategy_combo_2.setObjectName(u"strategy_combo_2")
-        self.strategy_combo_2.setGeometry(QRect(230, 10, 151, 20))
+        self.strategy_combo_2.setGeometry(QRect(1480, 10, 151, 20))
         self.groupBox = QGroupBox(self.scrollAreaWidgetContents)
         self.groupBox.setObjectName(u"groupBox")
         self.groupBox.setGeometry(QRect(1320, 210, 581, 801))
@@ -179,31 +181,15 @@ class Ui_MainWindow(object):
 "	font: 14pt \"Franklin Gothic Medium\";\n"
 "	background-color: rgb(212, 212, 212);\n"
 "	border: none;\n"
-"	boder-radius: 20px;\n"
 "	\n"
 "	color: rgb(255, 70, 73);\n"
-"\n"
-"	border-left: 1px solid rgb(230,230,230);\n"
-"	border-right: 1px solid rgb(230,230,230);\n"
-"	border-bottom: 3px solid rgb(230,230,230);\n"
-"	border-top: 3px solid rgb(230,230,230);\n"
-"\n"
-"}\n"
-"\n"
-"QPushButton:hover{\n"
-"	background-color: rgb(222, 222, 222);\n"
-"	border-left: rgb(230,230,230);\n"
-"	border-right: rgb(230,230,230);\n"
-"	border-bottom: rgb(230,230,230);\n"
-"\n"
-"}\n"
-"QPushButton:pressed{\n"
-"	background-color: rgb(180, 180, 180);\n"
-"	border-left: rgb(230,230,230);\n"
-"	border-right: rgb(230,230,230);\n"
-"	border-bottom: rgb(230,230,230);\n"
-"\n"
 "}")
+        self.start_button_2 = QPushButton(self.scrollAreaWidgetContents)
+        self.start_button_2.setObjectName(u"start_button_2")
+        self.start_button_2.setGeometry(QRect(230, 10, 75, 23))
+        self.clear_button = QPushButton(self.scrollAreaWidgetContents)
+        self.clear_button.setObjectName(u"clear_button")
+        self.clear_button.setGeometry(QRect(310, 10, 75, 23))
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         self.tabWidget.addTab(self.tab_2, "")
         MainWindow.setCentralWidget(self.centralwidget)
@@ -264,6 +250,8 @@ class Ui_MainWindow(object):
         self.stop_button.setText(QCoreApplication.translate("MainWindow", u"\uc911\uc9c0", None))
         self.groupBox.setTitle(QCoreApplication.translate("MainWindow", u"\uae30\ub85d", None))
         self.pushButton.setText(QCoreApplication.translate("MainWindow", u"\ube14\ub85d \ucd94\uac00 +", None))
+        self.start_button_2.setText(QCoreApplication.translate("MainWindow", u"\uc800\uc7a5", None))
+        self.clear_button.setText(QCoreApplication.translate("MainWindow", u"\ucd08\uae30\ud654", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), QCoreApplication.translate("MainWindow", u"\uc2e4\ud589", None))
     # retranslateUi
 

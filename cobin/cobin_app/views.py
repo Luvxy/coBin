@@ -106,8 +106,11 @@ def profile_view(request):
     profit_data.sort(key=lambda x: x["date"])
 
     # Firestore에서 활동 로그 가져오기
-    act_log_ref = db.collection("users").document(user_id).collection("actLog")
+    act_log_ref = db.collection("users").document(user_id).collection("actLog").limit(5)
     act_log_data = act_log_ref.stream()
+    
+    # 활동 로그는 최대 10개까지만 가져오기
+    
 
     user_acting_log = []
     for doc in act_log_data:

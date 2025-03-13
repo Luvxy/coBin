@@ -12,14 +12,20 @@ class Upbit_api:
         except:
             self.user = None
         
+    def get_balances(self):
+        try:
+            return self.user.get_balances()
+        except:
+            return None
+    
     def get_balance(self, ticker):
         try:
             return self.user.get_balance(ticker)
         except:
             return None
     
-    def get_order(self, ticker, state="wait"):
-        return self.user.get_order(ticker, state=state)
+    def get_order(self, ticker, state="done", limit=10):
+        return self.user.get_order(ticker, state=state, limit=limit)
     
     def buy_market_order(self, ticker, cash):
         return self.user.buy_market_order(ticker, cash)

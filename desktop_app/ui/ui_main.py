@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'CoB2n appsTNtLV.ui'
+## Form generated from reading UI file 'CoB2n applIosfF.ui'
 ##
 ## Created by: Qt User Interface Compiler version 5.14.1
 ##
@@ -30,9 +30,12 @@ class Ui_MainWindow(object):
         MainWindow.setStyleSheet(u"")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
+        self.windowbar = QWidget(self.centralwidget)
+        self.windowbar.setObjectName(u"windowbar")
+        self.windowbar.setGeometry(QRect(100, 0, 1821, 21))
         self.tabWidget = QTabWidget(self.centralwidget)
         self.tabWidget.setObjectName(u"tabWidget")
-        self.tabWidget.setGeometry(QRect(0, -1, 1921, 1041))
+        self.tabWidget.setGeometry(QRect(0, 0, 1921, 1041))
         self.tabWidget.setStyleSheet(u"")
         self.tab = QWidget()
         self.tab.setObjectName(u"tab")
@@ -199,10 +202,27 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(0)
 
 
         QMetaObject.connectSlotsByName(MainWindow)
+        
+        # Close Button 추가
+        self.close_button = QPushButton('X', MainWindow)
+        self.close_button.setGeometry(1890, 1, 20, 20)  # 위치와 크기 조절
+        self.close_button.setStyleSheet("""
+            QPushButton {
+                background-color: black;
+                color: white;
+                border: none;
+                font-weight: bold;
+                font-size: 20px;
+            }
+            QPushButton:hover {
+                background-color: darkred;
+            }
+        """)
+        self.close_button.clicked.connect(QApplication.quit)
     # setupUi
 
     def retranslateUi(self, MainWindow):

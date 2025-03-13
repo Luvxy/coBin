@@ -8,7 +8,8 @@ from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QLabel,
     QFrame, QDialog, QDialogButtonBox, QComboBox, QLineEdit, QCheckBox, QHBoxLayout
 )
-
+from PySide6.QtGui import QMovie
+from main import LoadingDialog
 
 # ---------------------
 # 부모 조건 클래스
@@ -303,10 +304,13 @@ class MarketBuyAction(Action):
         self.upbit = upbit
         self.amount = amount  # 문자열로 입력받아 % 처리 가능
         self.coin = coin
-        self.name = f"시장가 매수: {coin} {amount} KRW"
+        self.name = f"시장가 매수: {amount} KRW"
 
     def run_action(self):
-        balance = self.upbit.get_balance("KRW") * 0.9995  # 현재 보유 KRW
+        krwb = self.upbit.get_balance("KRW")
+        if krwb < 5000:
+            return "KRW 잔고 부족"
+        balance = krwb * 0.9995  # 현재 보유 KRW
         if self.amount.endswith("%"):  # % 입력 처리
             percent = float(self.amount.strip('%')) / 100
             order_amount = balance * percent
@@ -331,7 +335,7 @@ class MarketSellAction(Action):
         self.upbit = upbit
         self.quantity = quantity  # 문자열로 입력받아 % 처리 가능
         self.coin = coin
-        self.name = f"시장가 매도: {coin} - {quantity}개"
+        self.name = f"시장가 매도: {quantity}개"
 
     def run_action(self):
         balance = self.upbit.get_balance(self.coin)  # 현재 보유 수량
@@ -362,7 +366,7 @@ class LimitBuyAction(Action):
         self.price = price
         self.quantity = quantity
         self.coin = coin
-        self.name = f"지정가 매수: {coin} {quantity}개  {price} KRW"
+        self.name = f"지정가 매수: {quantity}개  {price} KRW"
 
     def run_action(self):
         order_result = self.upbit.buy_limit_order(self.coin, self.price, self.quantity)
@@ -382,7 +386,7 @@ class LimitSellAction(Action):
         self.price = price
         self.quantity = quantity
         self.coin = coin
-        self.name = f"지정가 매도: {coin} {quantity}개 @ {price} KRW"
+        self.name = f"지정가 매도: {quantity}개 @ {price} KRW"
 
     def run_action(self):
         order_result = self.upbit.sell_limit_order(self.coin, self.price, self.quantity)
@@ -406,21 +410,29 @@ class StopLossAction(Action):
         self.quantity_percent = quantity_percent
         self.coin = coin
         self.buy_price = self.get_buy_price()
-        self.name = f"스탑로스(손절): {coin} {stop_loss_percent} 손절"
+        self.name = f"스탑로스(손절): {stop_loss_percent} 손절"
 
     def get_buy_price(self):
-        """ 최근 매수 체결 내역에서 매수가 가져오기 """
-        orders = self.upbit.get_order(self.coin, state="done")  # 완료된 주문 조회
-        if not orders:
+        """보유 코인의 평균 매수가 조회"""
+        if not hasattr(self, 'coin') or not self.coin:
+            print("get_buy_price: coin 값이 설정되지 않음")
             return None
 
-        for order in orders:
-            if order['side'] == 'bid':  # 매수 체결된 주문 확인
-                return float(order['price'])
+        balances = self.upbit.get_balances()  # ✅ 전체 잔고 조회
+        target_currency = self.coin.replace("KRW-", "")  # 예: "KRW-BTC" → "BTC"
         
-        return None
+
+        for b in balances:
+            if b['currency'] == target_currency:
+                return float(b['avg_buy_price'])  # ✅ 평균 매수가 반환
+
+        print(f"get_buy_price: {self.coin} 잔고 없음")
+        return None  # 코인이 없으면 None 반환
+
 
     def run_action(self):
+        self.buy_price = self.get_buy_price()
+        
         if self.buy_price is None:
             return "매수가격을 가져올 수 없음"
 
@@ -435,6 +447,8 @@ class StopLossAction(Action):
         else:
             stop_loss_price = float(self.stop_loss_percent)
 
+        print(f"매수가: {self.buy_price}, 손절가: {stop_loss_price}")
+        
         # 현재 가격이 손절가 이하인지 확인
         if current_price <= stop_loss_price:
             balance = self.upbit.get_balance(self.coin)
@@ -468,21 +482,28 @@ class TakeProfitAction(Action):
         self.quantity_percent = quantity_percent
         self.coin = coin
         self.buy_price = self.get_buy_price()
-        self.name = f"테이크프로핏(익절): {coin} {take_profit_percent} 익절"
+        self.name = f"테이크프로핏(익절): {take_profit_percent} 익절"
 
     def get_buy_price(self):
-        """ 최근 매수 체결 내역에서 매수가 가져오기 """
-        orders = self.upbit.get_order(self.coin, state="done")  # 완료된 주문 조회
-        if not orders:
+        """보유 코인의 평균 매수가 조회"""
+        if not hasattr(self, 'coin') or not self.coin:
+            print("get_buy_price: coin 값이 설정되지 않음")
             return None
 
-        for order in orders:
-            if order['side'] == 'bid':  # 매수 체결된 주문 확인
-                return float(order['price'])
-        
-        return None
+        balances = self.upbit.get_balances()  # ✅ 전체 잔고 조회
+        target_currency = self.coin.replace("KRW-", "")  # 예: "KRW-BTC" → "BTC"
+
+        for b in balances:
+            if b['currency'] == target_currency:
+                return float(b['avg_buy_price'])  # ✅ 평균 매수가 반환
+
+        print(f"get_buy_price: {self.coin} 잔고 없음")
+        return None  # 코인이 없으면 None 반환
+            
 
     def run_action(self):
+        self.buy_price = self.get_buy_price()
+        
         if self.buy_price is None:
             return "매수가격을 가져올 수 없음"
 
@@ -539,6 +560,7 @@ class BlockWorker(QThread):
                 if all(results):  # 모든 조건이 True일 경우 액션 실행
                     action_result = self.block.action.run_action()
                     self.log_signal.emit(action_result)
+
             else:
                 # ✅ 조건이 없을 경우 액션 바로 실행
                 action_result = self.block.action.run_action()
@@ -738,6 +760,13 @@ class BlockMain(QWidget):
         
         self.blocks = []
         self.max_blocks = 4
+        
+        # 로딩 애니메이션 설정
+        self.loading_label = QLabel(self)
+        self.loading_movie = QMovie('loading.gif')
+        self.loading_label.setMovie(self.loading_movie)
+        self.loading_label.setFixedSize(22, 22)
+
 
     def add_to_history(self, message):
         self.history.addItem(message)
@@ -830,24 +859,40 @@ class BlockMain(QWidget):
         
         return new_block  # ✅ 생성된 블록 객체 반환
 
-    def run_all_blocks(self):
+    def run_all_blocks(self, coin):
         for block in self.blocks:
-            if block.action is not None and block.conditions:
-                # ➡ 사용자가 입력한 주기가 있으면 숫자로 변환
+            if block.action is not None:
+                # 각 조건과 액션에 coin 업데이트
+                for condition in block.conditions:
+                    if hasattr(condition, "coin"):
+                        condition.coin = coin
+
+                if hasattr(block.action, "coin"):
+                    block.action.coin = coin
+
+                # 실행 주기 설정
                 if hasattr(block, "interval_edit"):
                     text = block.interval_edit.text()
                     if text.strip().isdigit():
                         block.interval_sec = int(text.strip())
 
+                # 블록 워커 시작
                 if block.worker is None:
                     block.worker = BlockWorker(block, block.interval_sec)
                     block.worker.log_signal.connect(self.add_to_history)
                     block.worker.start()
 
-    def stop_all_blocks(self):
+    def stop_all_blocks(self):   
+        #loading gif
+        self.loading_screen = LoadingDialog()
+        self.loading_screen.show_loading()      
         for block in self.blocks:
-            block.stop()
-        self.add_to_history("모든 블록이 중지되었습니다.")
+            if block.worker is not None:
+                block.worker.terminate()  # ✅ 강제 종료
+                block.worker = None  # ✅ 바로 None 처리하여 즉시 종료 효과
+
+        self.loading_screen.hide_loading()
+        self.add_to_history("모든 블록이 종료되었습니다.")
 
     def closeEvent(self, event):
         self.stop_all_blocks()

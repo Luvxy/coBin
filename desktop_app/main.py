@@ -4,10 +4,10 @@ import requests
 import json
 from PySide6 import QtCore
 from PySide6.QtCore import (QCoreApplication, QMetaObject, QObject, QPoint,
-    QRect, QSize, QUrl, Qt)
+    QRect, QSize, QUrl, Qt, QByteArray, QEvent)
 from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor, QFont,
     QFontDatabase, QIcon, QLinearGradient, QPalette, QPainter, QPixmap,
-    QRadialGradient)
+    QRadialGradient, QMovie)
 from PySide6.QtWidgets import *
 from ui.ui_login import Ui_login
 from ui.ui_main import Ui_MainWindow
@@ -29,6 +29,42 @@ class User():
     def load_log(self):
         pass
 
+class LoadingDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog | Qt.WindowStaysOnTopHint)  # ✅ 항상 위에 표시
+        self.setAttribute(Qt.WA_TranslucentBackground)  # ✅ 배경 투명
+        self.setFixedSize(50, 50)  # ✅ 크기 조정 가능 (GIF 크기에 맞게 변경 가능)
+
+        # ✅ GIF 파일 경로 설정
+        gif_path = os.path.join(os.path.dirname(__file__), "resources", "loading.gif")
+
+        # ✅ QLabel 설정
+        self.label = QLabel(self)
+        self.movie = QMovie(gif_path, QByteArray(), self)
+        self.label.setMovie(self.movie)
+        self.movie.setCacheMode(QMovie.CacheAll)  # ✅ GIF를 미리 로드
+        self.show()
+        self.movie.start() 
+
+        # ✅ GIF를 중앙 정렬
+        layout = QVBoxLayout(self)
+        h_layout = QHBoxLayout()
+        h_layout.addStretch()
+        h_layout.addWidget(self.label, alignment=Qt.AlignCenter)
+        h_layout.addStretch()
+
+        layout.addStretch()
+        layout.addLayout(h_layout)
+        layout.addStretch()
+
+    def show_loading(self):
+        self.show()
+        QApplication.processEvents()  # ✅ UI 업데이트 강제 실행
+
+    def hide_loading(self):
+        self.hide()
+        self.close()
 
 
 # 메인 윈도우 클래스
@@ -68,12 +104,14 @@ class MainWindow(QMainWindow):
         
         # ✅ Esc 키 방지
         self.installEventFilter(self)
+    
         
         ###################
-        # 타이틀바 삭제
+        # 타이틀바
         ###################
         
-        self.setWindowFlag(QtCore.Qt.FramelessWindowHint)
+        # 타이틀바 숨기기
+        self.setWindowFlag(QtCore.Qt.FramelessWindowHint)   
         
         
         ###########################################################
@@ -86,7 +124,7 @@ class MainWindow(QMainWindow):
         self.ui.strategy_combo.currentTextChanged.connect(self.load_strategy)
         self.ui.verticalLayout.addWidget(self.blockFrame)
         self.ui.strategy_combo_2.addItems(["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-DOGE"])
-        self.ui.start_button.clicked.connect(self.blockFrame.run_all_blocks)
+        self.ui.start_button.clicked.connect(lambda: self.blockFrame.run_all_blocks(self.ui.strategy_combo_2.currentText()))
         self.ui.stop_button.clicked.connect(self.blockFrame.stop_all_blocks)
         self.ui.start_button_2.clicked.connect(self.save_custom_strategy)
         self.ui.clear_button.clicked.connect(self.blockFrame.clear_blocks)
@@ -129,7 +167,7 @@ class MainWindow(QMainWindow):
         self.order_layout.addWidget(self.order)
         self.order_layout.setContentsMargins(0, 0, 0, 0)  # ✅ 여백 제거
         self.order_layout.setStretch(0, 1)  # ✅ 레이아웃 내 OrderBookWidget이 최대한 확장되도록 설정
-
+        
         # 초기 차트 로드
         self.current_coin = "KRW-BTC"
         self.update_chart()
@@ -137,6 +175,11 @@ class MainWindow(QMainWindow):
 
     # 차트 업데이트 함수
     def update_chart(self):
+        
+        #loading gif
+        self.loading_screen = LoadingDialog()
+        self.loading_screen.show_loading() 
+        
         new_coin = self.ui.coin_selete.currentText()
         if new_coin == "선택":
             new_coin = "KRW-BTC"
@@ -179,6 +222,10 @@ class MainWindow(QMainWindow):
         if hasattr(self, "ax1"):
             self.ax1.reset()
             fplt.volume_ocv(df[['open', 'close', 'volume']], ax=self.ax1)
+        
+        
+        # loading gif 종료
+        self.loading_screen.hide_loading()
     
     #  esc 버튼 클릭 시
     def keyPressEvent(self, event):

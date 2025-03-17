@@ -285,7 +285,202 @@ class HighLowComparisonCondition(Condition):
             return False
 
 
+@ConditionRegistry.register("분할매수 조건")
+class CheckDCACondition(Condition):
+    config_fields = {
+        "max_buy_count": {"label": "최대 매수 횟수", "type": int, "default": 3, "ui_type": "line_edit"},
+        "price_drop_percent": {"label": "매수 기준 하락률 (%)", "type": float, "default": 2.0, "ui_type": "line_edit"},
+    }
 
+    def __init__(self, max_buy_count=3, price_drop_percent=2.0, coin="KRW-BTC"):
+        super().__init__()
+        self.obj_name = "분할매수 조건"
+        self.max_buy_count = max_buy_count
+        self.price_drop_percent = price_drop_percent
+        self.coin = coin
+        self.buy_count = 0  # 현재 매수 횟수
+        self.last_buy_price = None  # 마지막 매수가 저장
+        self.name = f"최대 {max_buy_count}회 매수, {price_drop_percent}% 하락 시 매수"
+
+    def check_condition(self) -> bool:
+        if self.buy_count >= self.max_buy_count:
+            return False  # 최대 횟수 초과
+
+        current_price = pyupbit.get_current_price(self.coin)
+        if current_price is None:
+            return False
+
+        if self.last_buy_price is None:
+            self.last_buy_price = current_price
+            return True  # 첫 매수는 무조건 실행
+
+        price_drop = (self.last_buy_price - current_price) / self.last_buy_price * 100
+        if price_drop >= self.price_drop_percent:
+            return True
+
+        return False
+
+
+@ConditionRegistry.register("DTC 기술 지표 조건")
+class CheckDTCIndicatorCondition(Condition):
+    config_fields = {
+        "rsi_threshold": {"label": "RSI 기준값", "type": float, "default": 30.0, "ui_type": "line_edit"},
+    }
+
+    def __init__(self, rsi_threshold=30.0, coin="KRW-BTC", interval="minute30"):
+        super().__init__()
+        self.obj_name = "DTC 기술 지표 조건"
+        self.rsi_threshold = rsi_threshold
+        self.coin = coin
+        self.interval = interval
+        self.name = f"RSI {rsi_threshold} 이하"
+
+    def check_condition(self) -> bool:
+        df = pyupbit.get_ohlcv(self.coin, interval=self.interval, count=14)
+        if df is None or df.empty:
+            return False
+
+        delta = df["close"].diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+        rs = gain / loss
+        rsi = 100 - (100 / (1 + rs))
+
+        current_rsi = rsi.iloc[-1]
+        return current_rsi <= self.rsi_threshold
+
+@ConditionRegistry.register("DTC 변동성 조건")
+class CheckDTCVolatilityCondition(Condition):
+    config_fields = {
+        "volatility_threshold": {"label": "변동성 기준 (%)", "type": float, "default": 2.0, "ui_type": "line_edit"},
+    }
+
+    def __init__(self, volatility_threshold=2.0, coin="KRW-BTC", interval="minute30"):
+        super().__init__()
+        self.obj_name = "DTC 변동성 조건"
+        self.volatility_threshold = volatility_threshold
+        self.coin = coin
+        self.interval = interval
+        self.name = f"변동성 {volatility_threshold}% 이상"
+
+    def check_condition(self) -> bool:
+        df = pyupbit.get_ohlcv(self.coin, interval=self.interval, count=2)
+        if df is None or df.empty or len(df) < 2:
+            return False
+
+        prev_close = df.iloc[-2]["close"]
+        current_close = df.iloc[-1]["close"]
+        price_change = abs(current_close - prev_close) / prev_close * 100
+        return price_change >= self.volatility_threshold
+
+@ConditionRegistry.register("RSI 기준 확인")
+class CheckRSICondition(Condition):
+    config_fields = {
+        "rsi_threshold": {"label": "RSI 기준값", "type": float, "default": 30.0, "ui_type": "line_edit"},
+        "check_type": {"label": "비교 유형", "type": str, "default": "이하", "ui_type": "dropdown", "options": ["이상", "이하"]},
+    }
+
+    def __init__(self, rsi_threshold=30.0, check_type="이하", coin="KRW-BTC", interval="minute30"):
+        super().__init__()
+        self.obj_name = "RSI 기준 확인"
+        self.rsi_threshold = rsi_threshold
+        self.check_type = check_type
+        self.coin = coin
+        self.interval = interval
+        self.name = f"RSI {rsi_threshold} {check_type} 확인"
+
+    def check_condition(self) -> bool:
+        df = pyupbit.get_ohlcv(self.coin, interval=self.interval, count=14)
+        if df is None or df.empty:
+            return False
+
+        delta = df["close"].diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+        rs = gain / loss
+        rsi = 100 - (100 / (1 + rs))
+
+        current_rsi = rsi.iloc[-1]
+        return current_rsi >= self.rsi_threshold if self.check_type == "이상" else current_rsi <= self.rsi_threshold
+
+
+@ConditionRegistry.register("볼린저밴드 돌파 확인")
+class CheckBollingerBandCondition(Condition):
+    config_fields = {
+        "band_type": {"label": "밴드 유형", "type": str, "default": "상한 돌파", "ui_type": "dropdown", "options": ["상한 돌파", "하한 돌파"]},
+        "period": {"label": "이동평균 기간", "type": int, "default": 20, "ui_type": "line_edit"},
+        "std_dev": {"label": "표준편차 배수", "type": float, "default": 2.0, "ui_type": "line_edit"},
+    }
+
+    def __init__(self, band_type="상한 돌파", period=20, std_dev=2.0, coin="KRW-BTC", interval="minute30"):
+        super().__init__()
+        self.obj_name = "볼린저밴드 돌파 확인"
+        self.band_type = band_type
+        self.period = period
+        self.std_dev = std_dev
+        self.coin = coin
+        self.name = f"볼린저밴드 {band_type} 확인"
+        self.interval = interval
+
+    def check_condition(self) -> bool:
+        df = pyupbit.get_ohlcv(self.coin, interval=self.interval, count=self.period + 1)
+        if df is None or df.empty or len(df) < self.period:
+            return False
+
+        moving_avg = df["close"].rolling(window=self.period).mean()
+        std_dev = df["close"].rolling(window=self.period).std()
+        upper_band = moving_avg + (std_dev * self.std_dev)
+        lower_band = moving_avg - (std_dev * self.std_dev)
+        current_price = df.iloc[-1]["close"]
+
+        if self.band_type == "상한 돌파":
+            return current_price > upper_band.iloc[-1]
+        else:
+            return current_price < lower_band.iloc[-1]
+
+
+@ConditionRegistry.register("피보나치 되돌림 확인")
+class CheckFibonacciRetracementCondition(Condition):
+    config_fields = {
+        "retracement_level": {
+            "label": "피보나치 되돌림 비율",
+            "type": float,
+            "default": 0.618,
+            "ui_type": "dropdown",
+            "options": [str(x) for x in [0.236, 0.382, 0.5, 0.618, 0.786]],  # 🔥 문자열 변환!
+        },
+        "check_type": {
+            "label": "확인 유형",
+            "type": str,
+            "default": "지지선 확인",
+            "ui_type": "dropdown",
+            "options": ["지지선 확인", "저항선 확인"],
+        },
+    }
+
+    def __init__(self, retracement_level=0.618, check_type="지지선 확인", coin="KRW-BTC", interval="minute30"):
+        super().__init__()
+        self.obj_name = "피보나치 되돌림 확인"
+        self.retracement_level = float(retracement_level)
+        self.check_type = check_type
+        self.coin = coin
+        self.interval = interval
+        self.name = f"피보나치 {retracement_level} {check_type}"
+
+    def check_condition(self) -> bool:
+        df = pyupbit.get_ohlcv(self.coin, interval=self.interval, count=100)
+        if df is None or df.empty:
+            return False
+
+        high_price = df["high"].max()
+        low_price = df["low"].min()
+        retracement_price = low_price + (high_price - low_price) * self.retracement_level
+        current_price = df.iloc[-1]["close"]
+
+        if self.check_type == "지지선 확인":
+            return current_price <= retracement_price
+        else:
+            return current_price >= retracement_price
 
 
 
@@ -534,6 +729,66 @@ class TakeProfitAction(Action):
             return f"익절 실행: {self.coin} - {sell_quantity:.6f}개 @ {current_price} KRW" if order_result else "익절 실패"
         
         return f"익절 조건 미충족: 현재가 {current_price} KRW, 익절가 {take_profit_price} KRW"
+
+
+@ActionRegistry.register("분할매수 실행")
+class DCABuyAction(Action):
+    config_fields = {
+        "buy_amount": {"label": "매수 금액 (KRW)", "type": float, "default": 10000.0, "ui_type": "line_edit"},
+    }
+
+    def __init__(self, upbit, buy_amount=10000.0, coin="KRW-BTC"):
+        super().__init__()
+        self.obj_name = "분할매수 실행"
+        self.upbit = upbit
+        self.buy_amount = buy_amount
+        self.coin = coin
+        self.name = f"분할매수 실행: {buy_amount} KRW"
+
+    def run_action(self):
+        krw_balance = self.upbit.get_balance("KRW")
+        if krw_balance < self.buy_amount:
+            return "KRW 잔고 부족"
+
+        order_result = self.upbit.buy_market_order(self.coin, self.buy_amount)
+        if order_result:
+            return f"분할매수 실행: {self.coin} - {self.buy_amount} KRW"
+        else:
+            return "분할매수 실패"
+
+
+@ActionRegistry.register("DTC 동적 분할매수")
+class DTCBuyAction(Action):
+    config_fields = {
+        "base_buy_amount": {"label": "기본 매수 금액 (KRW)", "type": float, "default": 10000.0, "ui_type": "line_edit"},
+        "volatility_adjustment": {"label": "변동성 조정 비율 (%)", "type": float, "default": 20.0, "ui_type": "line_edit"},
+    }
+
+    def __init__(self, upbit, base_buy_amount=10000.0, volatility_adjustment=20.0, coin="KRW-BTC"):
+        super().__init__()
+        self.obj_name = "DTC 동적 분할매수"
+        self.upbit = upbit
+        self.base_buy_amount = base_buy_amount
+        self.volatility_adjustment = volatility_adjustment
+        self.coin = coin
+        self.name = f"DTC 동적 분할매수: {base_buy_amount} KRW"
+
+    def run_action(self):
+        df = pyupbit.get_ohlcv(self.coin, interval="minute30", count=2)
+        if df is None or df.empty or len(df) < 2:
+            return "변동성 데이터를 가져올 수 없음"
+
+        prev_close = df.iloc[-2]["close"]
+        current_close = df.iloc[-1]["close"]
+        price_change = abs(current_close - prev_close) / prev_close * 100
+
+        adjusted_amount = self.base_buy_amount * (1 + (self.volatility_adjustment / 100 if price_change > 1 else -self.volatility_adjustment / 100))
+        krw_balance = self.upbit.get_balance("KRW")
+        if krw_balance < adjusted_amount:
+            return "KRW 잔고 부족"
+
+        order_result = self.upbit.buy_market_order(self.coin, adjusted_amount)
+        return f"DTC 매수 실행: {self.coin} - {adjusted_amount:.2f} KRW" if order_result else "DTC 매수 실패"
 
 
 

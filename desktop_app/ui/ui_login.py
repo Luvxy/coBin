@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'loginRbsOSa.ui'
+## Form generated from reading UI file 'loginOQXIdf.ui'
 ##
 ## Created by: Qt User Interface Compiler version 5.14.1
 ##
@@ -26,9 +26,10 @@ class Ui_login(object):
         self.centralwidget.setObjectName(u"centralwidget")
         self.frame = QFrame(self.centralwidget)
         self.frame.setObjectName(u"frame")
-        self.frame.setGeometry(QRect(0, 0, 691, 471))
+        self.frame.setGeometry(QRect(10, 10, 671, 451))
         self.frame.setStyleSheet(u"QFrame{\n"
-"	background-color: rgb(51, 51, 51);\n"
+"	background-color: rgb(3, 76, 83);\n"
+"	border-radius: 10px;\n"
 "}")
         self.frame.setFrameShape(QFrame.StyledPanel)
         self.frame.setFrameShadow(QFrame.Raised)
@@ -54,6 +55,14 @@ class Ui_login(object):
         self.pushButton = QPushButton(self.frame)
         self.pushButton.setObjectName(u"pushButton")
         self.pushButton.setGeometry(QRect(240, 290, 211, 51))
+        self.pushButton.setStyleSheet(u"QPushButton{\n"
+"	background-color: rgb(255, 193, 180);\n"
+"	border-radius: 10px;\n"
+"}\n"
+"\n"
+"QPushButton::hover{\n"
+"	background-color: rgb(243, 140, 121);\n"
+"}")
         login.setCentralWidget(self.centralwidget)
         self.statusbar = QStatusBar(login)
         self.statusbar.setObjectName(u"statusbar")
@@ -66,9 +75,9 @@ class Ui_login(object):
 
     def retranslateUi(self, login):
         login.setWindowTitle(QCoreApplication.translate("login", u"MainWindow", None))
-        self.label.setText(QCoreApplication.translate("login", u"Login", None))
-        self.user_id.setText("")
-        self.user_password.setText("")
-        self.pushButton.setText(QCoreApplication.translate("login", u"Login", None))
+        self.label.setText(QCoreApplication.translate("login", u"<strong>\ub85c\uadf8\uc778</strong>", None))
+        self.user_id.setText(QCoreApplication.translate("login", u"ID", None))
+        self.user_password.setText(QCoreApplication.translate("login", u"\ube44\ubc00\ubc88\ud638", None))
+        self.pushButton.setText(QCoreApplication.translate("login", u"\ub85c\uadf8\uc778", None))
     # retranslateUi
 

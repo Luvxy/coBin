@@ -212,8 +212,7 @@ class Ui_MainWindow(object):
         self.close_button.setGeometry(1890, 1, 20, 20)  # 위치와 크기 조절
         self.close_button.setStyleSheet("""
             QPushButton {
-                background-color: black;
-                color: white;
+                color: black;
                 border: none;
                 font-weight: bold;
                 font-size: 20px;

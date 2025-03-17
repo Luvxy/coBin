@@ -162,10 +162,7 @@ class ChartWidget(QWidget):
             self.series.append(new_set)
             
     def change_coin(self, new_coin, interval='minute30', count=80):
-        """코인을 변경하고 새로운 차트를 로드"""
-        if self.coin == new_coin:
-            return
-        
+        """코인을 변경하고 새로운 차트를 로드"""        
         print(f"코인 변경: {self.coin} → {new_coin}")
 
         self.worker.stop()

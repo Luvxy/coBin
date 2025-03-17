@@ -9,13 +9,25 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor, QFont,
     QFontDatabase, QIcon, QLinearGradient, QPalette, QPainter, QPixmap,
     QRadialGradient, QMovie)
 from PySide6.QtWidgets import *
+from PySide6.QtPdfWidgets import QPdfView
+from PySide6.QtPdf import QPdfDocument
 from ui.ui_login import Ui_login
 from ui.ui_main import Ui_MainWindow
 from ui.ui_block import *
+from ui.ui_loading import loading
 from upbit.get_data_upbit import *
 from upbit.configer import *
 from upbit.api_upbit import *
 import finplot as fplt
+
+## ==> GLOBALS
+counter = 0
+
+def resource_path(relative_path):
+    """ PyInstaller에서 빌드 후에도 리소스 파일 경로를 찾도록 도와주는 함수 """
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.dirname(__file__), relative_path)
 
 class User():
     def __init__(self, username, password):
@@ -28,6 +40,34 @@ class User():
     # firebase에 활동 로그 조회
     def load_log(self):
         pass
+
+class PdfViewer(QMainWindow):
+    def __init__(self, pdf_path):
+        super().__init__()
+
+        self.setWindowTitle("PDF 도움말")
+        self.setGeometry(100, 100, 1400, 800) 
+
+        # PDF 뷰어 설정
+        self.pdf_view = QPdfView(self)
+        self.pdf_doc = QPdfDocument(self)
+        self.pdf_doc.load(pdf_path)
+        self.pdf_view.setDocument(self.pdf_doc)
+
+        # 📌 전체 페이지 스크롤 가능하도록 설정
+        self.pdf_view.setPageMode(QPdfView.PageMode.MultiPage)
+
+        # 📌 기본 줌 크기 설정
+        self.pdf_view.setZoomMode(QPdfView.ZoomMode.Custom)
+        self.pdf_view.setZoomFactor(0.7)  # 기본 100% 배율
+
+        # 레이아웃 설정
+        layout = QVBoxLayout()
+        layout.addWidget(self.pdf_view)
+
+        container = QWidget()
+        container.setLayout(layout)
+        self.setCentralWidget(container)
 
 class LoadingDialog(QDialog):
     def __init__(self, parent=None):
@@ -65,6 +105,71 @@ class LoadingDialog(QDialog):
     def hide_loading(self):
         self.hide()
         self.close()
+        
+# SPLASH SCREEN
+class LoadingScreen(QMainWindow):
+    def __init__(self):
+        QMainWindow.__init__(self)
+        self.ui = loading()
+        self.ui.setupUi(self)
+
+        ## UI ==> INTERFACE CODES
+        ########################################################################
+
+        ## REMOVE TITLE BAR
+        self.setWindowFlag(QtCore.Qt.FramelessWindowHint)
+        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+
+
+        ## DROP SHADOW EFFECT
+        self.shadow = QGraphicsDropShadowEffect(self)
+        self.shadow.setBlurRadius(20)
+        self.shadow.setXOffset(0)
+        self.shadow.setYOffset(0)
+        self.shadow.setColor(QColor(0, 0, 0, 60))
+
+        ## QTIMER ==> START
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.progress)
+        # TIMER IN MILLISECONDS
+        self.timer.start(35)
+
+        # Change Texts
+        QtCore.QTimer.singleShot(1000, lambda: self.ui.label_3.setText("<strong>LOADING...</strong> 데이터베이스 연결중"))
+        QtCore.QTimer.singleShot(1500, lambda: self.ui.label_3.setText("<strong>LOADING...</strong> 차트 그리는중"))
+        QtCore.QTimer.singleShot(2000, lambda: self.ui.label_3.setText("<strong>LOADING...</strong> 블록 생성중"))
+        QtCore.QTimer.singleShot(2500, lambda: self.ui.label_3.setText("<strong>LOADING...</strong> 전략 로딩중"))
+        QtCore.QTimer.singleShot(3000, lambda: self.ui.label_3.setText("<strong>LOADING...</strong> 화면 구성중"))
+
+
+        ## SHOW ==> MAIN WINDOW
+        ########################################################################
+        self.show()
+        ## ==> END ##
+
+    ## ==> APP FUNCTIONS
+    ########################################################################
+    def progress(self):
+
+        global counter
+
+        # SET VALUE TO PROGRESS BAR
+        self.ui.progressBar.setValue(counter)
+
+        # CLOSE SPLASH SCREE AND OPEN APP
+        if counter > 100:
+            # STOP TIMER
+            self.timer.stop()
+
+            # SHOW MAIN WINDOW
+            self.main = MainWindow()
+            self.main.show()
+
+            # CLOSE SPLASH SCREEN
+            self.close()
+
+        # INCREASE COUNTER
+        counter += 1
 
 
 # 메인 윈도우 클래스
@@ -143,6 +248,7 @@ class MainWindow(QMainWindow):
         self.ui.coin_selete.currentTextChanged.connect(self.update_chart)
         self.ui.coin_selete_2.currentTextChanged.connect(self.update_chart)
         self.ui.coin_selete_3.currentTextChanged.connect(self.update_chart)
+        self.ui.pushButton_2.clicked.connect(self.open_pdf_viewer)
         
         # 그래프 UI 레이아웃 설정
         self.graph_layout = QVBoxLayout(self.ui.graph)
@@ -207,7 +313,7 @@ class MainWindow(QMainWindow):
         self.ui.label_3.setText(f"보유량: {self.upbit.get_balance(new_coin)}")
         self.ui.label_6.setText(f"KRW: {self.upbit.get_balance('KRW')}")
         self.current_coin = new_coin
-        df = pyupbit.get_ohlcv(new_coin, interval='minute1', count=100)
+        df = pyupbit.get_ohlcv(new_coin, interval=interval, count=count)
 
         if df is None or df.empty:
             print(f"코인 데이터 로드 실패: {new_coin}")
@@ -218,10 +324,8 @@ class MainWindow(QMainWindow):
             print(f"필요한 컬럼이 없음: {df.columns}")
             return
 
-        #  기존 차트 초기화 & 새 데이터 적용
-        if hasattr(self, "ax1"):
-            self.ax1.reset()
-            fplt.volume_ocv(df[['open', 'close', 'volume']], ax=self.ax1)
+        self.ax1.reset()
+        fplt.volume_ocv(df[['open', 'close', 'volume']], ax=self.ax1)
         
         
         # loading gif 종료
@@ -281,12 +385,22 @@ class MainWindow(QMainWindow):
 
         file_name = f"{strategy_name.lower().replace(' ', '')}.json"
 
-        if not os.path.exists(file_name):
+        try:
+            file_path = resource_path(file_name)  # 위에서 설명한 PyInstaller 경로 처리
+            if not os.path.exists(file_path):
+                self.blockFrame.clear_blocks()
+                print(f"파일이 존재하지 않음: {file_path}")
+                return
+
+            with open(file_path, "r", encoding="utf-8") as f:
+                print(f"파일 로드: {file_path}")
+                strategy_data = json.load(f)
+
+        except Exception as e:
+            print("load_custom_strategy() 예외 발생:", e)
+            # 에러 메시지 박스 띄우거나, 로딩을 종료한 뒤 멈추지 않도록 처리
             self.blockFrame.clear_blocks()
             return
-
-        with open(file_name, "r", encoding="utf-8") as f:
-            strategy_data = json.load(f)
 
         self.blockFrame.clear_blocks()
         for block_data in strategy_data:
@@ -331,9 +445,6 @@ class MainWindow(QMainWindow):
     def save_custom_strategy(self):
         """ 현재 블록 상태를 JSON 파일로 저장 """
         strategy_name = self.ui.strategy_combo.currentText()
-        if strategy_name not in ["Custom 1", "Custom 2", "Custom 3"]:
-            print("저장 가능한 Custom 전략이 아닙니다.")
-            return
 
         file_name = f"{strategy_name.lower().replace(' ', '')}.json"
 
@@ -367,7 +478,10 @@ class MainWindow(QMainWindow):
 
         QMessageBox.information(self, '저장', f'{strategy_name} 전략이 저장되었습니다.')
 
-
+    def open_pdf_viewer(self):
+        viewer_path = os.path.join(os.path.dirname(__file__), "resources", "프로그램 설명서.pdf")
+        self.viewer = PdfViewer(viewer_path)  # PDF 파일 경로 설정
+        self.viewer.show()
 
 
 
@@ -378,21 +492,8 @@ class SpleshScreen(QMainWindow):
         self.ui = Ui_login()
         self.ui.setupUi(self)
         
-        
-        ###################
-        # 타이틀바 삭제
-        ###################
-        
-        
         self.setWindowFlag(QtCore.Qt.FramelessWindowHint)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
-        
-        
-        
-        ###################
-        # 그림자 설정
-        ###################
-        
         
         self.shadow = QGraphicsDropShadowEffect(self)
         self.shadow.setBlurRadius(20)
@@ -405,10 +506,6 @@ class SpleshScreen(QMainWindow):
         
         self.ui.pushButton.clicked.connect(self.login_button_clicked)
     
-    
-    ###########################
-    # 로그인
-    ###########################
     def login_button_clicked(self):
         url = 'http://127.0.0.1:8000/api/token/'
         
@@ -430,7 +527,7 @@ class SpleshScreen(QMainWindow):
 
             if api_response.status_code == 200:
                 print("성공적으로 접근:", api_response.json())
-                self.main = MainWindow()
+                self.main = LoadingScreen()
                 self.main.show()
                 
                 self.close()
@@ -448,6 +545,6 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     # window = SpleshScreen()
     # window.show()
-    main = MainWindow()
-    main.show()
-    sys.exit(app.exec_())
+    window = LoadingScreen()
+    window.show()
+    sys.exit(app.exec())

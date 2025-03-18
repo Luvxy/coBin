@@ -19,15 +19,108 @@ from upbit.get_data_upbit import *
 from upbit.configer import *
 from upbit.api_upbit import *
 import finplot as fplt
+import os
+import zipfile
+import shutil
+import subprocess
+
+# GitHub 저장소 정보
+GITHUB_REPO = "luvxy/coBin"  # 변경 필요
+LATEST_RELEASE_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
+DOWNLOAD_PATH = "update.zip"
+EXTRACT_FOLDER = "update_temp"
+CURRENT_VERSION = "v1.0.0"  # 현재 버전 (매 빌드마다 업데이트 필요)
+
+def get_latest_release():
+    """GitHub에서 최신 릴리스 버전 및 다운로드 URL 가져오기"""
+    response = requests.get(LATEST_RELEASE_URL)
+    if response.status_code == 200:
+        data = response.json()
+        version = data["tag_name"]  # 최신 버전 태그
+        for asset in data["assets"]:
+            if asset["name"].endswith(".zip"):
+                return version, asset["browser_download_url"]
+    return None, None
+
+def download_update(url):
+    """업데이트 파일 다운로드"""
+    response = requests.get(url, stream=True)
+    if response.status_code == 200:
+        with open(DOWNLOAD_PATH, "wb") as file:
+            for chunk in response.iter_content(1024):
+                file.write(chunk)
+        return True
+    return False
+
+def install_update():
+    """업데이트 파일 압축 해제 및 덮어쓰기"""
+    if os.path.exists(EXTRACT_FOLDER):
+        shutil.rmtree(EXTRACT_FOLDER)
+    os.makedirs(EXTRACT_FOLDER)
+
+    with zipfile.ZipFile(DOWNLOAD_PATH, "r") as zip_ref:
+        zip_ref.extractall(EXTRACT_FOLDER)
+
+    # 현재 실행 중인 파일 경로 가져오기
+    exe_path = sys.executable  # PyInstaller 빌드된 실행 파일 경로
+    new_exe_path = os.path.join(EXTRACT_FOLDER, os.path.basename(exe_path))
+
+    if os.path.exists(new_exe_path):
+        # 현재 실행 중인 파일을 종료 후 교체
+        print("업데이트 적용 중...")
+        shutil.move(new_exe_path, exe_path)
+        os.chmod(exe_path, 0o755)
+
+    # 정리
+    shutil.rmtree(EXTRACT_FOLDER)
+    os.remove(DOWNLOAD_PATH)
+    
+    print("업데이트 완료! 프로그램을 다시 시작합니다.")
+    
+    # 프로그램 자동 재실행
+    subprocess.Popen([exe_path])
+    sys.exit(0)
+
+def check_for_update():
+    """현재 버전과 최신 버전을 비교하여 업데이트 수행"""
+    latest_version, download_url = get_latest_release()
+
+    if latest_version and latest_version != CURRENT_VERSION:
+        print(f"새로운 업데이트 발견: {latest_version}")
+        if download_update(download_url):
+            install_update()
+    else:
+        print("최신 버전입니다.")
+
 
 ## ==> GLOBALS
 counter = 0
 
+import os
+import sys
+import shutil
+
 def resource_path(relative_path):
-    """ PyInstaller에서 빌드 후에도 리소스 파일 경로를 찾도록 도와주는 함수 """
+    """ PyInstaller 실행 파일에서도 리소스 경로를 찾을 수 있도록 설정 """
     if hasattr(sys, '_MEIPASS'):
-        return os.path.join(sys._MEIPASS, relative_path)
+        return os.path.join(sys._MEIPASS, relative_path)  # PyInstaller 실행 환경
     return os.path.join(os.path.dirname(__file__), relative_path)
+
+def ensure_json_exists():
+    """ JSON 파일이 실행 폴더에 없으면 자동 복사 """
+    json_filename = "default.json"
+    source_path = resource_path(json_filename)  # PyInstaller 내 경로 또는 현재 경로
+    dest_path = os.path.join(os.getcwd(), json_filename)  # 실행 폴더에 저장
+
+    if not os.path.exists(dest_path):  # 실행 폴더에 JSON이 없으면 복사
+        try:
+            shutil.copy(source_path, dest_path)
+            print(f"{json_filename}을(를) 실행 폴더로 복사했습니다.")
+        except Exception as e:
+            print(f"JSON 복사 실패: {e}")
+
+    return dest_path  # ✅ 항상 실행 폴더에서 JSON을 사용하도록 경로 반환
+
 
 class User():
     def __init__(self, username, password):
@@ -178,6 +271,10 @@ class MainWindow(QMainWindow):
         QMainWindow.__init__(self)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        
+        screen_geometry = QApplication.primaryScreen().geometry()
+        self.setGeometry(screen_geometry)  # 전체 화면 크기로 설정
+        self.showMaximized()  # 창을 최대화하여 화면에 맞춤
         
         ###########################################################
         # 기본 설정
@@ -382,14 +479,13 @@ class MainWindow(QMainWindow):
         
     def load_custom_strategy(self, strategy_name):
         """ JSON 파일에서 Custom 전략 불러오기 """
-
         file_name = f"{strategy_name.lower().replace(' ', '')}.json"
+        file_path = os.path.join(os.getcwd(), file_name)  # ✅ 실행 폴더에서 JSON 로드
 
         try:
-            file_path = resource_path(file_name)  # 위에서 설명한 PyInstaller 경로 처리
             if not os.path.exists(file_path):
-                self.blockFrame.clear_blocks()
                 print(f"파일이 존재하지 않음: {file_path}")
+                self.blockFrame.clear_blocks()
                 return
 
             with open(file_path, "r", encoding="utf-8") as f:
@@ -397,8 +493,7 @@ class MainWindow(QMainWindow):
                 strategy_data = json.load(f)
 
         except Exception as e:
-            print("load_custom_strategy() 예외 발생:", e)
-            # 에러 메시지 박스 띄우거나, 로딩을 종료한 뒤 멈추지 않도록 처리
+            print(f"load_custom_strategy() 예외 발생: {e}")
             self.blockFrame.clear_blocks()
             return
 
@@ -432,6 +527,7 @@ class MainWindow(QMainWindow):
             if hasattr(block, "interval_edit"):
                 block.interval_edit.setText(block_data.get("주기", "10"))
 
+
     
     def load_strategy(self, strategy_name):
         """ 기본 전략 불러오기 """
@@ -443,8 +539,11 @@ class MainWindow(QMainWindow):
             self.load_custom_strategy(strategy_name)
 
     def save_custom_strategy(self):
-        """ 현재 블록 상태를 JSON 파일로 저장 """
+        """ 현재 블록 상태를 JSON 파일로 저장 """        
         strategy_name = self.ui.strategy_combo.currentText()
+        
+        if strategy_name == "기본전략":
+            strategy_name = "default"
 
         file_name = f"{strategy_name.lower().replace(' ', '')}.json"
 
@@ -542,6 +641,7 @@ class SpleshScreen(QMainWindow):
         
         
 if __name__ == "__main__":
+    check_for_update()
     app = QApplication(sys.argv)
     # window = SpleshScreen()
     # window.show()

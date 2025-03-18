@@ -611,24 +611,23 @@ class StopLossAction(Action):
         """보유 코인의 평균 매수가 조회"""
         if not hasattr(self, 'coin') or not self.coin:
             print("get_buy_price: coin 값이 설정되지 않음")
-            return None
+            return 0.0  # ✅ None 대신 0.0 반환
 
-        balances = self.upbit.get_balances()  # ✅ 전체 잔고 조회
+        balances = self.upbit.get_balances() or []  # ✅ None이면 빈 리스트 반환
         target_currency = self.coin.replace("KRW-", "")  # 예: "KRW-BTC" → "BTC"
-        
 
         for b in balances:
-            if b['currency'] == target_currency:
-                return float(b['avg_buy_price'])  # ✅ 평균 매수가 반환
+            if b.get('currency') == target_currency:  # ✅ get() 사용하여 KeyError 방지
+                return float(b.get('avg_buy_price', 0.0))  # ✅ KeyError 방지 + None이면 0.0 반환
 
         print(f"get_buy_price: {self.coin} 잔고 없음")
-        return None  # 코인이 없으면 None 반환
+        return 0.0  # ✅ None 대신 0.0 반환
 
 
     def run_action(self):
         self.buy_price = self.get_buy_price()
         
-        if self.buy_price is None:
+        if self.buy_price == 0.0:
             return "매수가격을 가져올 수 없음"
 
         current_price = pyupbit.get_current_price(self.coin)
@@ -683,23 +682,23 @@ class TakeProfitAction(Action):
         """보유 코인의 평균 매수가 조회"""
         if not hasattr(self, 'coin') or not self.coin:
             print("get_buy_price: coin 값이 설정되지 않음")
-            return None
+            return 0.0  # ✅ None 대신 0.0 반환
 
-        balances = self.upbit.get_balances()  # ✅ 전체 잔고 조회
+        balances = self.upbit.get_balances() or []  # ✅ None이면 빈 리스트 반환
         target_currency = self.coin.replace("KRW-", "")  # 예: "KRW-BTC" → "BTC"
 
         for b in balances:
-            if b['currency'] == target_currency:
-                return float(b['avg_buy_price'])  # ✅ 평균 매수가 반환
+            if b.get('currency') == target_currency:  # ✅ get() 사용하여 KeyError 방지
+                return float(b.get('avg_buy_price', 0.0))  # ✅ KeyError 방지 + None이면 0.0 반환
 
         print(f"get_buy_price: {self.coin} 잔고 없음")
-        return None  # 코인이 없으면 None 반환
+        return 0.0  # ✅ None 대신 0.0 반환
             
 
     def run_action(self):
         self.buy_price = self.get_buy_price()
         
-        if self.buy_price is None:
+        if self.buy_price == 0.0:
             return "매수가격을 가져올 수 없음"
 
         current_price = pyupbit.get_current_price(self.coin)

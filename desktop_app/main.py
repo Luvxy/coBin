@@ -28,8 +28,7 @@ import subprocess
 GITHUB_REPO = "luvxy/coBin"  # 변경 필요
 LATEST_RELEASE_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 TOKEN = "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"
-DOWNLOAD_PATH = "update.zip"
-EXTRACT_FOLDER = "update_temp"
+DOWNLOAD_PATH = "cobin.exe"
 CURRENT_VERSION = "v1.0.2"  # 현재 버전 (매 빌드마다 업데이트 필요)
 
 def get_latest_release():
@@ -37,14 +36,13 @@ def get_latest_release():
     headers = {"Authorization": f"token {TOKEN}"}
     response = requests.get(LATEST_RELEASE_URL, headers=headers)
     
-    print(response.status_code)
-
     if response.status_code == 200:
         data = response.json()
-        print(data)
         version = data["tag_name"]  # 최신 버전 태그
         for asset in data["assets"]:
-            if asset["name"].endswith(".zip"):
+            if asset["name"].endswith(".exe"):  # ✅ .exe 파일 다운로드하도록 수정
+                print(f"최신 버전: {version}")
+                print(f"업데이트 URL: {asset['browser_download_url']}")
                 return version, asset["browser_download_url"]
     else:
         print(f"API 요청 실패: {response.status_code}, 메시지: {response.text}")
@@ -65,22 +63,24 @@ def download_update(url):
 def install_update():
     """업데이트 파일을 덮어쓰기"""
     exe_path = sys.executable  # 현재 실행 중인 파일 경로
-    new_exe_path = DOWNLOAD_PATH  # `CoB2n.exe`가 그대로 다운로드됨
 
-    if os.path.exists(new_exe_path):
+    if os.path.exists(DOWNLOAD_PATH):
         print("업데이트 적용 중...")
-        shutil.move(new_exe_path, exe_path)
-        os.chmod(exe_path, 0o755)
+        
+        # ✅ Windows에서 실행 중인 파일은 바로 덮어쓸 수 없으므로, 새 파일을 실행 후 종료
+        new_exe_path = exe_path + ".old"
+        os.rename(exe_path, new_exe_path)  # 기존 파일 백업
+        shutil.move(DOWNLOAD_PATH, exe_path)  # 새 파일 덮어쓰기
 
-    print("업데이트 완료! 프로그램을 다시 시작합니다.")
-    subprocess.Popen([exe_path])
-    sys.exit(0)
+        print("업데이트 완료! 프로그램을 다시 시작합니다.")
+        subprocess.Popen([exe_path])
+        sys.exit(0)
 
 def check_for_update():
     """현재 버전과 최신 버전을 비교하여 업데이트 수행"""
     latest_version, download_url = get_latest_release()
-
-    if latest_version and latest_version != "v1.0.0":  # ❗ 수동으로 CURRENT_VERSION 비교
+    
+    if latest_version and latest_version != CURRENT_VERSION:
         print(f"새로운 업데이트 발견: {latest_version}")
         if download_update(download_url):
             install_update()

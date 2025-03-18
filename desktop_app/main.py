@@ -29,35 +29,51 @@ GITHUB_REPO = "luvxy/coBin"  # 변경 필요
 LATEST_RELEASE_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 TOKEN = "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"
 DOWNLOAD_PATH = "cobin.exe"
-CURRENT_VERSION = "v1.0.2"  # 현재 버전 (매 빌드마다 업데이트 필요)
+CURRENT_VERSION = "v1.0.5"  # 현재 버전 (매 빌드마다 업데이트 필요)
 
 def get_latest_release():
-    """GitHub에서 최신 릴리스 버전 및 다운로드 URL 가져오기 (Private Repo 지원)"""
+    """GitHub에서 최신 릴리스 버전 및 다운로드 API URL 가져오기"""
     headers = {"Authorization": f"token {TOKEN}"}
     response = requests.get(LATEST_RELEASE_URL, headers=headers)
     
     if response.status_code == 200:
         data = response.json()
-        version = data["tag_name"]  # 최신 버전 태그
+        version = data["tag_name"].strip()
+        print(f"[DEBUG] 최신 버전: {version}")  # ✅ 디버깅 로그 추가
+
         for asset in data["assets"]:
-            if asset["name"].endswith(".exe"):  # ✅ .exe 파일 다운로드하도록 수정
-                print(f"최신 버전: {version}")
-                print(f"업데이트 URL: {asset['browser_download_url']}")
-                return version, asset["browser_download_url"]
+            print(f"[DEBUG] Asset Name: {asset['name']}")  # ✅ 릴리스 파일 목록 출력
+            print(f"[DEBUG] Asset API URL: {asset['url']}")  # ✅ GitHub API 다운로드 URL
+
+            if asset["name"].endswith(".exe"):  # ✅ .exe 파일 다운로드 가능하도록 수정
+                return version, asset["url"]  # ✅ `browser_download_url`이 아니라 `url` 사용
+    
     else:
         print(f"API 요청 실패: {response.status_code}, 메시지: {response.text}")
+    
     return None, None
 
-def download_update(url):
-    """업데이트 파일 다운로드"""
-    headers = {"Authorization": f"token {TOKEN}"}
-    response = requests.get(url, stream=True, headers=headers)
-    
+def download_update(api_url):
+    """GitHub API를 사용하여 업데이트 파일 다운로드"""
+    headers = {
+        "Authorization": f"token {TOKEN}",
+        "Accept": "application/octet-stream",  # ✅ GitHub에서 직접 다운로드 가능하도록 설정
+        "User-Agent": "Mozilla/5.0"
+    }
+
+    print(f"[DEBUG] 다운로드 API URL: {api_url}")  # ✅ 디버깅 로그 추가
+
+    response = requests.get(api_url, stream=True, headers=headers)
+    print(f"[DEBUG] 다운로드 상태: {response.status_code}")  # ✅ 상태 코드 확인
+
     if response.status_code == 200:
         with open(DOWNLOAD_PATH, "wb") as file:
             for chunk in response.iter_content(1024):
                 file.write(chunk)
+        print("[DEBUG] 다운로드 완료 ✅")
         return True
+
+    print(f"[ERROR] 다운로드 실패 ❌ 상태 코드: {response.status_code}, 메시지: {response.text}")
     return False
 
 def install_update():
@@ -107,6 +123,33 @@ def ensure_json_exists():
             print(f"JSON 복사 실패: {e}")
 
     return dest_path  # ✅ 항상 실행 폴더에서 JSON을 사용하도록 경로 반환
+
+from PySide6.QtCore import QThread, Signal
+
+class UpdateThread(QThread):
+    update_status = Signal(str)  # UI에 메시지 업데이트
+    update_progress = Signal(int)  # 프로그레스 바 업데이트
+
+    def run(self):
+        """업데이트 확인 및 실행"""
+        latest_version, download_url = get_latest_release()
+
+        if latest_version and latest_version != CURRENT_VERSION:
+            self.update_status.emit(f"<strong>업데이트 발견: {latest_version}</strong> 다운로드 중...")
+            self.update_progress.emit(20)
+
+            if download_update(download_url):
+                self.update_status.emit("<strong>업데이트 완료</strong> 설치 중...")
+                self.update_progress.emit(50)
+
+                install_update()
+
+                self.update_status.emit("<strong>업데이트 적용 완료</strong> 프로그램 재시작 중...")
+                self.update_progress.emit(100)
+                return
+        
+        self.update_status.emit("<strong>최신 버전입니다.</strong>")
+        self.update_progress.emit(100)
 
 
 class User():
@@ -202,39 +245,33 @@ class LoadingScreen(QMainWindow):
         self.shadow.setYOffset(0)
         self.shadow.setColor(QColor(0, 0, 0, 60))
 
-        ## 상태 메시지 변경 및 업데이트 시작
-        QtCore.QTimer.singleShot(500, lambda: self.ui.label_3.setText("<strong>업데이트 확인 중...</strong>"))
-        QtCore.QTimer.singleShot(1000, self.check_for_update)  # 1초 후 업데이트 확인 시작
+        # ✅ 업데이트 스레드 생성
+        self.update_thread = UpdateThread()
+        self.update_thread.update_status.connect(self.set_status_text)
+        self.update_thread.update_progress.connect(self.update_progress)
+
+        QtCore.QTimer.singleShot(500, lambda: self.set_status_text("<strong>업데이트 확인 중...</strong>"))
 
         self.show()
 
-    def check_for_update(self):
-        latest_version, download_url = get_latest_release()
+        # ✅ 업데이트 스레드 실행
+        self.update_thread.start()
 
-        if latest_version and latest_version != CURRENT_VERSION:
-            self.ui.label_3.setText(f"<strong>업데이트 발견: {latest_version}</strong> 다운로드 중...")
-            self.update_progress(20)
-            if download_update(download_url):
-                self.ui.label_3.setText("<strong>업데이트 완료</strong> 설치 중...")
-                self.update_progress(50)
-                install_update()
-                self.ui.label_3.setText("<strong>업데이트 적용 완료</strong> 프로그램 재시작 중...")
-                self.update_progress(100)
-                return
-        
-        self.ui.label_3.setText("<strong>최신 버전입니다.</strong>")
-        self.update_progress(100)
-        QtCore.QTimer.singleShot(1000, self.start_main_window)  # 1초 후 메인 화면으로 전환
+    def set_status_text(self, text):
+        """로딩 창의 상태 메시지 업데이트"""
+        self.ui.label_3.setText(text)
+        QApplication.processEvents()  # ✅ UI 업데이트 강제 실행
 
     def update_progress(self, value):
+        """프로그레스 바 값 업데이트"""
         self.ui.progressBar.setValue(value)
         QApplication.processEvents()
 
     def start_main_window(self):
+        """업데이트 완료 후 메인 윈도우 실행"""
         self.main = MainWindow()
         self.main.show()
         self.close()
-
 
 # 메인 윈도우 클래스
 class MainWindow(QMainWindow):

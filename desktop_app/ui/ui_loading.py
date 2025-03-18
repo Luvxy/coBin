@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'loadingvAFzyv.ui'
+## Form generated from reading UI file 'loadingmEpcMP.ui'
 ##
 ## Created by: Qt User Interface Compiler version 5.14.1
 ##
@@ -27,7 +27,7 @@ class loading(object):
         self.frame.setObjectName(u"frame")
         self.frame.setGeometry(QRect(10, 10, 661, 431))
         self.frame.setStyleSheet(u"QFrame{\n"
-"	background: rgb(255, 255, 255);\n"
+"	background: rgb(3, 76, 83);\n"
 "	border-radius: 10px;\n"
 "}")
         self.frame.setFrameShape(QFrame.StyledPanel)
@@ -43,17 +43,23 @@ class loading(object):
         font.setStrikeOut(False)
         font.setKerning(True)
         self.label.setFont(font)
+        self.label.setStyleSheet(u"QLabel{\n"
+"	color: rgb(255, 255, 255);\n"
+"}")
         self.label.setAlignment(Qt.AlignCenter)
         self.label_2 = QLabel(self.frame)
         self.label_2.setObjectName(u"label_2")
         self.label_2.setGeometry(QRect(0, 200, 661, 20))
+        self.label_2.setStyleSheet(u"QLabel{\n"
+"	color: rgb(255, 255, 255);\n"
+"}")
         self.label_2.setAlignment(Qt.AlignCenter)
         self.progressBar = QProgressBar(self.frame)
         self.progressBar.setObjectName(u"progressBar")
         self.progressBar.setGeometry(QRect(57, 260, 541, 21))
-        self.progressBar.setStyleSheet(u"QProgressBar{\n"
+        self.progressBar.setStyleSheet(u"	QProgressBar{\n"
 "	background-color: rgb(255, 193, 180);\n"
-"	color: rgb(255, 255, 255);\n"
+"	color: rgb(0, 0, 0);\n"
 "	border-style: none;\n"
 "	border-radius: 10px;\n"
 "	text-align: center;\n"
@@ -61,12 +67,15 @@ class loading(object):
 "\n"
 "QProgressBar::chunk{\n"
 "	border-radius: 10px;\n"
-"	background-color: qlineargradient(spread:pad, x1:0, y1:0.477, x2:1, y2:0.471, stop:0 rgba(3, 76, 83, 255), stop:1 rgba(0, 112, 116, 255));\n"
+"	background-color: rgb(243, 140, 121)\n"
 "}")
         self.progressBar.setValue(24)
         self.label_3 = QLabel(self.frame)
         self.label_3.setObjectName(u"label_3")
         self.label_3.setGeometry(QRect(0, 290, 661, 20))
+        self.label_3.setStyleSheet(u"QLabel{\n"
+"	color: rgb(255, 255, 255);\n"
+"}")
         self.label_3.setAlignment(Qt.AlignCenter)
         MainWindow.setCentralWidget(self.centralwidget)
 

@@ -27,24 +27,34 @@ import subprocess
 # GitHub 저장소 정보
 GITHUB_REPO = "luvxy/coBin"  # 변경 필요
 LATEST_RELEASE_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
+TOKEN = "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"
 DOWNLOAD_PATH = "update.zip"
 EXTRACT_FOLDER = "update_temp"
-CURRENT_VERSION = "v1.0.0"  # 현재 버전 (매 빌드마다 업데이트 필요)
+CURRENT_VERSION = "v1.0.2"  # 현재 버전 (매 빌드마다 업데이트 필요)
 
 def get_latest_release():
-    """GitHub에서 최신 릴리스 버전 및 다운로드 URL 가져오기"""
-    response = requests.get(LATEST_RELEASE_URL)
+    """GitHub에서 최신 릴리스 버전 및 다운로드 URL 가져오기 (Private Repo 지원)"""
+    headers = {"Authorization": f"token {TOKEN}"}
+    response = requests.get(LATEST_RELEASE_URL, headers=headers)
+    
+    print(response.status_code)
+
     if response.status_code == 200:
         data = response.json()
+        print(data)
         version = data["tag_name"]  # 최신 버전 태그
         for asset in data["assets"]:
             if asset["name"].endswith(".zip"):
                 return version, asset["browser_download_url"]
+    else:
+        print(f"API 요청 실패: {response.status_code}, 메시지: {response.text}")
     return None, None
 
 def download_update(url):
     """업데이트 파일 다운로드"""
-    response = requests.get(url, stream=True)
+    headers = {"Authorization": f"token {TOKEN}"}
+    response = requests.get(url, stream=True, headers=headers)
+    
     if response.status_code == 200:
         with open(DOWNLOAD_PATH, "wb") as file:
             for chunk in response.iter_content(1024):
@@ -53,31 +63,16 @@ def download_update(url):
     return False
 
 def install_update():
-    """업데이트 파일 압축 해제 및 덮어쓰기"""
-    if os.path.exists(EXTRACT_FOLDER):
-        shutil.rmtree(EXTRACT_FOLDER)
-    os.makedirs(EXTRACT_FOLDER)
-
-    with zipfile.ZipFile(DOWNLOAD_PATH, "r") as zip_ref:
-        zip_ref.extractall(EXTRACT_FOLDER)
-
-    # 현재 실행 중인 파일 경로 가져오기
-    exe_path = sys.executable  # PyInstaller 빌드된 실행 파일 경로
-    new_exe_path = os.path.join(EXTRACT_FOLDER, os.path.basename(exe_path))
+    """업데이트 파일을 덮어쓰기"""
+    exe_path = sys.executable  # 현재 실행 중인 파일 경로
+    new_exe_path = DOWNLOAD_PATH  # `CoB2n.exe`가 그대로 다운로드됨
 
     if os.path.exists(new_exe_path):
-        # 현재 실행 중인 파일을 종료 후 교체
         print("업데이트 적용 중...")
         shutil.move(new_exe_path, exe_path)
         os.chmod(exe_path, 0o755)
 
-    # 정리
-    shutil.rmtree(EXTRACT_FOLDER)
-    os.remove(DOWNLOAD_PATH)
-    
     print("업데이트 완료! 프로그램을 다시 시작합니다.")
-    
-    # 프로그램 자동 재실행
     subprocess.Popen([exe_path])
     sys.exit(0)
 
@@ -85,20 +80,12 @@ def check_for_update():
     """현재 버전과 최신 버전을 비교하여 업데이트 수행"""
     latest_version, download_url = get_latest_release()
 
-    if latest_version and latest_version != CURRENT_VERSION:
+    if latest_version and latest_version != "v1.0.0":  # ❗ 수동으로 CURRENT_VERSION 비교
         print(f"새로운 업데이트 발견: {latest_version}")
         if download_update(download_url):
             install_update()
     else:
         print("최신 버전입니다.")
-
-
-## ==> GLOBALS
-counter = 0
-
-import os
-import sys
-import shutil
 
 def resource_path(relative_path):
     """ PyInstaller 실행 파일에서도 리소스 경로를 찾을 수 있도록 설정 """
@@ -206,63 +193,47 @@ class LoadingScreen(QMainWindow):
         self.ui = loading()
         self.ui.setupUi(self)
 
-        ## UI ==> INTERFACE CODES
-        ########################################################################
-
-        ## REMOVE TITLE BAR
         self.setWindowFlag(QtCore.Qt.FramelessWindowHint)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
 
-
-        ## DROP SHADOW EFFECT
         self.shadow = QGraphicsDropShadowEffect(self)
         self.shadow.setBlurRadius(20)
         self.shadow.setXOffset(0)
         self.shadow.setYOffset(0)
         self.shadow.setColor(QColor(0, 0, 0, 60))
 
-        ## QTIMER ==> START
-        self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.progress)
-        # TIMER IN MILLISECONDS
-        self.timer.start(35)
+        ## 상태 메시지 변경 및 업데이트 시작
+        QtCore.QTimer.singleShot(500, lambda: self.ui.label_3.setText("<strong>업데이트 확인 중...</strong>"))
+        QtCore.QTimer.singleShot(1000, self.check_for_update)  # 1초 후 업데이트 확인 시작
 
-        # Change Texts
-        QtCore.QTimer.singleShot(1000, lambda: self.ui.label_3.setText("<strong>LOADING...</strong> 데이터베이스 연결중"))
-        QtCore.QTimer.singleShot(1500, lambda: self.ui.label_3.setText("<strong>LOADING...</strong> 차트 그리는중"))
-        QtCore.QTimer.singleShot(2000, lambda: self.ui.label_3.setText("<strong>LOADING...</strong> 블록 생성중"))
-        QtCore.QTimer.singleShot(2500, lambda: self.ui.label_3.setText("<strong>LOADING...</strong> 전략 로딩중"))
-        QtCore.QTimer.singleShot(3000, lambda: self.ui.label_3.setText("<strong>LOADING...</strong> 화면 구성중"))
-
-
-        ## SHOW ==> MAIN WINDOW
-        ########################################################################
         self.show()
-        ## ==> END ##
 
-    ## ==> APP FUNCTIONS
-    ########################################################################
-    def progress(self):
+    def check_for_update(self):
+        latest_version, download_url = get_latest_release()
 
-        global counter
+        if latest_version and latest_version != CURRENT_VERSION:
+            self.ui.label_3.setText(f"<strong>업데이트 발견: {latest_version}</strong> 다운로드 중...")
+            self.update_progress(20)
+            if download_update(download_url):
+                self.ui.label_3.setText("<strong>업데이트 완료</strong> 설치 중...")
+                self.update_progress(50)
+                install_update()
+                self.ui.label_3.setText("<strong>업데이트 적용 완료</strong> 프로그램 재시작 중...")
+                self.update_progress(100)
+                return
+        
+        self.ui.label_3.setText("<strong>최신 버전입니다.</strong>")
+        self.update_progress(100)
+        QtCore.QTimer.singleShot(1000, self.start_main_window)  # 1초 후 메인 화면으로 전환
 
-        # SET VALUE TO PROGRESS BAR
-        self.ui.progressBar.setValue(counter)
+    def update_progress(self, value):
+        self.ui.progressBar.setValue(value)
+        QApplication.processEvents()
 
-        # CLOSE SPLASH SCREE AND OPEN APP
-        if counter > 100:
-            # STOP TIMER
-            self.timer.stop()
-
-            # SHOW MAIN WINDOW
-            self.main = MainWindow()
-            self.main.show()
-
-            # CLOSE SPLASH SCREEN
-            self.close()
-
-        # INCREASE COUNTER
-        counter += 1
+    def start_main_window(self):
+        self.main = MainWindow()
+        self.main.show()
+        self.close()
 
 
 # 메인 윈도우 클래스

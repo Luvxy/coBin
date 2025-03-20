@@ -29,18 +29,25 @@ import pyqtgraph as pg
 import psutil
 
 def is_already_running():
-    """현재 프로그램이 이미 실행 중인지 확인"""
+    """현재 디렉토리에 'cobin.exe' 이름의 실행 파일이 2개 이상 실행 중인지 확인"""
     current_pid = os.getpid()
-    current_executable = sys.executable
+    current_executable = os.path.basename(sys.executable)  # 현재 실행 파일 이름
 
-    for proc in psutil.process_iter(['pid', 'exe']):
+    # 'cobin.exe' 이름의 실행 파일 개수 확인
+    count = 0
+    for proc in psutil.process_iter(['pid', 'name']):
         try:
-            if proc.info['pid'] != current_pid and proc.info['exe'] == current_executable:
-                return True
+            if proc.info['name'] == "cobin.exe":
+                count += 1
+                # 현재 프로세스는 제외
+                if proc.info['pid'] == current_pid:
+                    count -= 1
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
 
-    return False
+    # 'cobin.exe'가 2개 이상 실행 중이면 True 반환
+    print(f"[INFO] 현재 실행 중인 'cobin.exe' 개수: {count}")
+    return count >= 2
 
 def resource_path(relative_path):
     """ PyInstaller 실행 파일에서도 리소스 경로를 찾을 수 있도록 설정 """
@@ -197,6 +204,7 @@ class MainWindow(QMainWindow):
 
         # ✅ Upbit API 초기화
         self.upbit = Upbit_api(self.access_key, self.secret_key)
+        self.upbit.create_user()
 
         # UI 초기화 및 신호 연결
         self.setup_ui()
@@ -212,7 +220,6 @@ class MainWindow(QMainWindow):
         """신호 연결"""
         self.ui.save_button.clicked.connect(self.save_api)
         self.ui.start_button.clicked.connect(lambda: self.blockFrame.run_all_blocks(self.ui.strategy_combo_2.currentText()))
-        self.ui.start_button_2.clicked.connect(self.blockFrame.stop_all_blocks)
         self.ui.stop_button.clicked.connect(self.blockFrame.stop_all_blocks)
         self.ui.coin_selete.currentIndexChanged.connect(self.update_chart)
         self.ui.coin_selete_2.currentIndexChanged.connect(self.update_chart)
@@ -220,6 +227,8 @@ class MainWindow(QMainWindow):
         self.ui.buy_button.clicked.connect(self.buy_market_order)
         self.ui.buy_button_2.clicked.connect(self.sell_market_order)
         self.ui.strategy_combo.currentIndexChanged.connect(self.load_strategy)
+        self.ui.start_button_2.clicked.connect(self.save_custom_strategy)
+        self.ui.clear_button.clicked.connect(self.blockFrame.clear_blocks)
 
     def setup_tab1(self):
         """Tab1 초기화 (그래프 복구)"""
@@ -253,6 +262,10 @@ class MainWindow(QMainWindow):
         self.ui.strategy_combo_2.addItems(["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-DOGE"])
         self.graph_layout = QVBoxLayout(self.ui.graph)
         self.graph_layout.addWidget(self.graph_widget)
+        
+        self.blance = self.upbit.get_balance("KRW-BTC")
+        self.ui.label_3.setText(f"보유량: {self.blance}")
+        self.ui.label_6.setText(f"KRW: {self.upbit.get_balance('KRW')}")
 
         # 초기 차트 로드
         self.current_coin = "KRW-BTC"
@@ -261,6 +274,7 @@ class MainWindow(QMainWindow):
     def setup_tab2(self):
         """Tab2 초기화"""
         self.blockFrame = BlockMain(self.upbit)
+        self.ui.pushButton.clicked.connect(self.blockFrame.add_block)
         self.ui.verticalLayout.addWidget(self.blockFrame)
         self.blockFrame.history = self.ui.history
 
@@ -330,6 +344,14 @@ class MainWindow(QMainWindow):
         
         QMessageBox.information(self, 'API 저장', 'API 키가 저장되었습니다.')
         
+        self.upbit = Upbit_api(self.access_key, self.secret_key)
+        
+        ticker = self.ui.coin_selete.currentText()
+        
+        self.blance = self.upbit.get_balance(ticker)
+        self.ui.label_3.setText(f"보유량: {self.blance}")
+        self.ui.label_6.setText(f"KRW: {self.upbit.get_balance('KRW')}")
+        
         self.upbit.create_user()
         if self.upbit.user is None:
             QMessageBox.critical(self, 'API 연결 실패', 'API 키가 올바르지 않습니다.')
@@ -338,6 +360,8 @@ class MainWindow(QMainWindow):
     def buy_market_order(self):
         ticker = self.ui.coin_selete.currentText()
         cash = self.ui.direct_input_2.text()
+        
+        cash = int(cash)*0.9995
         
         self.upbit.buy_market_order(ticker, cash)
         
@@ -411,9 +435,10 @@ class MainWindow(QMainWindow):
 
 
     
-    def load_strategy(self, strategy_name):
+    def load_strategy(self):
         """ 기본 전략 불러오기 """
         self.blockFrame.clear_blocks()
+        strategy_name = self.ui.strategy_combo.currentText()
 
         if strategy_name == "기본전략":
             self.load_custom_strategy("default")
@@ -523,13 +548,12 @@ class SpleshScreen(QMainWindow):
         
         
 if __name__ == "__main__":
+    app = QApplication(sys.argv)
     if is_already_running():
         # 메세지 박스로 이미 실행 중임을 알림
         print("[INFO] 이미 실행 중인 프로그램이 있습니다.")
         QMessageBox.critical(None, "오류", "이미 실행 중인 프로그램이 있습니다.")
         sys.exit(1)
-        
-    app = QApplication(sys.argv)
     # window = SpleshScreen()
     # window.show()
     # window = LoadingScreen()

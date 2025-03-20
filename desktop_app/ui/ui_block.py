@@ -808,15 +808,16 @@ class BlockWorker(QThread):
     def run(self):
         while self.running:
             if self.block.conditions:
-                results = [cond.check_condition() for cond in self.block.conditions]
+                # 조건 결과를 "만족"/"미충족"으로 변환
+                results = ["만족" if cond.check_condition() else "미충족" for cond in self.block.conditions]
                 self.log_signal.emit(f"Block 실행 결과: {results}")
-                
-                if all(results):  # 모든 조건이 True일 경우 액션 실행
+
+                # 모든 조건이 "만족"일 경우 액션 실행
+                if all(cond.check_condition() for cond in self.block.conditions):
                     action_result = self.block.action.run_action()
                     self.log_signal.emit(action_result)
-
             else:
-                # ✅ 조건이 없을 경우 액션 바로 실행
+                # 조건이 없을 경우 액션 바로 실행
                 action_result = self.block.action.run_action()
                 self.log_signal.emit(action_result)
 
@@ -861,6 +862,57 @@ class BlockConfigDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("조건/액션 추가")
         self.upbit = upbit
+        
+        
+        # ✅ 다이얼로그 스타일 설정
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #2E3440;  /* 다이얼로그 배경색 */
+                border-radius: 10px;  /* 모서리 둥글게 */
+            }
+            QLabel {
+                color: #D8DEE9;  /* 라벨 텍스트 색상 */
+                font-size: 12px;  /* 라벨 글꼴 크기 */
+            }
+            QComboBox {
+                background-color: #3B4252;  /* 콤보박스 배경색 */
+                border: 1px solid #4C566A;  /* 테두리 색상 */
+                border-radius: 5px;  /* 모서리 둥글게 */
+                padding: 5px;  /* 내부 여백 */
+                color: #ECEFF4;  /* 텍스트 색상 */
+            }
+            QComboBox QAbstractItemView {
+                background-color: #3B4252;  /* 드롭다운 배경색 */
+                border: 1px solid #4C566A;  /* 드롭다운 테두리 */
+                color: #ECEFF4;  /* 드롭다운 텍스트 색상 */
+            }
+            QLineEdit {
+                background-color: #3B4252;  /* 입력 필드 배경색 */
+                border: 1px solid #4C566A;  /* 테두리 색상 */
+                border-radius: 5px;  /* 모서리 둥글게 */
+                padding: 5px;  /* 내부 여백 */
+                color: #ECEFF4;  /* 텍스트 색상 */
+            }
+            QLineEdit:focus {
+                border: 1px solid #81A1C1;  /* 포커스 시 테두리 색상 */
+            }
+            QCheckBox {
+                color: #ECEFF4;  /* 체크박스 텍스트 색상 */
+            }
+            QPushButton {
+                background-color: #81A1C1;  /* 버튼 배경색 */
+                color: #2E3440;  /* 버튼 텍스트 색상 */
+                border: none;
+                border-radius: 5px;  /* 모서리 둥글게 */
+                padding: 8px 12px;  /* 내부 여백 */
+            }
+            QPushButton:hover {
+                background-color: #5E81AC;  /* 호버 시 배경색 */
+            }
+            QPushButton:pressed {
+                background-color: #4C566A;  /* 클릭 시 배경색 */
+            }
+        """)
 
         self.layout = QHBoxLayout()
         self.setLayout(self.layout)
@@ -1225,6 +1277,6 @@ class BlockMain(QWidget):
             widget = self.layout.itemAt(i).widget()
             if widget:
                 widget.setParent(None)
-        self.blocks.clear
-
+        
+        self.blocks.clear()
 

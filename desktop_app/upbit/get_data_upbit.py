@@ -213,7 +213,7 @@ class OrderBookWidget(QWidget):
 
         # ✅ 타이머 설정 (2초마다 업데이트)
         self.timer = QTimer(self)
-        self.timer.setInterval(1000)
+        self.timer.setInterval(2000)
         self.timer.timeout.connect(self.update_orderbook)
         self.timer.start()
 

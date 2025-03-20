@@ -171,7 +171,7 @@ class MainWindow(QMainWindow):
         self.ui.setupUi(self)  # UI 초기화
 
         # 타이틀바 숨기기
-        self.setWindowFlag(QtCore.Qt.FramelessWindowHint)
+        self.setWindowFlag(QtCore.Qt.FramelessWindowHint)  # 모든 테두리 제거
 
         # ✅ 화면 크기 설정
         screen_geometry = QApplication.primaryScreen().geometry()
@@ -212,6 +212,7 @@ class MainWindow(QMainWindow):
         """신호 연결"""
         self.ui.save_button.clicked.connect(self.save_api)
         self.ui.start_button.clicked.connect(lambda: self.blockFrame.run_all_blocks(self.ui.strategy_combo_2.currentText()))
+        self.ui.start_button_2.clicked.connect(self.blockFrame.stop_all_blocks)
         self.ui.stop_button.clicked.connect(self.blockFrame.stop_all_blocks)
         self.ui.coin_selete.currentIndexChanged.connect(self.update_chart)
         self.ui.coin_selete_2.currentIndexChanged.connect(self.update_chart)
@@ -238,12 +239,18 @@ class MainWindow(QMainWindow):
 
         # ✅ 거래량 차트 추가 (pyqtgraph 사용)
         self.graph_widget = PlotWidget(viewBox=CustomViewBox())  # CustomViewBox 사용
-        self.graph_widget.setBackground('w')  # 배경색 설정
-        self.graph_widget.showGrid(x=True, y=True)  # 그리드 표시
-        self.graph_widget.setLabel('left', 'Volume')
-        self.graph_widget.setLabel('bottom', 'Time')
+        self.graph_widget.setBackground('#2E3440')  # 배경색 설정
+        self.graph_widget.showGrid(x=False, y=False)  # 격자 비활성화
+        self.graph_widget.setLabel('left', 'Volume', color='#ECEFF4', size='12pt')  # Y축 라벨
+        self.graph_widget.setLabel('bottom', 'Time', color='#ECEFF4', size='12pt')  # X축 라벨
+        self.graph_widget.getAxis('left').setPen(pg.mkPen(color='#ECEFF4', width=1.5))  # Y축 색상 및 두께
+        self.graph_widget.getAxis('bottom').setPen(pg.mkPen(color='#ECEFF4', width=1.5))  # X축 색상 및 두께
+        self.graph_widget.getAxis('left').setStyle(tickTextOffset=10, tickFont=pg.QtGui.QFont("Arial", 12))  # Y축 폰트
+        self.graph_widget.getAxis('bottom').setStyle(tickTextOffset=10, tickFont=pg.QtGui.QFont("Arial", 12))  # X축 폰트
+        self.graph_widget.setMouseEnabled(x=False, y=False)  # 마우스 줌/팬 비활성화
 
         self.ui.coin_selete.addItems(["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-DOGE"])
+        self.ui.strategy_combo_2.addItems(["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-DOGE"])
         self.graph_layout = QVBoxLayout(self.ui.graph)
         self.graph_layout.addWidget(self.graph_widget)
 
@@ -255,6 +262,7 @@ class MainWindow(QMainWindow):
         """Tab2 초기화"""
         self.blockFrame = BlockMain(self.upbit)
         self.ui.verticalLayout.addWidget(self.blockFrame)
+        self.blockFrame.history = self.ui.history
 
     def preload_tab2_data(self):
         """tab2에서 필요한 데이터를 미리 로드"""
@@ -268,15 +276,15 @@ class MainWindow(QMainWindow):
         # ✅ 로딩 화면 표시
         self.loading_screen = LoadingDialog()
         self.loading_screen.show_loading()
-    
+
         try:
             new_coin = self.ui.coin_selete.currentText()
             if new_coin == "선택":
                 new_coin = "KRW-BTC"
-    
+
             interval = self.ui.coin_selete_2.currentText()
             count = int(self.ui.coin_selete_3.currentText())
-    
+
             interval_mapping = {
                 "1분": "minute1",
                 "3분": "minute3",
@@ -286,24 +294,24 @@ class MainWindow(QMainWindow):
                 "1시간": "minute60"
             }
             interval = interval_mapping.get(interval, "minute30")
-            
-            self.chart.change_coin(new_coin, interval, count)
-    
+
+            # self.chart.change_coin(new_coin, interval, count)
+
             # ✅ 차트 데이터 로드
             df = pyupbit.get_ohlcv(new_coin, interval=interval, count=count)
             if df is None or df.empty:
                 self.loading_screen.hide_loading()
                 QMessageBox.warning(self, "데이터 로드 실패", f"{new_coin}의 데이터를 불러오지 못했습니다.")
                 return
-    
+
             df['time'] = df.index
             self.graph_widget.clear()  # 기존 데이터 삭제
-            self.graph_widget.plot(df['time'], df['volume'], pen=pg.mkPen(color='b', width=2))
-    
+            self.graph_widget.plot(df['time'], df['volume'], pen=pg.mkPen(color='#81A1C1', width=2.5))  # 거래량 차트
+
         except Exception as e:
             print(e)
             QMessageBox.critical(self, "오류", f"차트 업데이트 중 오류가 발생했습니다: {e}")
-            
+
         finally:
             # ✅ 로딩 화면 종료
             self.loading_screen.hide_loading()

@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import *
 from PySide6.QtCharts import QCandlestickSeries, QChart, QChartView, QDateTimeAxis, QValueAxis, QCandlestickSet
 from PySide6.QtGui import QPainter
+from PySide6 import QtGui
 from PySide6.QtCore import Qt, QDateTime, QThread, Signal, QTimer
 import pyupbit
 import time
@@ -49,21 +50,40 @@ class ChartWidget(QWidget):
         self.worker.start()
 
         self.series = QCandlestickSeries()
-        self.series.setIncreasingColor(Qt.red)
-        self.series.setDecreasingColor(Qt.blue)
+        self.series.setIncreasingColor("#00FFFF")  # 상승 캔들 색상 (형광 파란색)
+        self.series.setDecreasingColor("#FF4500")  # 하락 캔들 색상 (형광 빨간색)
+
+        # ✅ 캔들 외곽선 설정
+        self.series.setBodyOutlineVisible(True)  # 외곽선 표시
+        self.series.setPen(QtGui.QPen(QtGui.QColor("#000000"), 1))  # 외곽선 색상: 하얀색, 두께: 1px
+
 
         self.chart = QChart()
         self.chart.legend().hide()
         self.chart.addSeries(self.series)
 
+        # ✅ 차트 스타일 설정
+        self.chart.setBackgroundBrush(QtGui.QBrush(QtGui.QColor("#1C1F26")))  # 더 어두운 배경색
+        self.chart.setPlotAreaBackgroundBrush(QtGui.QBrush(QtGui.QColor("#2B303B")))  # 플롯 영역 배경색
+        self.chart.setPlotAreaBackgroundVisible(True)
+        
+        # X축 설정
         self.axis_x = QDateTimeAxis()
         self.axis_x.setFormat("hh:mm:ss")
+        self.axis_x.setLabelsBrush(QtGui.QBrush(QtGui.QColor("#D8DEE9")))  # X축 라벨 색상
+        self.axis_x.setLinePen(QtGui.QPen(QtGui.QColor("#4C566A")))  # X축 선 색상
         self.chart.addAxis(self.axis_x, Qt.AlignBottom)
         self.series.attachAxis(self.axis_x)
 
+        # Y축 설정
         self.axis_y.setLabelFormat("%i")
+        self.axis_y.setLabelsBrush(QtGui.QBrush(QtGui.QColor("#D8DEE9")))  # Y축 라벨 색상
+        self.axis_y.setLinePen(QtGui.QPen(QtGui.QColor("#4C566A")))  # Y축 선 색상
         self.chart.addAxis(self.axis_y, Qt.AlignLeft)
         self.series.attachAxis(self.axis_y)
+        
+        # ✅ 격자 제거
+        self.chart.setPlotAreaBackgroundVisible(False)
         
         self.load_data(self.interval, self.count)
 
@@ -100,31 +120,6 @@ class ChartWidget(QWidget):
         self.update_axis_y(df['low'].min(), df['high'].max())
         self.update_axis_x()
     
-    def load_data(self, interval='minute30', count=80):
-        """코인 차트 데이터를 로드"""
-        df = pyupbit.get_ohlcv(self.coin, interval=interval, count=count)
-        if df is None or df.empty:
-            print(f"코인 데이터 로드 실패: {self.coin}")
-            return
-
-        self.series.clear()
-        for index in df.index:
-            open_price = df.loc[index, 'open']
-            high = df.loc[index, 'high']
-            low = df.loc[index, 'low']
-            close = df.loc[index, 'close']
-
-            format = "%Y-%m-%d %H:%M:%S"
-            str_time = index.strftime(format)
-            dt = QDateTime.fromString(str_time, "yyyy-MM-dd hh:mm:ss")
-            ts = dt.toMSecsSinceEpoch()
-
-            elem = QCandlestickSet(open_price, high, low, close, ts)
-            self.series.append(elem)
-        
-        self.update_axis_y(df['low'].min(), df['high'].max())
-        self.update_axis_x()
-    
     def update_axis_x(self):
         """X축 범위를 interval과 count에 맞게 조정"""
         if not self.series.sets():
@@ -133,9 +128,6 @@ class ChartWidget(QWidget):
         
         first_time = int(self.series.sets()[0].timestamp())
         last_time = int(self.series.sets()[-1].timestamp())
-        
-        first_time = max(first_time, -9223372036854775808)  # 최소값 제한
-        last_time = min(last_time, 9223372036854775807)  # 최대값 제한
         
         self.axis_x.setRange(QDateTime.fromMSecsSinceEpoch(first_time), QDateTime.fromMSecsSinceEpoch(last_time))
     
@@ -183,13 +175,31 @@ class OrderBookWidget(QWidget):
         self.coin_symbol = coin_symbol
         self.setWindowTitle(f"OrderBook - {self.coin_symbol}")
 
-        layout = QVBoxLayout(self) 
+        layout = QVBoxLayout(self)
 
         self.tableWidget = QTableWidget(self)
         self.tableWidget.setColumnCount(3)
         self.tableWidget.setRowCount(20)
         self.tableWidget.verticalHeader().setVisible(False)
         self.tableWidget.horizontalHeader().setVisible(False)
+
+        # ✅ 테이블 스타일 설정
+        self.tableWidget.setStyleSheet("""
+            QTableWidget {
+                background-color: #2E3440;  /* 테이블 배경색 */
+                border: 2px solid #4C566A;  /* 테두리 색상 */
+                gridline-color: #4C566A;  /* 셀 간격선 색상 */
+                border-radius: 8px;  /* 모서리 둥글게 */
+            }
+            QTableWidget::item {
+                color: #D8DEE9;  /* 글자 색상 */
+                padding: 5px;  /* 셀 내부 여백 */
+            }
+            QTableWidget::item:selected {
+                background-color: #81A1C1;  /* 선택된 셀 배경색 */
+                color: #2E3440;  /* 선택된 셀 글자 색상 */
+            }
+        """)
 
         # ✅ 크기 자동 조정 설정
         self.tableWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -218,9 +228,9 @@ class OrderBookWidget(QWidget):
     def resizeEvent(self, event):
         """부모 위젯 크기에 맞게 자동 조정"""
         table_width = self.width()
-        self.tableWidget.setColumnWidth(0, int(table_width * 0.4))
+        self.tableWidget.setColumnWidth(0, int(table_width * 0.38))
         self.tableWidget.setColumnWidth(1, int(table_width * 0.2))
-        self.tableWidget.setColumnWidth(2, int(table_width * 0.4))
+        self.tableWidget.setColumnWidth(2, int(table_width * 0.38))
         super().resizeEvent(event)
 
     def update_orderbook(self):
@@ -257,7 +267,7 @@ class OrderBookWidget(QWidget):
             item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
             self.tableWidget.setItem(i, 1, item)
 
-            self.set_progress_bar(i, 0, size, max_size, "blue", True)
+            self.set_progress_bar(i, 0, size, max_size, "#ff6666", True)  # 빨간색 ProgressBar
 
         # 매수(bids)
         for i, bid in enumerate(bids, start=10):
@@ -268,7 +278,7 @@ class OrderBookWidget(QWidget):
             item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
             self.tableWidget.setItem(i, 1, item)
 
-            self.set_progress_bar(i, 2, size, max_size, "red", False)
+            self.set_progress_bar(i, 2, size, max_size, "#66b3ff", False)  # 파란색 ProgressBar
 
     def set_progress_bar(self, row, col, size, max_size, color, inverted):
         """호가 수량을 시각적으로 나타내는 ProgressBar 설정"""
@@ -279,14 +289,23 @@ class OrderBookWidget(QWidget):
         pbar.setInvertedAppearance(inverted)
         pbar.setAlignment(Qt.AlignRight | Qt.AlignVCenter if inverted else Qt.AlignLeft | Qt.AlignVCenter)
         pbar.setRange(0, int(max_size))
-        pbar.setFormat(str(size))
+        pbar.setFormat(f"{size:.2f}")  # 소수점 2자리까지 표시
         pbar.setValue(int(size))
         pbar.setStyleSheet(f"""
-            QProgressBar {{background-color : rgba(0, 0, 0, 0%); border: 1}}
-            QProgressBar::Chunk {{background-color : rgba({'0, 0, 255' if color == 'blue' else '255, 0, 0'}, 20%); border: 1}}
+            QProgressBar {{
+                background-color: #3B4252;  /* ProgressBar 배경색 */
+                border: 1px solid #4C566A;  /* ProgressBar 테두리 */
+                border-radius: 5px;  /* 모서리 둥글게 */
+                text-align: center;  /* 텍스트 중앙 정렬 */
+                padding: 0px 5px;  /* 좌우 여백 5px */
+            }}
+            QProgressBar::chunk {{
+                background-color: {color};  /* ProgressBar 색상 */
+                border-radius: 5px;  /* 모서리 둥글게 */
+            }}
         """)
         layout.addWidget(pbar)
-        layout.setContentsMargins(0,0,0,0)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setAlignment(Qt.AlignVCenter)
         widget.setLayout(layout)
         self.tableWidget.setCellWidget(row, col, widget)

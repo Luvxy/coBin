@@ -6,7 +6,7 @@ import pyupbit
 from PySide6.QtCore import Qt, QThread, Signal, QObject, QMutex, QWaitCondition
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QLabel,
-    QFrame, QDialog, QDialogButtonBox, QComboBox, QLineEdit, QCheckBox, QHBoxLayout
+    QFrame, QDialog, QDialogButtonBox, QComboBox, QLineEdit, QCheckBox, QHBoxLayout, QGroupBox
 )
 from PySide6.QtGui import QMovie
 from main import LoadingDialog
@@ -1070,17 +1070,51 @@ class BlockMain(QWidget):
         new_block = Block(None, [], 10)
         self.blocks.append(new_block)
 
-        block_frame = QFrame()
-        block_frame.setFrameShape(QFrame.StyledPanel)
-        block_layout = QHBoxLayout(block_frame)
+        # QGroupBox 생성
+        block_group = QGroupBox(f"Block {len(self.blocks)}")
+        block_group.setStyleSheet("""
+            QGroupBox {
+                background-color: #2E3440;  /* 배경색 */
+                border: 2px solid #4C566A;  /* 테두리 */
+                border-radius: 8px;  /* 모서리 둥글게 */
+                margin-top: 10px;  /* 제목과 내용 간격 */
+            }
+            QGroupBox::title {
+                color: #D8DEE9;  /* 제목 색상 */
+                font-size: 14px;  /* 제목 글꼴 크기 */
+                font-weight: bold;  /* 제목 글꼴 굵게 */
+                subcontrol-origin: margin;
+                subcontrol-position: top left;  /* 제목 위치 */
+                padding: 2px 10px;  /* 제목 여백 */
+                background-color: transparent;  /* 제목 배경 투명 */
+            }
+            QGroupBox:hover {
+                border: 2px solid #81A1C1;  /* 호버 시 테두리 색상 */
+            }
+        """)
+
+        block_layout = QHBoxLayout(block_group)
 
         # ─── 왼쪽 (라벨 & 리스트) ───
         left_layout = QVBoxLayout()
-        
-        block_label = QLabel(f"Block {len(self.blocks)}")
-        left_layout.addWidget(block_label)
 
         block_content = QListWidget()
+        block_content.setStyleSheet("""
+            QListWidget {
+                background-color: #3B4252;  /* 리스트 배경색 */
+                border: 1px solid #4C566A;  /* 테두리 색상 */
+                border-radius: 5px;  /* 모서리 둥글게 */
+                padding: 5px;  /* 내부 여백 */
+                color: #ECEFF4;  /* 글자 색상 */
+            }
+            QListWidget::item {
+                padding: 5px;  /* 항목 내부 여백 */
+            }
+            QListWidget::item:selected {
+                background-color: #81A1C1;  /* 선택된 항목 배경색 */
+                color: #2E3440;  /* 선택된 항목 글꼴 색상 */
+            }
+        """)
         left_layout.addWidget(block_content)
 
         block_layout.addLayout(left_layout)
@@ -1089,13 +1123,46 @@ class BlockMain(QWidget):
         right_layout = QVBoxLayout()
 
         interval_label = QLabel(f"실행 주기 설정 (초)")
+        interval_label.setStyleSheet("""
+            QLabel {
+                font-size: 12px;
+                color: #D8DEE9;
+            }
+        """)
         right_layout.addWidget(interval_label)
-        
+
         interval_edit = QLineEdit()
         interval_edit.setPlaceholderText("주기 (초)")
+        interval_edit.setStyleSheet("""
+            QLineEdit {
+                background-color: #3B4252;
+                border: 1px solid #4C566A;
+                border-radius: 5px;
+                padding: 5px;
+                color: #ECEFF4;
+            }
+            QLineEdit:focus {
+                border: 1px solid #81A1C1;  /* 포커스 시 테두리 색상 */
+            }
+        """)
         right_layout.addWidget(interval_edit)
 
         add_config_btn = QPushButton("+ 조건/액션 추가")
+        add_config_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #81A1C1;  /* 버튼 배경색 */
+                color: #2E3440;  /* 버튼 글꼴 색상 */
+                border: none;
+                border-radius: 5px;
+                padding: 8px 12px;
+            }
+            QPushButton:hover {
+                background-color: #5E81AC;  /* 호버 시 배경색 */
+            }
+            QPushButton:pressed {
+                background-color: #4C566A;  /* 클릭 시 배경색 */
+            }
+        """)
         add_config_btn.clicked.connect(lambda: self.open_add_dialog(new_block, block_content))
         right_layout.addWidget(add_config_btn)
 
@@ -1109,8 +1176,8 @@ class BlockMain(QWidget):
         block_layout.setStretch(1, 1)
 
         new_block.interval_edit = interval_edit
-        self.layout.addWidget(block_frame)
-        
+        self.layout.addWidget(block_group)
+
         return new_block  # ✅ 생성된 블록 객체 반환
 
     def run_all_blocks(self, coin):
@@ -1158,6 +1225,6 @@ class BlockMain(QWidget):
             widget = self.layout.itemAt(i).widget()
             if widget:
                 widget.setParent(None)
-        self.blocks.clear()
-            
+        self.blocks.clear
+
 

@@ -26,7 +26,21 @@ import shutil
 import subprocess
 from pyqtgraph import PlotWidget, plot, ViewBox
 import pyqtgraph as pg
+import psutil
 
+def is_already_running():
+    """현재 프로그램이 이미 실행 중인지 확인"""
+    current_pid = os.getpid()
+    current_executable = sys.executable
+
+    for proc in psutil.process_iter(['pid', 'exe']):
+        try:
+            if proc.info['pid'] != current_pid and proc.info['exe'] == current_executable:
+                return True
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+
+    return False
 
 def resource_path(relative_path):
     """ PyInstaller 실행 파일에서도 리소스 경로를 찾을 수 있도록 설정 """
@@ -501,6 +515,12 @@ class SpleshScreen(QMainWindow):
         
         
 if __name__ == "__main__":
+    if is_already_running():
+        # 메세지 박스로 이미 실행 중임을 알림
+        print("[INFO] 이미 실행 중인 프로그램이 있습니다.")
+        QMessageBox.critical(None, "오류", "이미 실행 중인 프로그램이 있습니다.")
+        sys.exit(1)
+        
     app = QApplication(sys.argv)
     # window = SpleshScreen()
     # window.show()

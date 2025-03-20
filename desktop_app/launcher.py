@@ -57,27 +57,6 @@ def get_latest_release():
     
     return None, None
 
-def launch_main_application():
-    """메인 애플리케이션 실행"""
-    exe_path = "cobin.exe"  # 메인 실행 파일 경로
-    if os.path.exists(exe_path):
-        print("[DEBUG] 메인 애플리케이션 실행 중...")
-        subprocess.Popen([exe_path])  # cobin.exe 실행
-        sys.exit(0)
-    else:
-        print("[ERROR] cobin.exe 파일을 찾을 수 없습니다. 설치를 진행합니다.")
-        QMessageBox.warning(None, "설치 필요", "cobin.exe 파일이 없습니다. 설치를 진행합니다.")
-        latest_version, download_url = get_latest_release()
-        if latest_version and download_url:
-            if download_update(download_url):
-                install_update(latest_version)
-            else:
-                QMessageBox.critical(None, "설치 실패", "cobin.exe 파일을 다운로드할 수 없습니다.")
-                sys.exit(1)
-        else:
-            QMessageBox.critical(None, "설치 실패", "릴리스 정보를 가져올 수 없습니다.")
-            sys.exit(1)
-
 def download_update(api_url):
     """GitHub API를 사용하여 업데이트 파일 다운로드"""
     headers = {
@@ -109,6 +88,12 @@ def install_update(update_versions):
     if os.path.exists(DOWNLOAD_PATH):
         print("업데이트 적용 중...")
 
+        # 기존 파일이 없으면 다운로드
+        if not os.path.exists(exe_path):
+            shutil.move(DOWNLOAD_PATH, exe_path)
+            print("새 파일을 설치했습니다.")
+            return
+        
         # 기존 백업 파일이 있으면 삭제
         if os.path.exists(new_exe_path):
             os.remove(new_exe_path)
@@ -123,6 +108,31 @@ def install_update(update_versions):
         set_current_version(update_versions)  # 새로운 버전 저장
         subprocess.Popen([exe_path])
         sys.exit(0)
+
+def launch_main_application():
+    """메인 애플리케이션 실행"""
+    exe_path = "cobin.exe"  # 메인 실행 파일 경로
+    if os.path.exists(exe_path):
+        print("[DEBUG] 메인 애플리케이션 실행 중...")
+        subprocess.Popen([exe_path])  # cobin.exe 실행
+        sys.exit(0)
+    else:
+        print("[ERROR] cobin.exe 파일을 찾을 수 없습니다. 설치를 진행합니다.")
+        QMessageBox.warning(None, "설치 필요", "파일이 없습니다. 설치를 진행합니다.")
+        latest_version, download_url = get_latest_release()
+        if latest_version and download_url:
+            if download_update(download_url):
+                install_update(latest_version)
+                QMessageBox.information(None, "설치 완료", "cobin.exe 설치가 완료되었습니다. 프로그램을 다시 시작합니다.")
+                set_current_version(latest_version)  # 새로운 버전 저장
+                subprocess.Popen([exe_path])  # cobin.exe 실행
+                sys.exit(0)
+            else:
+                QMessageBox.critical(None, "설치 실패", "cobin.exe 파일을 다운로드할 수 없습니다.")
+                sys.exit(1)
+        else:
+            QMessageBox.critical(None, "설치 실패", "릴리스 정보를 가져올 수 없습니다.")
+            sys.exit(1)
 
 class LoadingScreen(QMainWindow):
     def __init__(self):
@@ -156,14 +166,14 @@ class LoadingScreen(QMainWindow):
     
         # cobin.exe가 없는 경우 설치 진행
         if not os.path.exists(exe_path):
-            self.set_status_text("<strong>cobin.exe 파일이 없습니다. 설치를 진행합니다...</strong>")
+            self.set_status_text("<strong>설치를 진행합니다...</strong>")
             for i in range(0, 33):
                 self.ui.progressBar.setValue(i)
                 time.sleep(0.05)
             latest_version, download_url = get_latest_release()
             if latest_version and download_url:
                 if download_update(download_url):
-                    self.set_status_text("<strong>설치 완료</strong> 설치 중...")
+                    self.set_status_text("<strong>설치 완료</strong> 압축해제 중...")
                     for i in range(33, 53):
                         self.ui.progressBar.setValue(i)
                         time.sleep(0.05)
@@ -172,6 +182,7 @@ class LoadingScreen(QMainWindow):
                         self.ui.progressBar.setValue(i)
                         time.sleep(0.05)
                     self.set_status_text("<strong>설치 완료! 프로그램을 재시작합니다.</strong>")
+                    launch_main_application()
                 else:
                     QMessageBox.critical(self, "설치 실패", "cobin.exe 파일을 다운로드할 수 없습니다.")
                     sys.exit(1)

@@ -965,7 +965,7 @@ class BlockConfigDialog(QDialog):
             self.action_combo.show()
             self.load_action_fields(self.action_combo.currentText())
 
-    def load_action_fields(self, name):
+    def load_action_fields(self, name, is_action=False):
         """조건/액션 필드 로드"""
         self.clear_dynamic_fields()
 
@@ -974,9 +974,15 @@ class BlockConfigDialog(QDialog):
             registry = ConditionRegistry
         else:
             registry = ActionRegistry
+        
+        if is_action:
+            registry = ActionRegistry
 
+        # 레지스트리에서 클래스 가져오기
         action_cls = registry._registry.get(name)
         if not action_cls or not hasattr(action_cls, 'config_fields'):
+            print(f"'{name}'에 대한 config_fields를 찾을 수 없습니다.")
+            print(f"현재 레지스트리: {registry._registry.keys()}")
             return
 
         self.input_fields = {}
@@ -987,20 +993,21 @@ class BlockConfigDialog(QDialog):
             ui_type = field_info.get("ui_type", "line_edit")
             if ui_type == "line_edit":
                 input_widget = QLineEdit()
-                input_widget.setText(str(field_info['default']))
+                input_widget.setText(str(getattr(self, field_name, field_info['default'])))
             elif ui_type == "checkbox":
                 input_widget = QCheckBox()
-                input_widget.setChecked(bool(field_info['default']))
+                input_widget.setChecked(bool(getattr(self, field_name, field_info['default'])))
             elif ui_type == "dropdown":
                 input_widget = QComboBox()
                 for option in field_info.get("options", []):
                     input_widget.addItem(option)
+                input_widget.setCurrentText(str(getattr(self, field_name, field_info['default'])))
             else:
                 input_widget = QLineEdit()
 
             self.dynamic_fields_layout.addWidget(input_widget)
             self.input_fields[field_name] = (input_widget, field_info['type'], ui_type)
-
+            
     def clear_dynamic_fields(self):
         """동적 필드 초기화"""
         while self.dynamic_fields_layout.count():
@@ -1235,23 +1242,28 @@ class BlockMain(QWidget):
         item_text = item.text()
         is_condition = item_text.startswith("조건: ")
         obj_name = item_text.replace("조건: ", "").replace("액션: ", "")
+        action_name = item_text.replace("액션: ", "")
 
         # 조건 또는 액션 객체 찾기
         obj = None
+        is_action = False
         if is_condition:
             obj = next((cond for cond in block.conditions if cond.name == obj_name), None)
         else:
-            obj = block.action if block.action and block.action.name == obj_name else None
-
+            obj = block.action if block.action and block.action.name == action_name else None
+            is_action = True
         if not obj:
             return
-
+        
         # 수정/삭제 대화상자 열기
         dialog = BlockConfigDialog(parent=self, upbit=self.upbit)
-        dialog.load_action_fields(obj.obj_name)  # 기존 데이터 로드
+        if is_action:
+            dialog.load_action_fields(obj.obj_name, is_action=True)
+        else:
+            # 기존 데이터 로드
+            dialog.load_action_fields(obj.obj_name)  # 기존 데이터 로드
         dialog.setWindowTitle("조건/액션 수정")
-        dialog.layout.itemAt(0).widget().hide()  # 추가할 필드 선택 숨김
-
+        
         # 삭제 버튼 추가
         delete_button = dialog.button_box.addButton("삭제", QDialogButtonBox.DestructiveRole)
         delete_button.setStyleSheet("background-color: #BF616A; color: #ECEFF4;")  # 삭제 버튼 스타일

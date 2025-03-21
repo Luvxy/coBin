@@ -103,11 +103,11 @@ class User():
         pass
 
 class PdfViewer(QMainWindow):
-    def __init__(self, pdf_path):
+    def __init__(self, pdf_path, x=100, y=100, width=1400, height=800):
         super().__init__()
 
         self.setWindowTitle("PDF 도움말")
-        self.setGeometry(100, 100, 1400, 800) 
+        self.setGeometry(x, y, width, height) 
 
         # PDF 뷰어 설정
         self.pdf_view = QPdfView(self)
@@ -210,6 +210,7 @@ class MainWindow(QMainWindow):
         self.setup_ui()
         self.setup_signals()
         self.preload_tab2_data()
+        self.open_patchnote()
 
     def setup_ui(self):
         """UI 초기화"""
@@ -229,6 +230,7 @@ class MainWindow(QMainWindow):
         self.ui.strategy_combo.currentIndexChanged.connect(self.load_strategy)
         self.ui.start_button_2.clicked.connect(self.save_custom_strategy)
         self.ui.clear_button.clicked.connect(self.blockFrame.clear_blocks)
+        self.ui.pushButton_2.clicked.connect(self.open_pdf_viewer)
 
     def setup_tab1(self):
         """Tab1 초기화 (그래프 복구)"""
@@ -334,10 +336,10 @@ class MainWindow(QMainWindow):
     def update_main(self):
         """메인 화면 정보 업데이트"""
         ticker = self.ui.coin_selete.currentText()  # 선택된 코인
-        self.blance = self.upbit.get_balance(ticker)  # 보유 코인 수량
-        current_price = self.upbit.get_current_price(ticker)  # 현재가
-        krw_balance = self.upbit.get_balance("KRW")  # 보유 원화
-        avg_buy_price = self.upbit.get_avg_buy_price(ticker)  # 매수 평단가 가져오기
+        self.blance = self.upbit.get_balance(ticker) or 0.0  # 보유 코인 수량 (None일 경우 0.0으로 설정)
+        current_price = self.upbit.get_current_price(ticker) or 0.0  # 현재가 (None일 경우 0.0으로 설정)
+        krw_balance = self.upbit.get_balance("KRW") or 0.0  # 보유 원화 (None일 경우 0.0으로 설정)
+        avg_buy_price = self.upbit.get_avg_buy_price(ticker) or 0.0  # 매수 평단가 (None일 경우 0.0으로 설정)
 
         # 보유 KRW 계산: volume * 현재가 + KRW
         total_krw = (self.blance * current_price) + krw_balance
@@ -349,7 +351,7 @@ class MainWindow(QMainWindow):
         self.ui.label_7.setText(f"총 보유 KRW: {total_krw:.0f}")  # 총 보유 KRW 표시
 
         # 수익률 계산
-        if self.blance > 0:  # 보유량이 있을 경우에만 계산
+        if self.blance > 0 and avg_buy_price > 0:  # 보유량과 매수 평단가가 있을 경우에만 계산
             profit_rate = ((current_price - avg_buy_price) / avg_buy_price) * 100
 
             # 수익률 텍스트 생성 (HTML 사용)
@@ -530,6 +532,11 @@ class MainWindow(QMainWindow):
     def open_pdf_viewer(self):
         viewer_path = os.path.join(os.path.dirname(__file__), "resources", "프로그램 설명서.pdf")
         self.viewer = PdfViewer(viewer_path)  # PDF 파일 경로 설정
+        self.viewer.show()
+        
+    def open_patchnote(self):
+        viewer_path = os.path.join(os.path.dirname(__file__), "resources", "패치노트.pdf")
+        self.viewer = PdfViewer(viewer_path, width=880, height=650)  # PDF 파일 경로 설정
         self.viewer.show()
 
 

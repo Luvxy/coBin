@@ -68,7 +68,7 @@
         "액션": {
             "이름": "테이크프로핏(익절)",
             "설정값": {
-                "take_profit_percent": "3%",
+                "take_profit_percent": "1%",
                 "quantity_percent": "100%"
             }
         },

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'mainrPSCCg.ui'
+## Form generated from reading UI file 'mainuhamRj.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.2
 ##
@@ -15,10 +15,10 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QFrame,
-    QGroupBox, QLabel, QLineEdit, QListWidget,
-    QListWidgetItem, QMainWindow, QPushButton, QScrollArea,
-    QSizePolicy, QTabWidget, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QGroupBox,
+    QLabel, QLineEdit, QListWidget, QListWidgetItem,
+    QMainWindow, QPushButton, QScrollArea, QSizePolicy,
+    QTabWidget, QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -358,7 +358,7 @@ class Ui_MainWindow(object):
 "")
         self.buy_button = QPushButton(self.buy_sell)
         self.buy_button.setObjectName(u"buy_button")
-        self.buy_button.setGeometry(QRect(320, 800, 75, 23))
+        self.buy_button.setGeometry(QRect(310, 800, 75, 23))
         self.buy_button.setStyleSheet(u"/* \uae30\ubcf8 \ubc84\ud2bc \uc2a4\ud0c0\uc77c */\n"
 "QPushButton {\n"
 "    background-color: #4C566A; /* \ubc84\ud2bc \ubc30\uacbd */\n"
@@ -391,7 +391,7 @@ class Ui_MainWindow(object):
 "")
         self.label_5 = QLabel(self.buy_sell)
         self.label_5.setObjectName(u"label_5")
-        self.label_5.setGeometry(QRect(260, 780, 61, 16))
+        self.label_5.setGeometry(QRect(70, 800, 61, 16))
         self.label_5.setStyleSheet(u"QLabel {\n"
 "    background-color: transparent; /* \ubc30\uacbd \ud22c\uba85 */\n"
 "    color: #D8DEE9; /* \uae00\uc790\uc0c9 */\n"
@@ -409,7 +409,7 @@ class Ui_MainWindow(object):
 "")
         self.direct_input_2 = QLineEdit(self.buy_sell)
         self.direct_input_2.setObjectName(u"direct_input_2")
-        self.direct_input_2.setGeometry(QRect(320, 776, 161, 20))
+        self.direct_input_2.setGeometry(QRect(140, 800, 161, 20))
         self.direct_input_2.setStyleSheet(u"QLineEdit {\n"
 "    background-color: #2E3440; /* \ubc30\uacbd\uc0c9 */\n"
 "    color: #D8DEE9; /* \uae00\uc790\uc0c9 */\n"
@@ -428,7 +428,7 @@ class Ui_MainWindow(object):
 "")
         self.buy_button_2 = QPushButton(self.buy_sell)
         self.buy_button_2.setObjectName(u"buy_button_2")
-        self.buy_button_2.setGeometry(QRect(410, 800, 75, 23))
+        self.buy_button_2.setGeometry(QRect(400, 800, 75, 23))
         self.buy_button_2.setStyleSheet(u"/* \uae30\ubcf8 \ubc84\ud2bc \uc2a4\ud0c0\uc77c */\n"
 "QPushButton {\n"
 "    background-color: #4C566A; /* \ubc84\ud2bc \ubc30\uacbd */\n"
@@ -459,112 +459,10 @@ class Ui_MainWindow(object):
 "    border: 2px solid #3B4252;\n"
 "}\n"
 "")
-        self.persent_50 = QCheckBox(self.buy_sell)
-        self.persent_50.setObjectName(u"persent_50")
-        self.persent_50.setGeometry(QRect(10, 780, 61, 16))
-        self.persent_50.setStyleSheet(u"QCheckBox {\n"
-"    color: #D8DEE9; /* \uae30\ubcf8 \ud14d\uc2a4\ud2b8 \uc0c9\uc0c1 */\n"
-"    font-size: 14px;\n"
-"    spacing: 8px; /* \uccb4\ud06c\ubc15\uc2a4\uc640 \ud14d\uc2a4\ud2b8 \uac04\uaca9 */\n"
-"}\n"
-"\n"
-"/* \uccb4\ud06c\ubc15\uc2a4 \uae30\ubcf8 \uc2a4\ud0c0\uc77c */\n"
-"QCheckBox::indicator {\n"
-"    width: 16px;\n"
-"    height: 16px;\n"
-"    border-radius: 4px;\n"
-"    border: 2px solid #4C566A;\n"
-"    background-color: #2E3440;\n"
-"}\n"
-"\n"
-"/* \uccb4\ud06c\ubc15\uc2a4 \uccb4\ud06c\ub410\uc744 \ub54c */\n"
-"QCheckBox::indicator:checked {\n"
-"    background-color: rgb(114, 255, 82); /* \uccb4\ud06c\ub41c \uc0c1\ud0dc \ubc30\uacbd\uc0c9 */\n"
-"    border: 2px solid #88C0D0;\n"
-"}\n"
-"\n"
-"/* \ub9c8\uc6b0\uc2a4 \uc62c\ub838\uc744 \ub54c */\n"
-"QCheckBox::indicator:hover {\n"
-"    border: 2px solid #81A1C1;\n"
-"}\n"
-"\n"
-"/* \uccb4\ud06c\ub410\uace0 \ub9c8\uc6b0\uc2a4 \uc62c\ub838\uc744 \ub54c */\n"
-"QCheckBox::indicator:checked:hover {\n"
-"    background-color: #88C0D0;\n"
-"}\n"
-"")
-        self.persent_max = QCheckBox(self.buy_sell)
-        self.persent_max.setObjectName(u"persent_max")
-        self.persent_max.setGeometry(QRect(190, 780, 61, 16))
-        self.persent_max.setStyleSheet(u"QCheckBox {\n"
-"    color: #D8DEE9; /* \uae30\ubcf8 \ud14d\uc2a4\ud2b8 \uc0c9\uc0c1 */\n"
-"    font-size: 14px;\n"
-"    spacing: 8px; /* \uccb4\ud06c\ubc15\uc2a4\uc640 \ud14d\uc2a4\ud2b8 \uac04\uaca9 */\n"
-"}\n"
-"\n"
-"/* \uccb4\ud06c\ubc15\uc2a4 \uae30\ubcf8 \uc2a4\ud0c0\uc77c */\n"
-"QCheckBox::indicator {\n"
-"    width: 16px;\n"
-"    height: 16px;\n"
-"    border-radius: 4px;\n"
-"    border: 2px solid #4C566A;\n"
-"    background-color: #2E3440;\n"
-"}\n"
-"\n"
-"/* \uccb4\ud06c\ubc15\uc2a4 \uccb4\ud06c\ub410\uc744 \ub54c */\n"
-"QCheckBox::indicator:checked {\n"
-"    background-color: rgb(114, 255, 82); /* \uccb4\ud06c\ub41c \uc0c1\ud0dc \ubc30\uacbd\uc0c9 */\n"
-"    border: 2px solid #88C0D0;\n"
-"}\n"
-"\n"
-"/* \ub9c8\uc6b0\uc2a4 \uc62c\ub838\uc744 \ub54c */\n"
-"QCheckBox::indicator:hover {\n"
-"    border: 2px solid #81A1C1;\n"
-"}\n"
-"\n"
-"/* \uccb4\ud06c\ub410\uace0 \ub9c8\uc6b0\uc2a4 \uc62c\ub838\uc744 \ub54c */\n"
-"QCheckBox::indicator:checked:hover {\n"
-"    background-color: #88C0D0;\n"
-"}\n"
-"")
         self.groupBox_4 = QGroupBox(self.buy_sell)
         self.groupBox_4.setObjectName(u"groupBox_4")
-        self.groupBox_4.setGeometry(QRect(10, 70, 471, 691))
+        self.groupBox_4.setGeometry(QRect(10, 90, 471, 701))
         self.groupBox_4.setStyleSheet(u"")
-        self.persent_75 = QCheckBox(self.buy_sell)
-        self.persent_75.setObjectName(u"persent_75")
-        self.persent_75.setGeometry(QRect(70, 780, 61, 16))
-        self.persent_75.setStyleSheet(u"QCheckBox {\n"
-"    color: #D8DEE9; /* \uae30\ubcf8 \ud14d\uc2a4\ud2b8 \uc0c9\uc0c1 */\n"
-"    font-size: 14px;\n"
-"    spacing: 8px; /* \uccb4\ud06c\ubc15\uc2a4\uc640 \ud14d\uc2a4\ud2b8 \uac04\uaca9 */\n"
-"}\n"
-"\n"
-"/* \uccb4\ud06c\ubc15\uc2a4 \uae30\ubcf8 \uc2a4\ud0c0\uc77c */\n"
-"QCheckBox::indicator {\n"
-"    width: 16px;\n"
-"    height: 16px;\n"
-"    border-radius: 4px;\n"
-"    border: 2px solid #4C566A;\n"
-"    background-color: #2E3440;\n"
-"}\n"
-"\n"
-"/* \uccb4\ud06c\ubc15\uc2a4 \uccb4\ud06c\ub410\uc744 \ub54c */\n"
-"QCheckBox::indicator:checked {\n"
-"    background-color: rgb(114, 255, 82); /* \uccb4\ud06c\ub41c \uc0c1\ud0dc \ubc30\uacbd\uc0c9 */\n"
-"    border: 2px solid #88C0D0;\n"
-"}\n"
-"\n"
-"/* \ub9c8\uc6b0\uc2a4 \uc62c\ub838\uc744 \ub54c */\n"
-"QCheckBox::indicator:hover {\n"
-"    border: 2px solid #81A1C1;\n"
-"}\n"
-"\n"
-"/* \uccb4\ud06c\ub410\uace0 \ub9c8\uc6b0\uc2a4 \uc62c\ub838\uc744 \ub54c */\n"
-"QCheckBox::indicator:checked:hover {\n"
-"    background-color: #88C0D0;\n"
-"}\n"
-"")
         self.coin_selete_2 = QComboBox(self.buy_sell)
         self.coin_selete_2.addItem("")
         self.coin_selete_2.addItem("")
@@ -695,38 +593,40 @@ class Ui_MainWindow(object):
 "    font-weight: bold;\n"
 "}\n"
 "")
-        self.persent_76 = QCheckBox(self.buy_sell)
-        self.persent_76.setObjectName(u"persent_76")
-        self.persent_76.setGeometry(QRect(130, 780, 61, 16))
-        self.persent_76.setStyleSheet(u"QCheckBox {\n"
-"    color: #D8DEE9; /* \uae30\ubcf8 \ud14d\uc2a4\ud2b8 \uc0c9\uc0c1 */\n"
+        self.label_7 = QLabel(self.buy_sell)
+        self.label_7.setObjectName(u"label_7")
+        self.label_7.setGeometry(QRect(10, 60, 221, 21))
+        self.label_7.setStyleSheet(u"QLabel {\n"
+"    background-color: transparent; /* \ubc30\uacbd \ud22c\uba85 */\n"
+"    color: #D8DEE9; /* \uae00\uc790\uc0c9 */\n"
 "    font-size: 14px;\n"
-"    spacing: 8px; /* \uccb4\ud06c\ubc15\uc2a4\uc640 \ud14d\uc2a4\ud2b8 \uac04\uaca9 */\n"
+"    font-weight: bold;\n"
+"    border-radius: 5px;\n"
 "}\n"
 "\n"
-"/* \uccb4\ud06c\ubc15\uc2a4 \uae30\ubcf8 \uc2a4\ud0c0\uc77c */\n"
-"QCheckBox::indicator {\n"
-"    width: 16px;\n"
-"    height: 16px;\n"
-"    border-radius: 4px;\n"
-"    border: 2px solid #4C566A;\n"
-"    background-color: #2E3440;\n"
+"/* \uac15\uc870 \uc2a4\ud0c0\uc77c */\n"
+"QLabel[highlight=\"true\"] {\n"
+"    color: #81A1C1; /* \uac15\uc870\ub41c \uae00\uc790\uc0c9 */\n"
+"    font-size: 16px;\n"
+"    font-weight: bold;\n"
+"}\n"
+"")
+        self.label_8 = QLabel(self.buy_sell)
+        self.label_8.setObjectName(u"label_8")
+        self.label_8.setGeometry(QRect(250, 60, 231, 21))
+        self.label_8.setStyleSheet(u"QLabel {\n"
+"    background-color: transparent; /* \ubc30\uacbd \ud22c\uba85 */\n"
+"    color: #D8DEE9; /* \uae00\uc790\uc0c9 */\n"
+"    font-size: 14px;\n"
+"    font-weight: bold;\n"
+"    border-radius: 5px;\n"
 "}\n"
 "\n"
-"/* \uccb4\ud06c\ubc15\uc2a4 \uccb4\ud06c\ub410\uc744 \ub54c */\n"
-"QCheckBox::indicator:checked {\n"
-"    background-color: rgb(114, 255, 82); /* \uccb4\ud06c\ub41c \uc0c1\ud0dc \ubc30\uacbd\uc0c9 */\n"
-"    border: 2px solid #88C0D0;\n"
-"}\n"
-"\n"
-"/* \ub9c8\uc6b0\uc2a4 \uc62c\ub838\uc744 \ub54c */\n"
-"QCheckBox::indicator:hover {\n"
-"    border: 2px solid #81A1C1;\n"
-"}\n"
-"\n"
-"/* \uccb4\ud06c\ub410\uace0 \ub9c8\uc6b0\uc2a4 \uc62c\ub838\uc744 \ub54c */\n"
-"QCheckBox::indicator:checked:hover {\n"
-"    background-color: #88C0D0;\n"
+"/* \uac15\uc870 \uc2a4\ud0c0\uc77c */\n"
+"QLabel[highlight=\"true\"] {\n"
+"    color: #81A1C1; /* \uac15\uc870\ub41c \uae00\uc790\uc0c9 */\n"
+"    font-size: 16px;\n"
+"    font-weight: bold;\n"
 "}\n"
 "")
         self.graph = QFrame(self.tab)
@@ -1186,10 +1086,7 @@ class Ui_MainWindow(object):
         self.buy_button.setText(QCoreApplication.translate("MainWindow", u"\ub9e4\uc218", None))
         self.label_5.setText(QCoreApplication.translate("MainWindow", u"\uc9c1\uc811\uc785\ub825", None))
         self.buy_button_2.setText(QCoreApplication.translate("MainWindow", u"\ub9e4\ub3c4", None))
-        self.persent_50.setText(QCoreApplication.translate("MainWindow", u"25%", None))
-        self.persent_max.setText(QCoreApplication.translate("MainWindow", u"\ucd5c\ub300", None))
         self.groupBox_4.setTitle("")
-        self.persent_75.setText(QCoreApplication.translate("MainWindow", u"50%", None))
         self.coin_selete_2.setItemText(0, QCoreApplication.translate("MainWindow", u"1\ubd84", None))
         self.coin_selete_2.setItemText(1, QCoreApplication.translate("MainWindow", u"5\ubd84", None))
         self.coin_selete_2.setItemText(2, QCoreApplication.translate("MainWindow", u"15\ubd84", None))
@@ -1204,7 +1101,8 @@ class Ui_MainWindow(object):
 
         self.label_3.setText(QCoreApplication.translate("MainWindow", u"\ud604\uc7ac \ubcf4\uc720\ub7c9 : 0.0", None))
         self.label_6.setText(QCoreApplication.translate("MainWindow", u"KRW : 0.0", None))
-        self.persent_76.setText(QCoreApplication.translate("MainWindow", u"75%", None))
+        self.label_7.setText(QCoreApplication.translate("MainWindow", u"\ubcf4\uc720 KRW : ", None))
+        self.label_8.setText(QCoreApplication.translate("MainWindow", u"\uc218\uc775\ub960 : ", None))
         self.label.setText(QCoreApplication.translate("MainWindow", u"COB2N", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), QCoreApplication.translate("MainWindow", u"\ucc28\ud2b8", None))
         self.strategy_combo.setItemText(0, QCoreApplication.translate("MainWindow", u"\uae30\ubcf8\uc804\ub7b5", None))

@@ -869,10 +869,12 @@ class BlockConfigDialog(QDialog):
             QDialog {
                 background-color: #2E3440;  /* 다이얼로그 배경색 */
                 border-radius: 10px;  /* 모서리 둥글게 */
+                padding: 15px;  /* 내부 여백 */
             }
             QLabel {
                 color: #D8DEE9;  /* 라벨 텍스트 색상 */
-                font-size: 12px;  /* 라벨 글꼴 크기 */
+                font-size: 14px;  /* 라벨 글꼴 크기 */
+                font-weight: bold;  /* 라벨 글꼴 굵게 */
             }
             QComboBox {
                 background-color: #3B4252;  /* 콤보박스 배경색 */
@@ -887,7 +889,6 @@ class BlockConfigDialog(QDialog):
                 color: #ECEFF4;  /* 드롭다운 텍스트 색상 */
             }
             QLineEdit {
-                background-color: #3B4252;  /* 입력 필드 배경색 */
                 border: 1px solid #4C566A;  /* 테두리 색상 */
                 border-radius: 5px;  /* 모서리 둥글게 */
                 padding: 5px;  /* 내부 여백 */
@@ -895,9 +896,6 @@ class BlockConfigDialog(QDialog):
             }
             QLineEdit:focus {
                 border: 1px solid #81A1C1;  /* 포커스 시 테두리 색상 */
-            }
-            QCheckBox {
-                color: #ECEFF4;  /* 체크박스 텍스트 색상 */
             }
             QPushButton {
                 background-color: #81A1C1;  /* 버튼 배경색 */
@@ -913,7 +911,7 @@ class BlockConfigDialog(QDialog):
                 background-color: #4C566A;  /* 클릭 시 배경색 */
             }
         """)
-
+        # 레이아웃 설정
         self.layout = QHBoxLayout()
         self.setLayout(self.layout)
 
@@ -941,7 +939,7 @@ class BlockConfigDialog(QDialog):
         self.action_combo.hide()  # 초기에는 숨김
         self.action_combo.currentTextChanged.connect(self.load_action_fields)
 
-        # ✅ 동적으로 생성되는 필드 레이아웃
+        # 동적으로 생성되는 필드 레이아웃
         self.dynamic_fields_layout = QHBoxLayout()
         self.layout.addLayout(self.dynamic_fields_layout)
 
@@ -955,26 +953,23 @@ class BlockConfigDialog(QDialog):
         self.toggle_mode("조건 추가")
 
     def toggle_mode(self, mode):
+        """조건/액션 모드 전환"""
         self.clear_dynamic_fields()
 
-        if mode == "선택":
-            self.condition_combo.hide()
-            self.action_combo.hide()
-
-        elif mode == "조건 추가":
+        if mode == "조건 추가":
             self.condition_combo.show()
             self.action_combo.hide()
             self.load_action_fields(self.condition_combo.currentText())
-
         elif mode == "액션 추가":
             self.condition_combo.hide()
             self.action_combo.show()
             self.load_action_fields(self.action_combo.currentText())
 
     def load_action_fields(self, name):
+        """조건/액션 필드 로드"""
         self.clear_dynamic_fields()
 
-        # ✅ 조건/액션 선택에 따라 레지스트리 분기
+        # 조건/액션 선택에 따라 레지스트리 분기
         if self.mode_combo.currentText() == "조건 추가":
             registry = ConditionRegistry
         else:
@@ -1007,14 +1002,16 @@ class BlockConfigDialog(QDialog):
             self.input_fields[field_name] = (input_widget, field_info['type'], ui_type)
 
     def clear_dynamic_fields(self):
+        """동적 필드 초기화"""
         while self.dynamic_fields_layout.count():
             item = self.dynamic_fields_layout.takeAt(0)
             widget = item.widget()
             if widget:
                 widget.deleteLater()
         self.input_fields = {}
-        
+
     def get_config_data(self):
+        """대화상자에서 입력된 데이터 가져오기"""
         mode = self.mode_combo.currentText()
 
         if mode == "조건 추가":
@@ -1040,7 +1037,7 @@ class BlockConfigDialog(QDialog):
             except ValueError:
                 kwargs[field_name] = field_type()  # 기본값 사용
 
-        # ✅ 조건/액션에 따라 객체 생성
+        # 조건/액션에 따라 객체 생성
         new_object = registry.create_condition(name, **kwargs) if mode == "조건 추가" else registry.create_action(name, self.upbit, **kwargs)
         return mode[:-3], new_object  # "조건 추가" → "조건", "액션 추가" → "액션"
 
@@ -1075,8 +1072,9 @@ class BlockMain(QWidget):
 
 
     def add_to_history(self, message):
-        self.history.addItem(message)
-        self.history.scrollToBottom()
+        if message != "매수가격을 가져올 수 없음":
+            self.history.addItem(message)
+            self.history.scrollToBottom()
 
     def open_add_dialog(self, block, block_content_widget, pre_selected=None):
         """
@@ -1144,7 +1142,6 @@ class BlockMain(QWidget):
                 border: 2px solid #81A1C1;  /* 호버 시 테두리 색상 */
             }
         """)
-
         block_layout = QHBoxLayout(block_group)
 
         # ─── 왼쪽 (라벨 & 리스트) ───
@@ -1167,6 +1164,7 @@ class BlockMain(QWidget):
                 color: #2E3440;  /* 선택된 항목 글꼴 색상 */
             }
         """)
+        block_content.itemDoubleClicked.connect(lambda item: self.edit_or_delete_item(new_block, block_content, item))  # ✅ 더블클릭 이벤트 연결
         left_layout.addWidget(block_content)
 
         block_layout.addLayout(left_layout)
@@ -1232,6 +1230,57 @@ class BlockMain(QWidget):
 
         return new_block  # ✅ 생성된 블록 객체 반환
 
+    def edit_or_delete_item(self, block, block_content, item):
+        """조건/액션 수정 또는 삭제"""
+        item_text = item.text()
+        is_condition = item_text.startswith("조건: ")
+        obj_name = item_text.replace("조건: ", "").replace("액션: ", "")
+
+        # 조건 또는 액션 객체 찾기
+        obj = None
+        if is_condition:
+            obj = next((cond for cond in block.conditions if cond.name == obj_name), None)
+        else:
+            obj = block.action if block.action and block.action.name == obj_name else None
+
+        if not obj:
+            return
+
+        # 수정/삭제 대화상자 열기
+        dialog = BlockConfigDialog(parent=self, upbit=self.upbit)
+        dialog.load_action_fields(obj.obj_name)  # 기존 데이터 로드
+        dialog.setWindowTitle("조건/액션 수정")
+        dialog.layout.itemAt(0).widget().hide()  # 추가할 필드 선택 숨김
+
+        # 삭제 버튼 추가
+        delete_button = dialog.button_box.addButton("삭제", QDialogButtonBox.DestructiveRole)
+        delete_button.setStyleSheet("background-color: #BF616A; color: #ECEFF4;")  # 삭제 버튼 스타일
+
+        # 삭제 버튼 클릭 이벤트 처리
+        def handle_delete():
+            if is_condition:
+                block.conditions.remove(obj)
+            else:
+                block.action = None
+            block_content.takeItem(block_content.row(item))  # UI에서 제거
+            dialog.reject()  # 대화상자 닫기
+
+        delete_button.clicked.connect(handle_delete)
+
+        # 대화상자 실행
+        result = dialog.exec_()
+
+        if result == QDialog.Accepted:
+            # 수정
+            _, updated_obj = dialog.get_config_data()
+            if is_condition:
+                index = block.conditions.index(obj)
+                block.conditions[index] = updated_obj
+                item.setText("조건: " + updated_obj.name)
+            else:
+                block.action = updated_obj
+                item.setText("액션: " + updated_obj.name)
+    
     def run_all_blocks(self, coin):
         for block in self.blocks:
             if block.action is not None:

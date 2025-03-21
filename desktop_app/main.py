@@ -262,13 +262,10 @@ class MainWindow(QMainWindow):
         self.ui.strategy_combo_2.addItems(["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-DOGE"])
         self.graph_layout = QVBoxLayout(self.ui.graph)
         self.graph_layout.addWidget(self.graph_widget)
-        
-        self.blance = self.upbit.get_balance("KRW-BTC")
-        self.ui.label_3.setText(f"보유량: {self.blance}")
-        self.ui.label_6.setText(f"KRW: {self.upbit.get_balance('KRW')}")
 
         # 초기 차트 로드
         self.current_coin = "KRW-BTC"
+        self.update_main()
         self.update_chart()
 
     def setup_tab2(self):
@@ -309,7 +306,8 @@ class MainWindow(QMainWindow):
             }
             interval = interval_mapping.get(interval, "minute30")
 
-            # self.chart.change_coin(new_coin, interval, count)
+            self.chart.change_coin(new_coin, interval, count)
+            self.order.change_coin(new_coin)
 
             # ✅ 차트 데이터 로드
             df = pyupbit.get_ohlcv(new_coin, interval=interval, count=count)
@@ -318,6 +316,8 @@ class MainWindow(QMainWindow):
                 QMessageBox.warning(self, "데이터 로드 실패", f"{new_coin}의 데이터를 불러오지 못했습니다.")
                 return
 
+            self.update_main()
+            
             df['time'] = df.index
             self.graph_widget.clear()  # 기존 데이터 삭제
             self.graph_widget.plot(df['time'], df['volume'], pen=pg.mkPen(color='#81A1C1', width=2.5))  # 거래량 차트
@@ -330,6 +330,38 @@ class MainWindow(QMainWindow):
             # ✅ 로딩 화면 종료
             self.loading_screen.hide_loading()
             
+    # 메인화면 정보 업데이트
+    def update_main(self):
+        """메인 화면 정보 업데이트"""
+        ticker = self.ui.coin_selete.currentText()  # 선택된 코인
+        self.blance = self.upbit.get_balance(ticker)  # 보유 코인 수량
+        current_price = self.upbit.get_current_price(ticker)  # 현재가
+        krw_balance = self.upbit.get_balance("KRW")  # 보유 원화
+        avg_buy_price = self.upbit.get_avg_buy_price(ticker)  # 매수 평단가 가져오기
+
+        # 보유 KRW 계산: volume * 현재가 + KRW
+        total_krw = (self.blance * current_price) + krw_balance
+
+        # UI 업데이트
+        # 보유량 소수점 8자리까지 표시
+        self.ui.label_3.setText(f"보유량: {self.blance:.8f}")
+        self.ui.label_6.setText(f"보유현금: {krw_balance:.0f}원")
+        self.ui.label_7.setText(f"총 보유 KRW: {total_krw:.0f}")  # 총 보유 KRW 표시
+
+        # 수익률 계산
+        if self.blance > 0:  # 보유량이 있을 경우에만 계산
+            profit_rate = ((current_price - avg_buy_price) / avg_buy_price) * 100
+
+            # 수익률 텍스트 생성 (HTML 사용)
+            if profit_rate > 0:
+                profit_text = f"수익률: <span style='color: blue;'>{profit_rate:.2f}%</span>"
+            else:
+                profit_text = f"수익률: <span style='color: red;'>{profit_rate:.2f}%</span>"
+
+            self.ui.label_8.setText(profit_text)  # HTML 텍스트 설정
+        else:
+            self.ui.label_8.setText("수익률: N/A")  # 보유량이 없을 경우 표시
+    
     # 버장 버튼 클릭 시
     def save_api(self):
         self.access_key = self.ui.access_key.text()
@@ -346,11 +378,7 @@ class MainWindow(QMainWindow):
         
         self.upbit = Upbit_api(self.access_key, self.secret_key)
         
-        ticker = self.ui.coin_selete.currentText()
-        
-        self.blance = self.upbit.get_balance(ticker)
-        self.ui.label_3.setText(f"보유량: {self.blance}")
-        self.ui.label_6.setText(f"KRW: {self.upbit.get_balance('KRW')}")
+        self.update_main()
         
         self.upbit.create_user()
         if self.upbit.user is None:
@@ -358,29 +386,44 @@ class MainWindow(QMainWindow):
 
         
     def buy_market_order(self):
+        """시장가 매수"""
         ticker = self.ui.coin_selete.currentText()
-        cash = self.ui.direct_input_2.text()
-        
-        cash = int(cash)*0.9995
-        
-        self.upbit.buy_market_order(ticker, cash)
-        
+        current_krw_balance = self.upbit.get_balance("KRW")  # 현재 보유 원화
+
+        input_value = self.ui.direct_input_2.text().strip()  # 입력값 가져오기
+        if input_value.endswith('%'):  # 입력값이 퍼센트인지 확인
+            percent = int(input_value.rstrip('%'))  # '%' 제거 후 정수로 변환
+            cash = (current_krw_balance * percent / 100) * 0.9995  # 수수료 0.05% 적용
+        else:
+            cash = int(input_value) * 0.9995  # 입력된 금액 사용
+
+        if cash > current_krw_balance:
+            QMessageBox.warning(self, "잔액 부족", "보유 원화가 부족합니다.")
+            return
+
+        self.upbit.buy_market_order(ticker, cash)  # 매수 실행
         QMessageBox.information(self, '매수 주문', '주문이 완료되었습니다.')
-        
-        self.blance = self.upbit.get_balance(ticker)
-        self.ui.label_3.setText(f"보유량: {self.blance}")
-        self.ui.label_6.setText(f"KRW: {self.upbit.get_balance('KRW')}")
+        self.update_main()
     
     def sell_market_order(self):
+        """시장가 매도"""
         ticker = self.ui.coin_selete.currentText()
-        volume = self.ui.direct_input_2.text()
-        
-        self.upbit.sell_market_order(ticker, volume)
-        
+        current_volume = self.upbit.get_balance(ticker)  # 현재 보유 코인 수량
+
+        input_value = self.ui.direct_input_2.text().strip()  # 입력값 가져오기
+        if input_value.endswith('%'):  # 입력값이 퍼센트인지 확인
+            percent = int(input_value.rstrip('%'))  # '%' 제거 후 정수로 변환
+            volume = current_volume * percent / 100  # 퍼센트만큼 매도
+        else:
+            volume = float(input_value)  # 입력된 수량 사용
+
+        if volume > current_volume:
+            QMessageBox.warning(self, "잔량 부족", "보유 코인이 부족합니다.")
+            return
+
+        self.upbit.sell_market_order(ticker, volume)  # 매도 실행
         QMessageBox.information(self, '매도 주문', '주문이 완료되었습니다.')
-        self.blance = self.upbit.get_balance(ticker)
-        self.ui.label_3.setText(f"보유량: {self.blance}")
-        self.ui.label_6.setText(f"KRW: {self.upbit.get_balance('KRW')}")
+        self.update_main()
         
     def load_custom_strategy(self, strategy_name):
         """ JSON 파일에서 Custom 전략 불러오기 """

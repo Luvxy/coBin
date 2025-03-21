@@ -38,3 +38,9 @@ class Upbit_api:
 
     def sell_limit_order(self, ticker, price, volume):
         return self.user.sell_limit_order(ticker, price, volume)
+
+    def get_avg_buy_price(self, ticker):
+        return self.user.get_avg_buy_price(ticker)
+    
+    def get_current_price(self, ticker):
+        return pyupbit.get_current_price(ticker)

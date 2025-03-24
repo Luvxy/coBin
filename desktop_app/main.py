@@ -412,6 +412,9 @@ class MainWindow(QMainWindow):
         if self.upbit.user is None:
             QMessageBox.critical(self, 'API 연결 실패', 'API 키가 올바르지 않습니다.')
 
+        if self.blockFrame:
+            self.blockFrame.update_upbit(self.upbit)
+        
         self.update_main()
         
     def buy_market_order(self):

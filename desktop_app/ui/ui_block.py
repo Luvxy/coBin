@@ -1077,7 +1077,19 @@ class BlockMain(QWidget):
         self.loading_label.setMovie(self.loading_movie)
         self.loading_label.setFixedSize(22, 22)
 
-
+    
+    def update_upbit(self, new_upbit):
+        """Upbit 객체 업데이트"""
+        self.upbit = new_upbit
+        print("BlockMain: Upbit 객체가 업데이트되었습니다.")
+        # 블록 내 조건/액션의 Upbit 객체도 업데이트
+        for block in self.blocks:
+            if block.action:
+                block.action.upbit = new_upbit
+            for condition in block.conditions:
+                if hasattr(condition, "upbit"):
+                    condition.upbit = new_upbit
+    
     def add_to_history(self, message):
         if message != "매수가격을 가져올 수 없음":
             self.history.addItem(message)

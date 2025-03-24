@@ -6,7 +6,8 @@ import pyupbit
 from PySide6.QtCore import Qt, QThread, Signal, QObject, QMutex, QWaitCondition
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QLabel,
-    QFrame, QDialog, QDialogButtonBox, QComboBox, QLineEdit, QCheckBox, QHBoxLayout, QGroupBox
+    QFrame, QDialog, QDialogButtonBox, QComboBox, QLineEdit, QCheckBox, QHBoxLayout,
+    QGroupBox, QMessageBox
 )
 from PySide6.QtGui import QMovie
 from main import LoadingDialog
@@ -912,7 +913,7 @@ class BlockConfigDialog(QDialog):
             }
         """)
         # 레이아웃 설정
-        self.layout = QHBoxLayout()
+        self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
         # 조건/액션 선택
@@ -965,7 +966,7 @@ class BlockConfigDialog(QDialog):
             self.action_combo.show()
             self.load_action_fields(self.action_combo.currentText())
 
-    def load_action_fields(self, name, is_action=False):
+    def load_action_fields(self, name, is_action=False, obj=None):
         """조건/액션 필드 로드"""
         self.clear_dynamic_fields()
 
@@ -982,7 +983,6 @@ class BlockConfigDialog(QDialog):
         action_cls = registry._registry.get(name)
         if not action_cls or not hasattr(action_cls, 'config_fields'):
             print(f"'{name}'에 대한 config_fields를 찾을 수 없습니다.")
-            print(f"현재 레지스트리: {registry._registry.keys()}")
             return
 
         self.input_fields = {}
@@ -1100,7 +1100,7 @@ class BlockMain(QWidget):
                     block.action = obj
                     block_content_widget.addItem("액션: " + obj.name)
                 else:
-                    print("이 블록에는 이미 액션이 있습니다.")
+                    QMessageBox.warning(self, "액션 추가 실패", "이 블록에는 이미 액션이 있습니다.")
             return
 
         # 기존 방식 (사용자가 직접 추가)
@@ -1116,7 +1116,7 @@ class BlockMain(QWidget):
                     block.action = obj
                     block_content_widget.addItem("액션: " + obj.name)
                 else:
-                    print("이 블록에는 이미 액션이 있습니다.")
+                    QMessageBox.warning(self, "액션 추가 실패", "이 블록에는 이미 액션이 있습니다.")
 
     def add_block(self):
         if len(self.blocks) >= self.max_blocks:
@@ -1236,62 +1236,33 @@ class BlockMain(QWidget):
         self.layout.addWidget(block_group)
 
         return new_block  # ✅ 생성된 블록 객체 반환
-
+    
+    
     def edit_or_delete_item(self, block, block_content, item):
-        """조건/액션 수정 또는 삭제"""
+        """조건/액션 수정"""
         item_text = item.text()
         is_condition = item_text.startswith("조건: ")
         obj_name = item_text.replace("조건: ", "").replace("액션: ", "")
-        action_name = item_text.replace("액션: ", "")
 
         # 조건 또는 액션 객체 찾기
         obj = None
-        is_action = False
         if is_condition:
             obj = next((cond for cond in block.conditions if cond.name == obj_name), None)
         else:
-            obj = block.action if block.action and block.action.name == action_name else None
-            is_action = True
+            obj = block.action if block.action and block.action.name == obj_name else None
+
         if not obj:
             return
-        
-        # 수정/삭제 대화상자 열기
-        dialog = BlockConfigDialog(parent=self, upbit=self.upbit)
-        if is_action:
-            dialog.load_action_fields(obj.obj_name, is_action=True)
+
+        # 기존 조건/액션 삭제
+        if is_condition:
+            block.conditions.remove(obj)
         else:
-            # 기존 데이터 로드
-            dialog.load_action_fields(obj.obj_name)  # 기존 데이터 로드
-        dialog.setWindowTitle("조건/액션 수정")
-        
-        # 삭제 버튼 추가
-        delete_button = dialog.button_box.addButton("삭제", QDialogButtonBox.DestructiveRole)
-        delete_button.setStyleSheet("background-color: #BF616A; color: #ECEFF4;")  # 삭제 버튼 스타일
+            block.action = None
+        block_content.takeItem(block_content.row(item))  # UI에서 제거
 
-        # 삭제 버튼 클릭 이벤트 처리
-        def handle_delete():
-            if is_condition:
-                block.conditions.remove(obj)
-            else:
-                block.action = None
-            block_content.takeItem(block_content.row(item))  # UI에서 제거
-            dialog.reject()  # 대화상자 닫기
-
-        delete_button.clicked.connect(handle_delete)
-
-        # 대화상자 실행
-        result = dialog.exec_()
-
-        if result == QDialog.Accepted:
-            # 수정
-            _, updated_obj = dialog.get_config_data()
-            if is_condition:
-                index = block.conditions.index(obj)
-                block.conditions[index] = updated_obj
-                item.setText("조건: " + updated_obj.name)
-            else:
-                block.action = updated_obj
-                item.setText("액션: " + updated_obj.name)
+        # 새 조건/액션 추가
+        self.open_add_dialog(block, block_content)
     
     def run_all_blocks(self, coin):
         for block in self.blocks:

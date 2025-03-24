@@ -28,6 +28,34 @@ from pyqtgraph import PlotWidget, plot, ViewBox
 import pyqtgraph as pg
 import psutil
 
+def set_global_stylesheet(app):
+    """QApplication에 글로벌 스타일시트 설정"""
+    app.setStyleSheet("""
+        QMessageBox {
+            background-color: #2E3440;  /* 배경색 */
+            color: #ECEFF4;  /* 텍스트 색상 */
+            border: 1px solid #4C566A;  /* 테두리 */
+            border-radius: 10px;  /* 모서리 둥글게 */
+        }
+        QMessageBox QLabel {
+            color: #ECEFF4;  /* 라벨 텍스트 색상 */
+            font-size: 14px;  /* 라벨 글꼴 크기 */
+        }
+        QMessageBox QPushButton {
+            background-color: #81A1C1;  /* 버튼 배경색 */
+            color: #2E3440;  /* 버튼 텍스트 색상 */
+            border: none;
+            border-radius: 5px;  /* 모서리 둥글게 */
+            padding: 8px 12px;  /* 내부 여백 */
+        }
+        QMessageBox QPushButton:hover {
+            background-color: #5E81AC;  /* 호버 시 배경색 */
+        }
+        QMessageBox QPushButton:pressed {
+            background-color: #4C566A;  /* 클릭 시 배경색 */
+        }
+    """)
+
 def is_already_running():
     """현재 디렉토리에 'cobin.exe' 이름의 실행 파일이 2개 이상 실행 중인지 확인"""
     current_pid = os.getpid()
@@ -380,12 +408,11 @@ class MainWindow(QMainWindow):
         
         self.upbit = Upbit_api(self.access_key, self.secret_key)
         
-        self.update_main()
-        
         self.upbit.create_user()
         if self.upbit.user is None:
             QMessageBox.critical(self, 'API 연결 실패', 'API 키가 올바르지 않습니다.')
 
+        self.update_main()
         
     def buy_market_order(self):
         """시장가 매수"""
@@ -599,11 +626,12 @@ class SpleshScreen(QMainWindow):
         
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    set_global_stylesheet(app)  # 글로벌 스타일시트 설정
     if is_already_running():
         # 메세지 박스로 이미 실행 중임을 알림
         print("[INFO] 이미 실행 중인 프로그램이 있습니다.")
         QMessageBox.critical(None, "오류", "이미 실행 중인 프로그램이 있습니다.")
-        sys.exit(1)
+        sys.exit(0)
     # window = SpleshScreen()
     # window.show()
     # window = LoadingScreen()

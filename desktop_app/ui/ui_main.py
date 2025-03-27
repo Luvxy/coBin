@@ -664,10 +664,6 @@ class Ui_MainWindow(object):
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
         self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 1909, 1029))
         self.strategy_combo = QComboBox(self.scrollAreaWidgetContents)
-        self.strategy_combo.addItem("")
-        self.strategy_combo.addItem("")
-        self.strategy_combo.addItem("")
-        self.strategy_combo.addItem("")
         self.strategy_combo.setObjectName(u"strategy_combo")
         self.strategy_combo.setGeometry(QRect(10, 10, 211, 22))
         self.strategy_combo.setStyleSheet(u"QComboBox {\n"
@@ -1106,9 +1102,6 @@ class Ui_MainWindow(object):
         self.label.setText(QCoreApplication.translate("MainWindow", u"COB2N", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), QCoreApplication.translate("MainWindow", u"\ucc28\ud2b8", None))
         self.strategy_combo.setItemText(0, QCoreApplication.translate("MainWindow", u"\uae30\ubcf8\uc804\ub7b5", None))
-        self.strategy_combo.setItemText(1, QCoreApplication.translate("MainWindow", u"Custom 1", None))
-        self.strategy_combo.setItemText(2, QCoreApplication.translate("MainWindow", u"Custom 2", None))
-        self.strategy_combo.setItemText(3, QCoreApplication.translate("MainWindow", u"Custom 3", None))
 
         self.start_button.setText(QCoreApplication.translate("MainWindow", u"\uc2e4\ud589", None))
         self.groupBox_2.setTitle(QCoreApplication.translate("MainWindow", u"\uc2e4\ud589 \ubc15\uc2a4", None))

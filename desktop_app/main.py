@@ -259,6 +259,8 @@ class MainWindow(QMainWindow):
         self.ui.start_button_2.clicked.connect(self.save_custom_strategy)
         self.ui.clear_button.clicked.connect(self.blockFrame.clear_blocks)
         self.ui.pushButton_2.clicked.connect(self.open_pdf_viewer)
+        
+        self.ui.strategy_combo.addItems(["기본전략","custom1", "custom2", "custom3", "custom4", "custom5"])
 
     def setup_tab1(self):
         """Tab1 초기화 (그래프 복구)"""
@@ -363,6 +365,13 @@ class MainWindow(QMainWindow):
     # 메인화면 정보 업데이트
     def update_main(self):
         """메인 화면 정보 업데이트"""
+        # Upbit API 요청 테스트
+        test = self.upbit.get_balances()
+        if not test or isinstance(test, dict) and test.get("error"):
+            # API 요청 실패 시 에러 메시지 표시 및 종료
+            return
+        
+        
         ticker = self.ui.coin_selete.currentText()  # 선택된 코인
         self.blance = self.upbit.get_balance(ticker) or 0.0  # 보유 코인 수량 (None일 경우 0.0으로 설정)
         current_price = self.upbit.get_current_price(ticker) or 0.0  # 현재가 (None일 경우 0.0으로 설정)
@@ -453,6 +462,9 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "잔량 부족", "보유 코인이 부족합니다.")
             return
 
+        # 소수점 자리수 제한 (Upbit는 최대 8자리까지 허용)
+        volume = round(volume, 8)
+        
         self.upbit.sell_market_order(ticker, volume)  # 매도 실행
         QMessageBox.information(self, '매도 주문', '주문이 완료되었습니다.')
         self.update_main()
@@ -568,8 +580,6 @@ class MainWindow(QMainWindow):
         viewer_path = os.path.join(os.path.dirname(__file__), "resources", "패치노트.pdf")
         self.viewer = PdfViewer(viewer_path, width=880, height=650)  # PDF 파일 경로 설정
         self.viewer.show()
-
-
 
 # 로그인 윈도우 클래스
 class SpleshScreen(QMainWindow):

@@ -1,25 +1,47 @@
-import pyupbit
-from upbit.api_upbit import Upbit_api
+from PySide6.QtCharts import QChart, QChartView, QCandlestickSeries, QCandlestickSet
+from PySide6.QtGui import QPainter, QPen, QColor
+from PySide6.QtCore import Qt, QPointF
 
-a = "0L6LOtuovTfT3Anjptj1NdB8zMHhxKhzsshNLogy"
-s = "BbCTt8blhRLcUNoapxvUSMiI45QdaMgswUQ0WqvU"
+class CustomChart(QChart):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.drawing = False  # 그리기 모드 활성화 여부
+        self.last_point = None  # 마지막 마우스 위치
+        self.pen = QPen(QColor("#FFFFFF"), 2)  # 기본 펜 설정
 
-upbit = Upbit_api(a,s)
-upbit.create_user()
+    def mousePressEvent(self, event):
+        """마우스 클릭 이벤트 처리"""
+        if event.button() == Qt.LeftButton:
+            self.drawing = True
+            self.last_point = event.pos()
+        super().mousePressEvent(event)
 
-order = upbit.get_order("KRW-BTC", state="done", limit=1)
-balance = float(upbit.get_balance("KRW")) * 0.9995
-print(balance)
-upbit.buy_market_order("KRW-BTC", cash=balance)
+    def mouseMoveEvent(self, event):
+        """마우스 이동 이벤트 처리"""
+        if self.drawing and self.last_point:
+            painter = QPainter(self)
+            painter.setPen(self.pen)
+            painter.drawLine(self.last_point, event.pos())
+            self.last_point = event.pos()
+            painter.end()
+        super().mouseMoveEvent(event)
 
-
-print(order)
-
-coin = "KRW-BTC"
-
-balances = upbit.get_balances()  # ✅ 전체 잔고 조회
-for b in balances:
-    if b['currency'] == coin.replace("KRW-", ""):
-        dklj = float(b['avg_buy_price'])# 예: "KRW-BTC" → "BTC"
-
-print(dklj)
+    def mouseReleaseEvent(self, event):
+        """마우스 버튼 해제 이벤트 처리"""
+        if event.button() == Qt.LeftButton:
+            self.drawing = False
+            self.last_point = None
+        super().mouseReleaseEvent(event)
+        
+if __name__ == "__main__":
+    import sys
+    from PySide6.QtWidgets import QApplication, QMainWindow
+    
+    app = QApplication(sys.argv)
+    window = QMainWindow()
+    chart = CustomChart()
+    chart.setTitle("Custom Chart")
+    chart.setAnimationOptions(QChart.SeriesAnimations)
+    window.setCentralWidget(QChartView(chart))
+    window.show()
+    sys.exit(app.exec_())

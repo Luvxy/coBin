@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import *
 from PySide6.QtCharts import QCandlestickSeries, QChart, QChartView, QDateTimeAxis, QValueAxis, QCandlestickSet
-from PySide6.QtGui import QPainter
+from PySide6.QtGui import QPainter, QPen, QColor, QCursor
 from PySide6 import QtGui
 from PySide6.QtCore import Qt, QDateTime, QThread, Signal, QTimer
 import pyupbit
@@ -42,6 +42,11 @@ class ChartWidget(QWidget):
         self.count = count
         self.axis_y = QValueAxis()
         self.ticks = {}
+        self.tooltip_timer = QTimer(self)  # 툴팁 갱신용 타이머
+        self.tooltip_timer.setInterval(100)  # 500ms마다 갱신
+        self.tooltip_timer.timeout.connect(self.update_tooltip)
+        self.current_tooltip_text = ""  # 현재 툴팁 텍스트
+        self.current_tooltip_pos = None  # 현재 툴팁 위치
         self.init_ui()
 
     def init_ui(self):
@@ -50,13 +55,12 @@ class ChartWidget(QWidget):
         self.worker.start()
 
         self.series = QCandlestickSeries()
-        self.series.setIncreasingColor("#00FFFF")  # 상승 캔들 색상 (형광 파란색)
-        self.series.setDecreasingColor("#FF4500")  # 하락 캔들 색상 (형광 빨간색)
+        self.series.setIncreasingColor("#FF0000")  # 상승 캔들 색상 (빨간색)
+        self.series.setDecreasingColor("#00FFFF")  # 하락 캔들 색상 (파랑색)
 
         # ✅ 캔들 외곽선 설정
         self.series.setBodyOutlineVisible(True)  # 외곽선 표시
         self.series.setPen(QtGui.QPen(QtGui.QColor("#000000"), 1))  # 외곽선 색상: 하얀색, 두께: 1px
-
 
         self.chart = QChart()
         self.chart.legend().hide()
@@ -86,6 +90,19 @@ class ChartWidget(QWidget):
         self.chart.setPlotAreaBackgroundVisible(False)
         
         self.load_data(self.interval, self.count)
+        
+        self.series.hovered.connect(self.show_tooltip)  # hovered 신호 연결
+        
+        QApplication.instance().setStyleSheet("""
+            QToolTip {
+                background-color: #2E3440;  /* 툴팁 배경색 */
+                color: #D8DEE9;  /* 툴팁 글자 색상 */
+                border: 1px solid #4C566A;  /* 툴팁 테두리 색상 */
+                border-radius: 5px;  /* 모서리 둥글게 */
+                padding: 5px;  /* 내부 여백 */
+                font-size: 12px;  /* 글자 크기 */
+            }
+        """)
 
         self.chart.layout().setContentsMargins(0, 0, 0, 0)
         self.chart_view = QChartView(self.chart)
@@ -168,7 +185,48 @@ class ChartWidget(QWidget):
         self.worker = Worker(new_coin)
         self.worker.price.connect(self.get_price)
         self.worker.start()
+        
+    def show_tooltip(self, state: bool, candlestick_set: QCandlestickSet):
+        """캔들 위에 마우스를 올릴 때 툴팁 표시"""
+        if state:  # 마우스가 캔들 위에 있을 때
+            if not isinstance(candlestick_set, QCandlestickSet):
+                return  # candlestick_set이 QCandlestickSet이 아니면 무시
 
+            open_price = candlestick_set.open()
+            close_price = candlestick_set.close()
+            low_price = candlestick_set.low()
+            high_price = candlestick_set.high()
+            change_rate = ((close_price - open_price) / open_price) * 100
+
+            # 상승률 색상 설정
+            change_rate_color = "#FF4C4C" if change_rate > 0 else "#4C9FFF"
+
+            # 툴팁 텍스트 생성
+            tooltip_text = (
+                f"시가: {open_price:.2f}<br>"
+                f"종가: {close_price:.2f}<br>"
+                f"최저가: {low_price:.2f}<br>"
+                f"최고가: {high_price:.2f}<br>"
+                f"<span style='color: {change_rate_color};'>"
+                f"변동률: {change_rate:.2f}%</span>"
+            )
+
+            # 툴팁 표시
+            self.current_tooltip_text = tooltip_text
+            self.current_tooltip_pos = QCursor.pos()
+            QToolTip.showText(self.current_tooltip_pos, tooltip_text, self.chart_view)
+
+            # 타이머 시작
+            self.tooltip_timer.start()
+        else:  # 마우스가 캔들에서 벗어날 때
+            QToolTip.hideText()
+            self.tooltip_timer.stop()
+
+    def update_tooltip(self):
+        """툴팁을 갱신하여 사라지지 않도록 유지"""
+        if self.current_tooltip_text and self.current_tooltip_pos:
+            QToolTip.showText(self.current_tooltip_pos, self.current_tooltip_text, self.chart_view)
+    
 class OrderBookWidget(QWidget):
     def __init__(self, coin_symbol="KRW-BTC"):
         super().__init__()

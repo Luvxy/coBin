@@ -3,7 +3,7 @@ import time
 import os
 import json
 import pyupbit
-from PySide6.QtCore import Qt, QThread, Signal, QObject, QMutex, QWaitCondition
+from PySide6.QtCore import Qt, QThread, Signal, QObject, QMutex, QWaitCondition, QTimer
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QLabel,
     QFrame, QDialog, QDialogButtonBox, QComboBox, QLineEdit, QCheckBox, QHBoxLayout,
@@ -1057,10 +1057,11 @@ class BlockConfigDialog(QDialog):
 class BlockMain(QWidget):
     log_signal = Signal(str)
 
-    def __init__(self, upbit):
+    def __init__(self, upbit, user_id):
         super().__init__()
         self.setWindowTitle("PyQt5 Block System as Frame")
         self.upbit = upbit
+        self.user_id = user_id
 
         self.blocks = []
         self.layout = QVBoxLayout(self)
@@ -1070,6 +1071,12 @@ class BlockMain(QWidget):
         
         self.blocks = []
         self.max_blocks = 4
+        
+        # point1 = free, point2 = paid
+        self.point = {
+            "point1": 0,
+            "point2": 0,
+        }
         
         # 로딩 애니메이션 설정
         self.loading_label = QLabel(self)
@@ -1277,6 +1284,10 @@ class BlockMain(QWidget):
         self.open_add_dialog(block, block_content)
     
     def run_all_blocks(self, coin):
+        if self.point["point1"] < 1 and self.point["point2"] < 1:
+            self.add_to_history("포인트가 부족합니다.")
+            return
+        
         for block in self.blocks:
             if block.action is not None:
                 # 각 조건과 액션에 coin 업데이트
@@ -1292,12 +1303,32 @@ class BlockMain(QWidget):
                     text = block.interval_edit.text()
                     if text.strip().isdigit():
                         block.interval_sec = int(text.strip())
-
-                # 블록 워커 시작
+                        
+                # 타이머 추가
+                # 타이머는 1분당 point1를 1씩 차감
+                # 만약 point1 = 0이 되면 point2를 1씩 차감
+                # point2 = 0이 되면 더 이상 블록 실행 불가
+                # 블록 쓰레드 종료
                 if block.worker is None:
                     block.worker = BlockWorker(block, block.interval_sec)
                     block.worker.log_signal.connect(self.add_to_history)
                     block.worker.start()
+                    
+                    timer = QTimer()
+                    timer.setInterval(60000)
+                    timer.timeout.connect(lambda: self.update_point())
+                    timer.start()
+                    
+    def update_point(self):
+        if self.point["point1"] > 0:
+            self.point["point1"] -= 1
+        else:
+            if self.point["point2"] > 0:
+                self.point["point2"] -= 1
+            else:
+                self.stop_all_blocks()
+                self.add_to_history("포인트가 부족합니다.")
+                return
 
     def stop_all_blocks(self):   
         #loading gif

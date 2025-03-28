@@ -84,7 +84,7 @@ def profile_view(request):
     user_id = str(request.user.username)  # Django 유저 ID를 문자열로 변환 (Firebase UID와 일치해야 함)
     
     # Firestore에서 사용자 정보 가져오기
-    user_data = get_user_from_firestore(user_id)  
+    user_data = get_user_from_firestore(user_id)
     
     if not user_data:
         return redirect('logout')  # Firebase에 사용자 정보가 없으면 로그아웃 처리
@@ -131,6 +131,10 @@ def profile_view(request):
     })
 
 
+###################################################################################################
+# cobin app api
+###################################################################################################
+
 # cobin app api connet
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -153,6 +157,101 @@ def signup(request):
         print("회원가입 실패")
         form = UserForm()
     return render(request, 'login.html', {'form': form})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])  # 인증된 사용자만 접근 가능
+def get_user_info(request):
+    """유저 정보를 반환하는 API"""
+    user = request.user
+    user_data = {
+        "username": user.username,
+        "email": user.email,
+    }
+    return Response(user_data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])  # 인증된 사용자만 접근 가능
+def get_user_by_id(request, user_id):
+    """
+    요청으로 받은 user_id를 사용하여 Firebase Firestore에서 유저 정보를 반환하는 API
+    """
+    try:
+        # Firestore에서 유저 정보 가져오기
+        user_ref = db.collection("users").document(user_id)
+        user_doc = user_ref.get()
+
+        if user_doc.exists:
+            user_data = user_doc.to_dict()
+            return Response({
+                "status": "success",
+                "user_data": user_data
+            }, status=200)
+        else:
+            return Response({
+                "status": "fail",
+                "message": f"User with ID '{user_id}' not found."
+            }, status=404)
+    except Exception as e:
+        return Response({
+            "status": "error",
+            "message": str(e)
+        }, status=500)
+        
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])  # 인증된 사용자만 접근 가능
+def upload_inv(request, user_id):
+    """
+    API로 받은 데이터를 Firebase Firestore에 저장
+    """
+    try:
+        # 요청 데이터에서 date, amount, profitRate 가져오기
+        data = request.data
+        date = data.get('date')  # "2025/03/28" 형식
+        amount = data.get('amount')
+        profit_rate = data.get('profitRate')
+
+        # 필수 데이터가 없는 경우 에러 반환
+        if not date or amount is None or profit_rate is None:
+            return Response({
+                "status": "fail",
+                "message": "date, amount, and profitRate are required."
+            }, status=400)
+
+        # 날짜 형식을 "YYYYMMDD"로 변환
+        formatted_date = date.replace("/", "")  # "20250328"
+
+        # Firestore에서 기존 문서 수를 가져와 count 계산
+        user_ref = db.collection("users").document(user_id).collection("investmentHistory")
+        existing_docs = user_ref.stream()
+        count = sum(1 for _ in existing_docs) + 1  # 기존 문서 수 + 1
+
+        # 문서 이름 생성: "YYYYMMDD_count"
+        document_id = f"{formatted_date}_{count}"
+
+        # Firestore에 데이터 저장
+        user_ref.document(document_id).set({
+            "date": date,
+            "amount": amount,
+            "profitRate": profit_rate
+        })
+
+        return Response({
+            "status": "success",
+            "message": "Data uploaded successfully.",
+            "document_id": document_id
+        }, status=201)
+    except Exception as e:
+        return Response({
+            "status": "error",
+            "message": str(e)
+        }, status=500)
+    
+
+###################################################################################################
+# cobin app api end line
+###################################################################################################
 
 
 # email verification 함수

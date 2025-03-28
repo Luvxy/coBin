@@ -50,10 +50,13 @@ urlpatterns = [
     path('blog/<str:category>/<int:pk>/delete/', views.delete_post, name='delete_post'),
     path('blog/<str:category>/<int:post_pk>/comment/<int:comment_pk>/delete/', views.delete_comment, name='delete_comment'),
     
-    # app URL
+    # cobin app 관련 URL
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('protected-api/', views.protected_api, name='protected_api'),
+    path('api/user-info/', views.get_user_info, name='get_user_info'),
+    path('api/user/<str:user_id>/', views.get_user_by_id, name='get_user_by_id'),
+    path('api/user/<str:user_id>/upload_inv/', views.upload_inv, name='upload_inv'),
     
     # emali
     path('verify/email/send/', views.send_email_verification, name='send_email_verification'),

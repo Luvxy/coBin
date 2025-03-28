@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'mainuhamRj.ui'
+## Form generated from reading UI file 'mainrIRJFY.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.2
 ##
@@ -664,6 +664,10 @@ class Ui_MainWindow(object):
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
         self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 1909, 1029))
         self.strategy_combo = QComboBox(self.scrollAreaWidgetContents)
+        self.strategy_combo.addItem("")
+        self.strategy_combo.addItem("")
+        self.strategy_combo.addItem("")
+        self.strategy_combo.addItem("")
         self.strategy_combo.setObjectName(u"strategy_combo")
         self.strategy_combo.setGeometry(QRect(10, 10, 211, 22))
         self.strategy_combo.setStyleSheet(u"QComboBox {\n"
@@ -942,7 +946,7 @@ class Ui_MainWindow(object):
 "")
         self.pushButton = QPushButton(self.scrollAreaWidgetContents)
         self.pushButton.setObjectName(u"pushButton")
-        self.pushButton.setGeometry(QRect(1320, 50, 581, 151))
+        self.pushButton.setGeometry(QRect(1320, 50, 311, 151))
         self.pushButton.setStyleSheet(u"/* \uae30\ubcf8 \ubc84\ud2bc \uc2a4\ud0c0\uc77c */\n"
 "QPushButton {\n"
 "    background-color: #4C566A; /* \ubc84\ud2bc \ubc30\uacbd */\n"
@@ -1039,17 +1043,103 @@ class Ui_MainWindow(object):
 "    border: 2px solid #3B4252;\n"
 "}\n"
 "")
+        self.groupBox_3 = QGroupBox(self.scrollAreaWidgetContents)
+        self.groupBox_3.setObjectName(u"groupBox_3")
+        self.groupBox_3.setGeometry(QRect(1640, 50, 261, 151))
+        self.groupBox_3.setStyleSheet(u"/* \uae30\ubcf8 QGroupBox \uc2a4\ud0c0\uc77c */\n"
+"QGroupBox {\n"
+"    background-color: #2E3440; /* \ubc30\uacbd\uc0c9 */\n"
+"    border: 2px solid #4C566A; /* \ud14c\ub450\ub9ac */\n"
+"    border-radius: 8px; /* \ubaa8\uc11c\ub9ac \ub465\uae00\uac8c */\n"
+"}\n"
+"\n"
+"/* \uadf8\ub8f9\ubc15\uc2a4 \uc81c\ubaa9 \uc2a4\ud0c0\uc77c */\n"
+"QGroupBox::title {\n"
+"    color: #D8DEE9; /* \uc81c\ubaa9 \uc0c9\uc0c1 */\n"
+"    font-size: 14px;\n"
+"    font-weight: bold;\n"
+"    subcontrol-origin: margin;\n"
+"    subcontrol-position: top left; /* \uc81c\ubaa9 \uc704\uce58 */\n"
+"    padding: 2px 10px;\n"
+"    background-color: transparent; /* \uc81c\ubaa9 \ubc30\uacbd \ud22c\uba85 */\n"
+"}\n"
+"\n"
+"/* \ub9c8\uc6b0\uc2a4 \ud638\ubc84 \uc2dc */\n"
+"QGroupBox:hover {\n"
+"    border: 2px solid #81A1C1;\n"
+"}\n"
+"")
+        self.label_9 = QLabel(self.groupBox_3)
+        self.label_9.setObjectName(u"label_9")
+        self.label_9.setGeometry(QRect(10, 20, 241, 31))
+        font1 = QFont()
+        font1.setBold(True)
+        self.label_9.setFont(font1)
+        self.label_9.setStyleSheet(u"QLabel {\n"
+"    background-color: transparent; /* \ubc30\uacbd \ud22c\uba85 */\n"
+"    color: #D8DEE9; /* \uae00\uc790\uc0c9 */\n"
+"    font-size: 25px;\n"
+"    font-weight: bold;\n"
+"    border-radius: 5px;\n"
+"}\n"
+"\n"
+"/* \uac15\uc870 \uc2a4\ud0c0\uc77c */\n"
+"QLabel[highlight=\"true\"] {\n"
+"    color: #81A1C1; /* \uac15\uc870\ub41c \uae00\uc790\uc0c9 */\n"
+"    font-size: 16px;\n"
+"    font-weight: bold;\n"
+"}\n"
+"")
+        self.label_10 = QLabel(self.groupBox_3)
+        self.label_10.setObjectName(u"label_10")
+        self.label_10.setGeometry(QRect(10, 60, 241, 31))
+        self.label_10.setFont(font1)
+        self.label_10.setStyleSheet(u"QLabel {\n"
+"    background-color: transparent; /* \ubc30\uacbd \ud22c\uba85 */\n"
+"    color: #D8DEE9; /* \uae00\uc790\uc0c9 */\n"
+"    font-size: 25px;\n"
+"    font-weight: bold;\n"
+"    border-radius: 5px;\n"
+"}\n"
+"\n"
+"/* \uac15\uc870 \uc2a4\ud0c0\uc77c */\n"
+"QLabel[highlight=\"true\"] {\n"
+"    color: #81A1C1; /* \uac15\uc870\ub41c \uae00\uc790\uc0c9 */\n"
+"    font-size: 16px;\n"
+"    font-weight: bold;\n"
+"}\n"
+"")
+        self.label_11 = QLabel(self.groupBox_3)
+        self.label_11.setObjectName(u"label_11")
+        self.label_11.setGeometry(QRect(10, 100, 241, 31))
+        self.label_11.setFont(font1)
+        self.label_11.setStyleSheet(u"QLabel {\n"
+"    background-color: transparent; /* \ubc30\uacbd \ud22c\uba85 */\n"
+"    color: #D8DEE9; /* \uae00\uc790\uc0c9 */\n"
+"    font-size: 25px;\n"
+"    font-weight: bold;\n"
+"    border-radius: 5px;\n"
+"}\n"
+"\n"
+"/* \uac15\uc870 \uc2a4\ud0c0\uc77c */\n"
+"QLabel[highlight=\"true\"] {\n"
+"    color: #81A1C1; /* \uac15\uc870\ub41c \uae00\uc790\uc0c9 */\n"
+"    font-size: 16px;\n"
+"    font-weight: bold;\n"
+"}\n"
+"")
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         self.tabWidget.addTab(self.tab_2, "")
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
 
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(1)
 
 
         QMetaObject.connectSlotsByName(MainWindow)
-        
+    # setupUi
+    
         # ✅ 종료 버튼 추가
         self.exit_button = QPushButton(self.centralwidget)
         self.exit_button.setObjectName(u"exit_button")
@@ -1068,7 +1158,6 @@ class Ui_MainWindow(object):
         """)
         self.exit_button.setText("X")
         self.exit_button.clicked.connect(QApplication.quit)  # 클릭 시 프로그램 종료
-    # setupUi
 
     def retranslateUi(self, MainWindow):
         self.chart.setTitle("")
@@ -1102,6 +1191,9 @@ class Ui_MainWindow(object):
         self.label.setText(QCoreApplication.translate("MainWindow", u"COB2N", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), QCoreApplication.translate("MainWindow", u"\ucc28\ud2b8", None))
         self.strategy_combo.setItemText(0, QCoreApplication.translate("MainWindow", u"\uae30\ubcf8\uc804\ub7b5", None))
+        self.strategy_combo.setItemText(1, QCoreApplication.translate("MainWindow", u"Custom 1", None))
+        self.strategy_combo.setItemText(2, QCoreApplication.translate("MainWindow", u"Custom 2", None))
+        self.strategy_combo.setItemText(3, QCoreApplication.translate("MainWindow", u"Custom 3", None))
 
         self.start_button.setText(QCoreApplication.translate("MainWindow", u"\uc2e4\ud589", None))
         self.groupBox_2.setTitle(QCoreApplication.translate("MainWindow", u"\uc2e4\ud589 \ubc15\uc2a4", None))
@@ -1111,6 +1203,10 @@ class Ui_MainWindow(object):
         self.pushButton.setText(QCoreApplication.translate("MainWindow", u"\ube14\ub85d \ucd94\uac00 +", None))
         self.start_button_2.setText(QCoreApplication.translate("MainWindow", u"\uc800\uc7a5", None))
         self.clear_button.setText(QCoreApplication.translate("MainWindow", u"\ucd08\uae30\ud654", None))
+        self.groupBox_3.setTitle("")
+        self.label_9.setText(QCoreApplication.translate("MainWindow", u"\uae08\ud654 : 0", None))
+        self.label_10.setText(QCoreApplication.translate("MainWindow", u"\uc740\ud654 : 0", None))
+        self.label_11.setText(QCoreApplication.translate("MainWindow", u"\uc2e4\ud589 \uc2dc\uac04 : 0", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), QCoreApplication.translate("MainWindow", u"\uc2e4\ud589", None))
         pass
     # retranslateUi

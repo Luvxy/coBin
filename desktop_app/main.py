@@ -28,6 +28,8 @@ from pyqtgraph import PlotWidget, plot, ViewBox
 import pyqtgraph as pg
 import psutil
 
+SURVER_URL = "127.0.0.1:8000"
+
 def set_global_stylesheet(app):
     """QApplication에 글로벌 스타일시트 설정"""
     app.setStyleSheet("""
@@ -200,11 +202,13 @@ class LoadingDialog(QDialog):
 
 # 메인 윈도우 클래스
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, token, id):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)  # UI 초기화
-
+        self.token = token
+        self.id = id
+        
         # 타이틀바 숨기기
         self.setWindowFlag(QtCore.Qt.FramelessWindowHint)  # 모든 테두리 제거
 
@@ -244,6 +248,13 @@ class MainWindow(QMainWindow):
         """UI 초기화"""
         self.setup_tab1()
         self.setup_tab2()
+        
+        # 유저 정보 불러오기
+        user_data = self.fetch_user_info()
+        
+        # point1 = free, point2 = paid
+        self.blockFrame.point['point1'] = user_data['point1']
+        self.blockFrame.point['point2'] = user_data['point2']
 
     def setup_signals(self):
         """신호 연결"""
@@ -302,7 +313,7 @@ class MainWindow(QMainWindow):
 
     def setup_tab2(self):
         """Tab2 초기화"""
-        self.blockFrame = BlockMain(self.upbit)
+        self.blockFrame = BlockMain(self.upbit, self.id)
         self.ui.pushButton.clicked.connect(self.blockFrame.add_block)
         self.ui.verticalLayout.addWidget(self.blockFrame)
         self.blockFrame.history = self.ui.history
@@ -314,6 +325,22 @@ class MainWindow(QMainWindow):
         self.load_custom_strategy("default")  # 기본 전략 로드
         print("tab2 데이터 로드 완료.")
 
+    def fetch_user_info(self):
+        """Django 서버로 요청을 보내 유저 정보를 가져옵니다."""
+        url = f"http://{SURVER_URL}/api/user/{self.id}"  # Django 서버의 API URL
+        headers = {
+            "Authorization": f"Bearer {self.token}"  # JWT 토큰을 헤더에 포함
+        }
+        response = requests.get(url, headers=headers)
+
+        if response.status_code == 200:
+            result = response.json()
+            user_data = result['user_data']
+            return user_data
+        else:
+            print("유저 정보 요청 실패:", response.status_code, response.text)
+            return None
+    
     def update_chart(self):
         """차트 업데이트"""
         # ✅ 로딩 화면 표시
@@ -603,7 +630,7 @@ class SpleshScreen(QMainWindow):
         self.ui.pushButton.clicked.connect(self.login_button_clicked)
     
     def login_button_clicked(self):
-        url = 'http://127.0.0.1:8000/api/token/'
+        url = f'http://{SURVER_URL}/api/token/'
         
         payload = {
             'username': self.ui.user_id.text(),
@@ -619,11 +646,11 @@ class SpleshScreen(QMainWindow):
 
             # 보호된 API에 접근
             headers = {'Authorization': f'Bearer {access_token}'}
-            api_response = requests.get('http://127.0.0.1:8000/protected-api/', headers=headers)
+            api_response = requests.get(f'http://{SURVER_URL}/protected-api/', headers=headers)
 
             if api_response.status_code == 200:
                 print("성공적으로 접근:", api_response.json())
-                self.main = MainWindow()
+                self.main = MainWindow(access_token, self.ui.user_id.text())
                 self.main.show()
                 
                 self.close()
@@ -637,6 +664,26 @@ class SpleshScreen(QMainWindow):
             QMessageBox.critical(self, '로그인 실패', '아이디 또는 비밀번호가 일치하지 않습니다.')
         
         
+def login_button_clicked(id, password):
+    """로그인 요청을 보내고 JWT 토큰을 반환합니다."""
+    url = 'http://127.0.0.1:8000/api/token/'
+    
+    payload = {
+        'username': id,
+        'password': password,
+    }
+    
+    response = requests.post(url, data=payload)  # data를 사용
+
+    if response.status_code == 200:
+        tokens = response.json()
+        access_token = tokens['access']
+        refresh_token = tokens['refresh']
+        return access_token
+    else:
+        print("로그인 실패:", response.json())
+        return None
+        
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     set_global_stylesheet(app)  # 글로벌 스타일시트 설정
@@ -648,6 +695,7 @@ if __name__ == "__main__":
     # window = SpleshScreen()
     # window.show()
     # window = LoadingScreen()
-    window = MainWindow()
+    token = login_button_clicked("brunch", "qaz4455!")
+    window = MainWindow(token, "brunch")
     window.show()
     sys.exit(app.exec())

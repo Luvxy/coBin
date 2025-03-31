@@ -1,5 +1,5 @@
 from django.urls import re_path
-from ..cobin.consumers import PointConsumer, TradingConsumer
+from .consumers import PointConsumer, TradingConsumer
 
 websocket_urlpatterns = [
     re_path(r'ws/points/(?P<user_id>\w+)/$', PointConsumer.as_asgi()),

@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.validators import MaxValueValidator
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -8,7 +9,14 @@ class UserProfile(models.Model):
     phone_verified = models.BooleanField(default=False)  # 휴대전화 인증 여부
     email_verification_code = models.CharField(max_length=6, blank=True, null=True)  # 이메일 인증 코드
     sms_verification_code = models.CharField(max_length=6, blank=True, null=True)  # SMS 인증 코드
-
+    point1 = models.IntegerField(blank=True, null=True)
+    point2 = models.IntegerField(
+        blank=True,
+        null=True,
+        validators=[MaxValueValidator(960)]  # 상한값 10000으로 제한
+    )
+    
+    
     def __str__(self):
         return self.user.username
 

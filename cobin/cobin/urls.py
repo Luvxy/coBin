@@ -48,7 +48,7 @@ urlpatterns = [
     path('blog/<str:category>/<int:pk>/', views.post_detail, name='post_detail'),
     path('blog/<str:category>/<int:pk>/like/', views.like, name='like'),
     path('blog/<str:category>/<int:pk>/delete/', views.delete_post, name='delete_post'),
-    path('blog/<str:category>/<int:post_pk>/comment/<int:comment_pk>/delete/', views.delete_comment, name='delete_comment'),
+    path('api/user/update_consumed_points/', views.update_consumed_points, name='update_consumed_points'),
     
     # cobin app 관련 URL
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
@@ -57,6 +57,8 @@ urlpatterns = [
     path('api/user-info/', views.get_user_info, name='get_user_info'),
     path('api/user/<str:user_id>/', views.get_user_by_id, name='get_user_by_id'),
     path('api/user/<str:user_id>/upload_inv/', views.upload_inv, name='upload_inv'),
+    path('purchase-points/', views.purchase_points, name='purchase_points'),
+    path('api/user/update_consumed_points/', views.update_consumed_points, name='update_consumed_points'),
     
     # emali
     path('verify/email/send/', views.send_email_verification, name='send_email_verification'),

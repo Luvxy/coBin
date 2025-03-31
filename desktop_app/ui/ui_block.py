@@ -3,6 +3,7 @@ import time
 import os
 import json
 import pyupbit
+import requests
 from PySide6.QtCore import Qt, QThread, Signal, QObject, QMutex, QWaitCondition, QTimer
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QLabel,
@@ -11,6 +12,8 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtGui import QMovie
 from main import LoadingDialog
+
+SURVER_URL = "127.0.0.1:8000"
 
 # ---------------------
 # 부모 조건 클래스
@@ -1057,17 +1060,20 @@ class BlockConfigDialog(QDialog):
 class BlockMain(QWidget):
     log_signal = Signal(str)
 
-    def __init__(self, upbit, user_id):
+    def __init__(self, upbit):
         super().__init__()
         self.setWindowTitle("PyQt5 Block System as Frame")
         self.upbit = upbit
-        self.user_id = user_id
 
         self.blocks = []
         self.layout = QVBoxLayout(self)
 
         # History (결과 출력)
         self.history = QListWidget()
+        
+        # point label
+        self.point1 = QLabel()
+        self.point2 = QLabel()
         
         self.blocks = []
         self.max_blocks = 4
@@ -1084,6 +1090,11 @@ class BlockMain(QWidget):
         self.loading_label.setMovie(self.loading_movie)
         self.loading_label.setFixedSize(22, 22)
 
+        # 포인트 소모 추적
+        self.consumed_points = {
+            "point1": 0,
+            "point2": 0,
+        }
     
     def update_upbit(self, new_upbit):
         """Upbit 객체 업데이트"""
@@ -1314,35 +1325,93 @@ class BlockMain(QWidget):
                     block.worker.log_signal.connect(self.add_to_history)
                     block.worker.start()
                     
-                    timer = QTimer()
-                    timer.setInterval(60000)
-                    timer.timeout.connect(lambda: self.update_point())
-                    timer.start()
+                    self.timer = QTimer()
+                    self.timer.setInterval(1000)  # 1분마다 실행
+                    self.timer.timeout.connect(self.update_point)
+                    self.timer.start()
                     
     def update_point(self):
+        """포인트를 차감하고 소모된 포인트를 추적"""
         if self.point["point1"] > 0:
             self.point["point1"] -= 1
+            self.consumed_points["point1"] += 1
+            self.point1.setText(f"금화: {self.point["point1"]}")
+        elif self.point["point2"] > 0:
+            self.point["point2"] -= 1
+            self.consumed_points["point2"] += 1
+            self.point1.setText(f"금화: {self.point["point2"]}")
         else:
-            if self.point["point2"] > 0:
-                self.point["point2"] -= 1
-            else:
-                self.stop_all_blocks()
-                self.add_to_history("포인트가 부족합니다.")
-                return
-
-    def stop_all_blocks(self):   
-        #loading gif
+            self.stop_all_blocks()
+            self.add_to_history("포인트가 부족합니다.")
+            return
+        
+    def stop_all_blocks(self):
+        """모든 블록을 중지하고 소모된 포인트를 서버로 전송"""
+        # 로딩 애니메이션 표시
         self.loading_screen = LoadingDialog()
-        self.loading_screen.show_loading()      
+        self.loading_screen.show_loading()
+
         for block in self.blocks:
             if block.worker is not None:
                 block.worker.terminate()  # ✅ 강제 종료
                 block.worker = None  # ✅ 바로 None 처리하여 즉시 종료 효과
+            
+        self.timer.stop()
+
+        # 서버로 소모된 포인트 전송
+        try:
+            self.send_consumed_points_to_server()
+        except:
+            QMessageBox.information(self, "서버 연결 실패", "서버와 연결 실패했습니다.")
+        # 로딩 애니메이션 숨기기
 
         self.loading_screen.hide_loading()
+
         self.add_to_history("모든 블록이 종료되었습니다.")
+        
+    def send_consumed_points_to_server(self):
+        """소모된 포인트를 서버로 전송"""
+        # 토큰 갱신
+        try:
+            new_token = self.upbit.refresh_token()  # Upbit 객체에 refresh_token 메서드가 있다고 가정
+            if not new_token:
+                raise ValueError("토큰 갱신 실패: 새 토큰이 None입니다.")
+            self.upbit.token = new_token  # 갱신된 토큰 업데이트
+        except Exception as e:
+            self.add_to_history(f"토큰 갱신 중 오류 발생: {e}")
+            return
+
+        # 서버 요청 URL 및 헤더 설정
+        url = f"http://{SURVER_URL}/api/user/update_consumed_points/"  # 슬래시 확인
+        headers = {
+            "Authorization": f"Bearer {self.upbit.token}",  # 갱신된 토큰 사용
+            "Content-Type": "application/json"
+        }
+        data = {
+            "consumed_point1": self.consumed_points["point1"],
+            "consumed_point2": self.consumed_points["point2"]
+        }
+        
+        try:
+            # 서버로 POST 요청 전송
+            response = requests.post(url, headers=headers, json=data)
+            print(response)
+            if response.status_code == 200:
+                self.add_to_history("소모된 포인트가 서버에 성공적으로 저장되었습니다.")
+                # 요청 성공 시 소모된 포인트 초기화
+                self.consumed_points = {"point1": 0, "point2": 0}
+            else:
+                # 요청 실패 시 상세 오류 메시지 출력
+                self.add_to_history(f"서버 요청 실패: {response.status_code}, {response.text}")
+        except requests.exceptions.RequestException as e:
+            # 네트워크 오류 처리
+            self.add_to_history(f"서버 요청 중 네트워크 오류 발생: {e}")
+        except Exception as e:
+            # 기타 예외 처리
+            self.add_to_history(f"서버 요청 중 알 수 없는 오류 발생: {e}")
 
     def closeEvent(self, event):
+        """창 닫기 이벤트에서 모든 블록을 중지하고 포인트를 서버로 전송"""
         self.stop_all_blocks()
         super().closeEvent(event)
         

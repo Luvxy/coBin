@@ -47,8 +47,38 @@
         <a>{{ point }} 포인트</a>
         <a class="blank"></a>
         <a class="price">₩ 10,000</a>
-        <button>구매하기</button>
+        <button onclick="purchasePoints('{{ user.username }}', {{ point }})">구매하기</button>
     </div>
     {% endfor %}
 </div>
+
+<script>
+    function purchasePoints(username, points) {
+        fetch('/purchase-points/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                username: username,  // 사용자 이름 전달
+                points: points
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === "success") {
+                alert("포인트가 성공적으로 추가되었습니다!");
+                // 페이지를 새로고침하여 업데이트된 포인트를 반영
+                location.reload();
+            } else {
+                alert("오류 발생: " + data.message);
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("서버와의 통신 중 오류가 발생했습니다.");
+        });
+    }
+</script>
 {% endblock %}

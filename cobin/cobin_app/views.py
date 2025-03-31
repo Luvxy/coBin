@@ -29,11 +29,17 @@ from .models import UserProfile
 import random
 import requests
 
+# firebase 관련 라이브러리
 import firebase_admin
 from firebase_admin import credentials, firestore
 from cobin_app.forms import UserForm
 
+# 웹소켓 관련
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
 import os
+from datetime import datetime
 from django.conf import settings
 
 # Firebase 인증 정보 로드
@@ -78,7 +84,101 @@ def get_user_from_firestore(user_id):
         return user_doc.to_dict()
     else:
         return None
+
+def update_user_points(user_id, new_points):
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        f"user_{user_id}",
+        {
+            "type": "send_point_update",
+            "message": {"points": new_points}
+        }
+    )
     
+@csrf_exempt
+def purchase_points(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            username = data.get('username')  # 사용자 이름
+            points_to_add = data.get('points')  # 구매한 포인트
+
+            # 사용자 포인트 업데이트
+            user = User.objects.get(username=username)  # username으로 사용자 조회
+            profile, created = UserProfile.objects.get_or_create(user=user)
+            profile.point1 = (profile.point1 or 0) + points_to_add
+            profile.save()
+
+            # Firebase에서 기존 문서 업데이트
+            user_ref = db.collection("users").document(username)  # username을 문서 ID로 사용
+            user_ref.update({
+                "point1": profile.point1,
+                "point2": profile.point2 or 0
+            })
+
+            # 구매 기록 추가
+            purchase_ref = user_ref.collection("purchaseHistory")
+            purchase_ref.add({
+                "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),  # 현재 날짜와 시간
+                "points": points_to_add,
+                "description": f"{points_to_add} 포인트 구매"
+            })
+
+            # WebSocket을 통해 프로그램으로 포인트 업데이트 알림 전송
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"user_{username}",  # WebSocket 그룹 이름
+                {
+                    "type": "send_point_update",
+                    "message": {
+                        "point1": profile.point1,
+                        "point2": profile.point2 or 0
+                    }
+                }
+            )
+
+            return JsonResponse({"status": "success", "message": "포인트가 성공적으로 추가되었습니다."})
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)})
+    return JsonResponse({"status": "error", "message": "Invalid request method."})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def update_consumed_points(request):
+    """
+    클라이언트에서 소모된 포인트를 서버에 전송하여 업데이트하는 API
+    """
+    try:
+        print(f"Request method: {request.method}")  # 요청 메서드 출력
+        print(f"Request path: {request.path}")  # 요청 URL 출력
+        print(f"Authenticated user: {request.user}")  # 디버깅용
+        print(f"Username: {request.user.username}")  # 디버깅용
+
+        data = request.data
+        consumed_point1 = data.get('consumed_point1', 0)
+        consumed_point2 = data.get('consumed_point2', 0)
+
+        # 사용자 포인트 업데이트
+        user = User.objects.get(username=request.user.username)
+        profile, created = UserProfile.objects.get_or_create(user=user)
+
+        # 포인트 차감
+        profile.point1 = max((profile.point1 or 0) - consumed_point1, 0)
+        profile.point2 = max((profile.point2 or 0) - consumed_point2, 0)
+        profile.save()
+
+        # Firebase에서 기존 문서 업데이트
+        user_ref = db.collection("users").document(request.user.username)
+        user_ref.update({
+            "point1": profile.point1,
+            "point2": profile.point2
+        })
+
+        return JsonResponse({"status": "success", "message": "포인트가 성공적으로 업데이트되었습니다."})
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
 @login_required
 def profile_view(request):
     user_id = str(request.user.username)  # Django 유저 ID를 문자열로 변환 (Firebase UID와 일치해야 함)

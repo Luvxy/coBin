@@ -1,11 +1,44 @@
 import pyupbit
+import requests
 
 class Upbit_api:
-    def __init__(self, access_key, secret_key):
+    def __init__(self, access_key, secret_key, id, password):
         self.access_key = access_key
         self.secret_key = secret_key
+        self.id = id
+        self.password = password
         self.user = self.create_user()
+        self.token = self.create_token()
         
+    def create_token(self):
+        """로그인 요청을 보내고 JWT 토큰을 반환합니다."""
+        url = 'http://127.0.0.1:8000/api/token/'
+
+        payload = {
+            'username': self.id,
+            'password': self.password,
+        }
+
+        response = requests.post(url, data=payload)
+
+        if response.status_code == 200:
+            tokens = response.json()
+            access_token = tokens['access']
+            return access_token
+        else:
+            error_message = response.json().get('detail', '로그인 실패')
+            print(f"로그인 실패: {error_message}")
+            return None
+
+    def refresh_token(self):
+        return self.create_token()
+        
+    def get_valid_token(self):
+        """유효한 토큰을 반환합니다. 만료된 경우 갱신합니다."""
+        if not self.token:
+            self.token = self.create_token()
+        return self.token
+
     def create_user(self):
         try:
             self.user = pyupbit.Upbit(self.access_key, self.secret_key)

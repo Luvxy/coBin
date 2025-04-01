@@ -311,6 +311,8 @@ class MainWindow(QMainWindow):
         
         self.ui.label_9.setText(f"금화: {user_data['point1']}")
         self.ui.label_10.setText(f"은화: {user_data['point2']}")
+        points = user_data['point1'] + user_data['point2']
+        self.ui.label_11.setText(f"남은 시간: {self.blockFrame.point_to_time(points)}")
 
     def setup_signals(self):
         """신호 연결"""
@@ -326,8 +328,11 @@ class MainWindow(QMainWindow):
         self.ui.start_button_2.clicked.connect(self.save_custom_strategy)
         self.ui.clear_button.clicked.connect(self.blockFrame.clear_blocks)
         self.ui.pushButton_2.clicked.connect(self.open_pdf_viewer)
-        
+        self.ui.back_start.clicked.connect(self.backtest)  # 백테스트 실행 버튼
+        self.ui.back_result.clicked.connect(self.display_backtest_results)  # 결과 표시 버튼
         self.ui.strategy_combo.addItems(["기본전략","custom1", "custom2", "custom3", "custom4", "custom5"])
+        self.ui.back_count.addItems(["20", "30", "50", "100", "200"])
+        self.ui.back_time.addItems(["1분", "3분", "5분", "15분", "30분", "1시간"])
 
     def setup_tab1(self):
         """Tab1 초기화 (그래프 복구)"""
@@ -375,6 +380,8 @@ class MainWindow(QMainWindow):
         self.blockFrame.history = self.ui.history
         self.blockFrame.point1 = self.ui.label_9
         self.blockFrame.point2 = self.ui.label_10
+        self.blockFrame.remain_time = self.ui.label_11
+        
 
     def preload_tab2_data(self):
         """tab2에서 필요한 데이터를 미리 로드"""
@@ -604,8 +611,6 @@ class MainWindow(QMainWindow):
             # 주기 설정 적용
             if hasattr(block, "interval_edit"):
                 block.interval_edit.setText(block_data.get("주기", "10"))
-
-
     
     def load_strategy(self):
         """ 기본 전략 불러오기 """
@@ -666,6 +671,75 @@ class MainWindow(QMainWindow):
         self.viewer = PdfViewer(viewer_path, width=880, height=650)  # PDF 파일 경로 설정
         self.viewer.show()
 
+    ###################################################################################
+    # 백테스트
+    ###################################################################################
+    def backtest(self):
+        """백테스트 실행"""
+        coin = self.ui.strategy_combo_2.currentText()
+        interval = self.ui.back_time.currentText()
+        count = int(self.ui.back_count.currentText())        
+        initial_balance = 1000000  # 초기 자본 (100만원)
+        
+        # interval 매핑
+        interval_mapping = {
+            "1분": "minute1",
+            "3분": "minute3",
+            "5분": "minute5",
+            "15분": "minute15",
+            "30분": "minute30",
+            "1시간": "minute60"
+        }
+        interval = interval_mapping.get(interval, "minute30")
+
+        # 백테스트 실행
+        results = self.blockFrame.run_backtest(coin, interval, count, initial_balance)
+
+        # 결과 저장
+        result_file = f"{coin}_backtest_results.json"
+        with open(result_file, "w", encoding="utf-8") as f:
+            json.dump(results, f, ensure_ascii=False, indent=4)
+
+        QMessageBox.information(self, "백테스트 완료", f"백테스트 결과가 {result_file}에 저장되었습니다.")
+    
+    def display_backtest_results(self):
+        """저장된 백테스트 결과를 불러와 새 창에 표시"""
+        options = QFileDialog.Options()
+        file_name, _ = QFileDialog.getOpenFileName(self, "백테스트 결과 파일 선택", "", "JSON Files (*.json);;All Files (*)", options=options)
+        if not file_name:
+            return
+
+        try:
+            with open(file_name, "r", encoding="utf-8") as f:
+                results = json.load(f)
+
+            # 결과 표시
+            result_text = (
+                f"초기 자본: {results['initial_balance']}원\n"
+                f"최종 자본: {results['final_balance']}원\n"
+                f"총 거래 횟수: {results['total_trades']}회\n"
+                f"승리 횟수: {results['wins']}회\n"
+                f"패배 횟수: {results['losses']}회\n"
+                f"승률: {results['win_rate']:.2f}%"
+            )
+
+            # 새 창에 결과 표시
+            result_window = QDialog(self)
+            result_window.setWindowTitle("백테스트 결과")
+            result_window.setFixedSize(400, 300)
+
+            layout = QVBoxLayout(result_window)
+            result_label = QLabel(result_text)
+            result_label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+            result_label.setWordWrap(True)
+            layout.addWidget(result_label)
+
+            result_window.exec_()
+        except Exception as e:
+            QMessageBox.critical(self, "오류", f"백테스트 결과를 불러오는 중 오류가 발생했습니다: {e}")
+    
+    
+    
 # 로그인 윈도우 클래스
 class SpleshScreen(QMainWindow):
     def __init__(self):

@@ -15,6 +15,149 @@ from main import LoadingDialog
 
 SURVER_URL = "127.0.0.1:8000"
 
+from PySide6.QtCore import QThread, Signal
+
+
+# 백테스트 작업을 수행하는 스레드 클래스
+import json
+from datetime import datetime
+
+class BacktestWorker(QThread):
+    result_signal = Signal(dict)  # 백테스트 결과를 전달하는 시그널
+    log_signal = Signal(str)  # 로그 메시지를 전달하는 시그널
+
+    def run(self):
+        try:
+            # 데이터 가져오기
+            df = pyupbit.get_ohlcv(self.coin, interval=self.interval, count=self.count)
+            if df is None or df.empty:
+                self.log_signal.emit("백테스트 데이터를 가져올 수 없습니다.")
+                self.logs.append("백테스트 데이터를 가져올 수 없습니다.")
+                return
+
+            self.log_signal.emit(f"백테스트 시작: {self.coin}, 데이터 개수: {self.count}, 간격: {self.interval}")
+            self.logs.append(f"백테스트 시작: {self.coin}, 데이터 개수: {self.count}, 간격: {self.interval}")
+
+            # 초기값 설정
+            balance = self.initial_balance
+            holdings = 0.0  # 초기 보유 코인 수량
+            wins = 0
+            losses = 0
+            total_trades = 0
+
+            # 각 블록에 대해 백테스트 실행
+            for block in self.blocks:
+                if not block.conditions or not block.action:
+                    continue
+
+                self.log_signal.emit(f"블록 테스트 시작: {block.action.name if block.action else '액션 없음'}")
+                self.logs.append(f"블록 테스트 시작: {block.action.name if block.action else '액션 없음'}")
+
+                # 조건별 백테스트 결과 계산
+                condition_results = []
+                for condition in block.conditions:
+                    if hasattr(condition, "backtest"):
+                        condition_result = condition.backtest(df)
+                        condition_results.append(condition_result)
+                    else:
+                        self.log_signal.emit(f"조건 {condition.name}에 백테스트 메서드가 없습니다.")
+                        self.logs.append(f"조건 {condition.name}에 백테스트 메서드가 없습니다.")
+                        return
+
+                # 조건 결과를 데이터별로 평가
+                for index in range(len(df)):
+                    # 모든 조건이 해당 데이터에서 만족하는지 확인
+                    if all(results[index] for results in condition_results):
+                        # 조건이 모두 만족하면 액션의 백테스트 실행
+                        if hasattr(block.action, "backtest"):
+                            # 액션의 타입에 따라 필요한 매개변수만 전달
+                            if isinstance(block.action, MarketBuyAction):
+                                action_results = block.action.backtest(
+                                    historical_data=df.iloc[:index + 1],
+                                    balance=balance
+                                )
+                            elif isinstance(block.action, (MarketSellAction, StopLossAction, TakeProfitAction, LimitSellAction)):
+                                action_results = block.action.backtest(
+                                    historical_data=df.iloc[:index + 1],
+                                    balance=balance,
+                                    holdings=holdings
+                                )
+                            else:
+                                self.log_signal.emit(f"액션 {block.action.name}에 백테스트 메서드가 없습니다.")
+                                self.logs.append(f"액션 {block.action.name}에 백테스트 메서드가 없습니다.")
+                                return
+
+                            # 액션 결과 처리
+                            for action_result in action_results:
+                                if action_result["status"] == "매도 성공":
+                                    # 승리/패배 계산
+                                    sell_amount = action_result["sell_amount"]
+                                    buy_amount = action_result.get("buy_amount", 0)
+                                    profit = sell_amount - buy_amount
+                                    if profit > 0:
+                                        wins += 1
+                                    else:
+                                        losses += 1
+
+                                if action_result["status"] in ["매수 성공", "매도 성공"]:
+                                    balance = action_result["balance"]
+                                    holdings = action_result.get("holdings", holdings)  # holdings 업데이트
+                                    total_trades += 1
+                                log_message = f"액션 실행 결과: {action_result}"
+                                self.log_signal.emit(log_message)
+                                self.logs.append(log_message)
+                        else:
+                            self.log_signal.emit(f"액션 {block.action.name}에 백테스트 메서드가 없습니다.")
+                            self.logs.append(f"액션 {block.action.name}에 백테스트 메서드가 없습니다.")
+                            return
+
+            # 백테스트 종료 후 남은 보유 수량 전부 매도
+            if holdings > 0:
+                final_price = df.iloc[-1]["close"]  # 마지막 캔들의 종가 사용
+                sell_amount = holdings * final_price
+                balance += sell_amount
+                log_message = f"남은 보유 수량 {holdings:.6f}개를 {final_price:.2f} KRW에 매도하여 {sell_amount:.2f} KRW 추가."
+                self.log_signal.emit(log_message)
+                self.logs.append(log_message)
+                holdings = 0.0  # 보유 수량 초기화
+
+            # 최종 결과 계산
+            win_rate = (wins / total_trades) * 100 if total_trades > 0 else 0
+            final_message = f"백테스트 완료. 최종 잔액: {balance:.2f}원, 승률: {win_rate:.2f}%"
+            self.log_signal.emit(final_message)
+            self.logs.append(final_message)
+
+            # 결과 반환
+            self.result_signal.emit({
+                "initial_balance": self.initial_balance,
+                "final_balance": balance,
+                "total_trades": total_trades,
+                "wins": wins,
+                "losses": losses,
+                "win_rate": win_rate
+            })
+
+            # 로그를 JSON 파일로 저장
+            self.save_logs_to_json()
+
+        except Exception as e:
+            error_message = f"백테스트 중 오류 발생: {e}"
+            self.log_signal.emit(error_message)
+            self.logs.append(error_message)
+            self.result_signal.emit({})
+            self.save_logs_to_json()
+
+    def save_logs_to_json(self):
+        """로그 데이터를 JSON 파일로 저장"""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"backtest_logs_{timestamp}.json"
+        try:
+            with open(filename, "w", encoding="utf-8") as f:
+                json.dump(self.logs, f, ensure_ascii=False, indent=4)
+            self.log_signal.emit(f"백테스트 로그가 {filename}에 저장되었습니다.")
+        except Exception as e:
+            self.log_signal.emit(f"로그 저장 중 오류 발생: {e}")
+
 # ---------------------
 # 부모 조건 클래스
 # ---------------------
@@ -50,9 +193,6 @@ class ConditionRegistry:
 # ---------------------
 
 
-
-
-
 @ConditionRegistry.register("지정 캔들 양봉/음봉 확인")
 class CheckCandleTypeCondition(Condition):
     config_fields = {
@@ -69,8 +209,15 @@ class CheckCandleTypeCondition(Condition):
         self.target_type = target_type
         self.coin = coin
         self.interval = interval
+        self.current_data = None  # 현재 데이터
 
     def check_condition(self) -> bool:
+        if self.current_data is not None:
+            # 현재 데이터 기반으로 조건 평가
+            is_bullish = self.current_data['open'] < self.current_data['close']
+            return is_bullish if self.target_type == "양봉" else not is_bullish
+
+        # 백테스트가 아닌 경우, 실시간 데이터 가져오기
         df = pyupbit.get_ohlcv(self.coin, interval=self.interval, count=self.candle_index + 1)
         if df is None or df.empty or len(df) <= self.candle_index:
             print("캔들 데이터를 가져올 수 없음")
@@ -78,8 +225,26 @@ class CheckCandleTypeCondition(Condition):
 
         target_candle = df.iloc[-(self.candle_index + 1)]
         is_bullish = target_candle['open'] < target_candle['close']
-
         return is_bullish if self.target_type == "양봉" else not is_bullish
+    
+    def backtest(self, historical_data) -> list:
+        """
+        백테스트를 위한 메서드. 주어진 데이터셋에서 조건을 평가합니다.
+        :param historical_data: DataFrame, 과거 데이터를 포함한 DataFrame
+        :return: list, 각 데이터 포인트에 대한 조건 평가 결과 (True/False)
+        """
+        results = []
+        for index in range(len(historical_data)):
+            if index < self.candle_index:
+                # 데이터가 부족한 경우 False로 처리
+                results.append(False)
+                continue
+
+            target_candle = historical_data.iloc[index - self.candle_index]
+            is_bullish = target_candle['open'] < target_candle['close']
+            result = is_bullish if self.target_type == "양봉" else not is_bullish
+            results.append(result)
+        return results
 
 @ConditionRegistry.register("거래량 확인")
 class CheckVolumeCondition(Condition):
@@ -108,6 +273,19 @@ class CheckVolumeCondition(Condition):
         print(f"현재 거래량: {current_volume:.2f}")
 
         return current_volume >= self.volume_threshold if self.check_type == "이상" else current_volume <= self.volume_threshold
+    
+    def backtest(self, historical_data) -> list:
+        """
+        백테스트를 위한 메서드. 주어진 데이터셋에서 조건을 평가합니다.
+        :param historical_data: DataFrame, 거래량 데이터를 포함한 과거 데이터
+        :return: list, 각 데이터 포인트에 대한 조건 평가 결과 (True/False)
+        """
+        results = []
+        for index, row in historical_data.iterrows():
+            current_volume = row['volume']
+            result = current_volume >= self.volume_threshold if self.check_type == "이상" else current_volume <= self.volume_threshold
+            results.append(result)
+        return results
 
 @ConditionRegistry.register("현재 가격 확인")
 class CheckPriceCondition(Condition):
@@ -129,6 +307,20 @@ class CheckPriceCondition(Condition):
         print(f"현재 가격: {current_price:.2f}")
 
         return current_price >= self.price_threshold if self.check_type == "이상" else current_price <= self.price_threshold
+
+    def backtest(self, historical_data) -> list:
+        """
+        백테스트를 위한 메서드. 주어진 데이터셋에서 조건을 평가합니다.
+        :param historical_data: DataFrame, 과거 데이터를 포함한 DataFrame
+        :return: list, 각 데이터 포인트에 대한 조건 평가 결과 (True/False)
+        """
+        results = []
+        for index, row in historical_data.iterrows():
+            current_price = row['close']
+            result = current_price >= self.price_threshold if self.check_type == "이상" else current_price <= self.price_threshold
+            results.append(result)
+        return results
+
 
 @ConditionRegistry.register("가격 변동률 확인")
 class CheckPriceChangeCondition(Condition):
@@ -157,6 +349,22 @@ class CheckPriceChangeCondition(Condition):
         print(f"가격 변동률: {price_change:.2f}%")
 
         return price_change >= self.change_threshold if self.check_type == "이상" else price_change <= self.change_threshold
+
+    def backtest(self, historical_data) -> list:
+        """
+        백테스트를 위한 메서드. 주어진 데이터셋에서 조건을 평가합니다.
+        :param historical_data: DataFrame, 과거 데이터를 포함한 DataFrame
+        :return: list, 각 데이터 포인트에 대한 조건 평가 결과 (True/False)
+        """
+        results = []
+        for index in range(1, len(historical_data)):
+            prev_close = historical_data.iloc[index - 1]['close']
+            current_close = historical_data.iloc[index]['close']
+            price_change = (current_close - prev_close) / prev_close * 100
+            result = price_change >= self.change_threshold if self.check_type == "이상" else price_change <= self.change_threshold
+            results.append(result)
+        results.insert(0, False)  # 첫 번째 데이터는 비교할 이전 데이터가 없으므로 False
+        return results
 
 
 @ConditionRegistry.register("이동평균선 돌파/하회 확인")
@@ -190,6 +398,36 @@ class CheckMovingAverageCondition(Condition):
 
         return is_break_up if self.check_type == "상향 돌파" else is_break_down
     
+    def backtest(self, historical_data) -> list:
+        """
+        백테스트를 위한 메서드. 주어진 데이터셋에서 조건을 평가합니다.
+        :param historical_data: DataFrame, 과거 데이터를 포함한 DataFrame
+        :return: list, 각 데이터 포인트에 대한 조건 평가 결과 (True/False)
+        """
+        results = []
+        ma_series = historical_data['close'].rolling(window=self.ma_days).mean()
+
+        for index in range(len(historical_data)):
+            if index < self.ma_days:
+                # 이동평균선을 계산할 데이터가 부족한 경우 False로 처리
+                results.append(False)
+                continue
+
+            current_price = historical_data.iloc[index]['close']
+            current_ma = ma_series.iloc[index]
+            prev_ma = ma_series.iloc[index - 1]
+
+            if self.check_type == "상향 돌파":
+                result = current_price > current_ma > prev_ma
+            elif self.check_type == "하향 돌파":
+                result = current_price < current_ma < prev_ma
+            else:
+                result = False
+
+            results.append(result)
+
+        return results
+    
 @ConditionRegistry.register("시간 범위 선택")
 class CheckTimeRangeCondition(Condition):
     config_fields = {
@@ -208,36 +446,19 @@ class CheckTimeRangeCondition(Condition):
         current_hour = time.localtime().tm_hour
         return self.start_hour <= current_hour <= self.end_hour
 
-
-
-# ---------------------
-# 부모 액션 클래스
-# ---------------------
-class Action(QObject):
-    def run_action(self):
-        raise NotImplementedError("run_action()을 자식 클래스에서 오버라이드해야 합니다.")
-
-class ActionRegistry:
-    _registry = {}
-
-    @classmethod
-    def register(cls, name):
-        def decorator(action_cls):
-            cls._registry[name] = action_cls
-            return action_cls
-        return decorator
-
-    @classmethod
-    def get_action_names(cls):
-        return list(cls._registry.keys())
-
-    @classmethod
-    def create_action(cls, name, *args, **kwargs):
-        action_cls = cls._registry.get(name)
-        if action_cls:
-            return action_cls(*args, **kwargs)
-        else:
-            raise ValueError(f"{name}은(는) 등록되지 않은 Action입니다.")
+    def backtest(self, historical_data) -> list:
+        """
+        백테스트를 위한 메서드. 주어진 데이터셋에서 조건을 평가합니다.
+        :param historical_data: DataFrame, 과거 데이터를 포함한 DataFrame
+        :return: list, 각 데이터 포인트에 대한 조건 평가 결과 (True/False)
+        """
+        results = []
+        for index, row in historical_data.iterrows():
+            # 시간 정보 추출 (예: '2023-03-01 09:30:00' → 9)
+            current_hour = row.name.hour
+            result = self.start_hour <= current_hour <= self.end_hour
+            results.append(result)
+        return results
 
 @ConditionRegistry.register("최고가/최저가 비교")
 class HighLowComparisonCondition(Condition):
@@ -287,6 +508,45 @@ class HighLowComparisonCondition(Condition):
             return low1 < current_price
         else:
             return False
+        
+    def backtest(self, historical_data) -> list:
+        """
+        백테스트를 위한 메서드. 주어진 데이터셋에서 조건을 평가합니다.
+        :param historical_data: DataFrame, 과거 데이터를 포함한 DataFrame
+        :return: list, 각 데이터 포인트에 대한 조건 평가 결과 (True/False)
+        """
+        results = []
+        for index in range(len(historical_data)):
+            if index < max(self.candle1, self.candle2):
+                # 비교할 데이터가 부족한 경우 False로 처리
+                results.append(False)
+                continue
+
+            high1 = historical_data.iloc[index - self.candle1]['high']
+            low1 = historical_data.iloc[index - self.candle1]['low']
+            high2 = historical_data.iloc[index - self.candle2]['high']
+            low2 = historical_data.iloc[index - self.candle2]['low']
+            current_price = historical_data.iloc[index]['close']
+
+            if self.compare_type == "최고가vs최저가":
+                result = high1 > low2
+            elif self.compare_type == "최고가vs최고가":
+                result = high1 > high2
+            elif self.compare_type == "최저가vs최저가":
+                result = low1 > low2
+            elif self.compare_type == "최고가vs현재가":
+                result = high1 > current_price
+            elif self.compare_type == "최저가vs현재가":
+                result = low1 > current_price
+            elif self.compare_type == "현재가vs최고가":
+                result = current_price > high1
+            elif self.compare_type == "현재가vs최저가":
+                result = current_price > low1
+            else:
+                result = False
+
+            results.append(result)
+        return results
 
 
 @ConditionRegistry.register("분할매수 조건")
@@ -324,6 +584,41 @@ class CheckDCACondition(Condition):
 
         return False
 
+    def backtest(self, historical_data) -> list:
+        """
+        백테스트를 위한 메서드. 주어진 데이터셋에서 조건을 평가합니다.
+        :param historical_data: DataFrame, 과거 데이터를 포함한 DataFrame
+        :return: list, 각 데이터 포인트에 대한 조건 평가 결과 (True/False)
+        """
+        results = []
+        buy_count = 0
+        last_buy_price = None
+
+        for index, row in historical_data.iterrows():
+            if buy_count >= self.max_buy_count:
+                # 최대 매수 횟수를 초과한 경우 False로 처리
+                results.append(False)
+                continue
+
+            current_price = row['close']
+
+            if last_buy_price is None:
+                # 첫 매수는 무조건 True
+                last_buy_price = current_price
+                results.append(True)
+                buy_count += 1
+            else:
+                # 가격 하락률 계산
+                price_drop = (last_buy_price - current_price) / last_buy_price * 100
+                if price_drop >= self.price_drop_percent:
+                    results.append(True)
+                    last_buy_price = current_price
+                    buy_count += 1
+                else:
+                    results.append(False)
+
+        return results
+
 
 @ConditionRegistry.register("DTC 기술 지표 조건")
 class CheckDTCIndicatorCondition(Condition):
@@ -352,6 +647,31 @@ class CheckDTCIndicatorCondition(Condition):
 
         current_rsi = rsi.iloc[-1]
         return current_rsi <= self.rsi_threshold
+    
+    def backtest(self, historical_data) -> list:
+        """
+        백테스트를 위한 메서드. 주어진 데이터셋에서 RSI 조건을 평가합니다.
+        :param historical_data: DataFrame, 과거 데이터를 포함한 DataFrame
+        :return: list, 각 데이터 포인트에 대한 조건 평가 결과 (True/False)
+        """
+        results = []
+        delta = historical_data["close"].diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+        rs = gain / loss
+        rsi = 100 - (100 / (1 + rs))
+
+        for index in range(len(historical_data)):
+            if index < 14:
+                # RSI를 계산할 데이터가 부족한 경우 False로 처리
+                results.append(False)
+                continue
+
+            current_rsi = rsi.iloc[index]
+            result = current_rsi <= self.rsi_threshold
+            results.append(result)
+
+        return results
 
 @ConditionRegistry.register("DTC 변동성 조건")
 class CheckDTCVolatilityCondition(Condition):
@@ -376,6 +696,22 @@ class CheckDTCVolatilityCondition(Condition):
         current_close = df.iloc[-1]["close"]
         price_change = abs(current_close - prev_close) / prev_close * 100
         return price_change >= self.volatility_threshold
+
+    def backtest(self, historical_data) -> list:
+        """
+        백테스트를 위한 메서드. 주어진 데이터셋에서 변동성 조건을 평가합니다.
+        :param historical_data: DataFrame, 과거 데이터를 포함한 DataFrame
+        :return: list, 각 데이터 포인트에 대한 조건 평가 결과 (True/False)
+        """
+        results = []
+        for index in range(1, len(historical_data)):
+            prev_close = historical_data.iloc[index - 1]["close"]
+            current_close = historical_data.iloc[index]["close"]
+            price_change = abs(current_close - prev_close) / prev_close * 100
+            result = price_change >= self.volatility_threshold
+            results.append(result)
+        results.insert(0, False)  # 첫 번째 데이터는 비교할 이전 데이터가 없으므로 False
+        return results
 
 @ConditionRegistry.register("RSI 기준 확인")
 class CheckRSICondition(Condition):
@@ -406,6 +742,31 @@ class CheckRSICondition(Condition):
 
         current_rsi = rsi.iloc[-1]
         return current_rsi >= self.rsi_threshold if self.check_type == "이상" else current_rsi <= self.rsi_threshold
+
+    def backtest(self, historical_data) -> list:
+        """
+        백테스트를 위한 메서드. 주어진 데이터셋에서 RSI 조건을 평가합니다.
+        :param historical_data: DataFrame, 과거 데이터를 포함한 DataFrame
+        :return: list, 각 데이터 포인트에 대한 조건 평가 결과 (True/False)
+        """
+        results = []
+        delta = historical_data["close"].diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+        rs = gain / loss
+        rsi = 100 - (100 / (1 + rs))
+
+        for index in range(len(historical_data)):
+            if index < 14:
+                # RSI를 계산할 데이터가 부족한 경우 False로 처리
+                results.append(False)
+                continue
+
+            current_rsi = rsi.iloc[index]
+            result = current_rsi >= self.rsi_threshold if self.check_type == "이상" else current_rsi <= self.rsi_threshold
+            results.append(result)
+
+        return results
 
 
 @ConditionRegistry.register("볼린저밴드 돌파 확인")
@@ -441,6 +802,37 @@ class CheckBollingerBandCondition(Condition):
             return current_price > upper_band.iloc[-1]
         else:
             return current_price < lower_band.iloc[-1]
+
+    def backtest(self, historical_data) -> list:
+        """
+        백테스트를 위한 메서드. 주어진 데이터셋에서 볼린저 밴드 조건을 평가합니다.
+        :param historical_data: DataFrame, 과거 데이터를 포함한 DataFrame
+        :return: list, 각 데이터 포인트에 대한 조건 평가 결과 (True/False)
+        """
+        results = []
+        moving_avg = historical_data["close"].rolling(window=self.period).mean()
+        std_dev = historical_data["close"].rolling(window=self.period).std()
+        upper_band = moving_avg + (std_dev * self.std_dev)
+        lower_band = moving_avg - (std_dev * self.std_dev)
+
+        for index in range(len(historical_data)):
+            if index < self.period:
+                # 이동평균선을 계산할 데이터가 부족한 경우 False로 처리
+                results.append(False)
+                continue
+
+            current_price = historical_data.iloc[index]["close"]
+
+            if self.band_type == "상한 돌파":
+                result = current_price > upper_band.iloc[index]
+            elif self.band_type == "하한 돌파":
+                result = current_price < lower_band.iloc[index]
+            else:
+                result = False
+
+            results.append(result)
+
+        return results
 
 
 @ConditionRegistry.register("피보나치 되돌림 확인")
@@ -485,7 +877,61 @@ class CheckFibonacciRetracementCondition(Condition):
             return current_price <= retracement_price
         else:
             return current_price >= retracement_price
+        
+    def backtest(self, historical_data) -> list:
+        """
+        백테스트를 위한 메서드. 주어진 데이터셋에서 피보나치 되돌림 조건을 평가합니다.
+        :param historical_data: DataFrame, 과거 데이터를 포함한 DataFrame
+        :return: list, 각 데이터 포인트에 대한 조건 평가 결과 (True/False)
+        """
+        results = []
+        high_price = historical_data["high"].max()
+        low_price = historical_data["low"].min()
+        retracement_price = low_price + (high_price - low_price) * self.retracement_level
 
+        for index, row in historical_data.iterrows():
+            current_price = row["close"]
+
+            if self.check_type == "지지선 확인":
+                result = current_price <= retracement_price
+            elif self.check_type == "저항선 확인":
+                result = current_price >= retracement_price
+            else:
+                result = False
+
+            results.append(result)
+
+        return results
+
+
+# ---------------------
+# 부모 액션 클래스
+# ---------------------
+class Action(QObject):
+    def run_action(self):
+        raise NotImplementedError("run_action()을 자식 클래스에서 오버라이드해야 합니다.")
+
+class ActionRegistry:
+    _registry = {}
+
+    @classmethod
+    def register(cls, name):
+        def decorator(action_cls):
+            cls._registry[name] = action_cls
+            return action_cls
+        return decorator
+
+    @classmethod
+    def get_action_names(cls):
+        return list(cls._registry.keys())
+
+    @classmethod
+    def create_action(cls, name, *args, **kwargs):
+        action_cls = cls._registry.get(name)
+        if action_cls:
+            return action_cls(*args, **kwargs)
+        else:
+            raise ValueError(f"{name}은(는) 등록되지 않은 Action입니다.")
 
 
 # ---------------------
@@ -507,6 +953,9 @@ class MarketBuyAction(Action):
 
     def run_action(self):
         krwb = self.upbit.get_balance("KRW")
+        if krwb is None:
+            return "API 연결 실패"
+        
         if krwb < 5000:
             return "KRW 잔고 부족"
         balance = krwb * 0.9995  # 현재 보유 KRW
@@ -521,6 +970,54 @@ class MarketBuyAction(Action):
         
         order_result = self.upbit.buy_market_order(self.coin, order_amount)
         return f"시장가 매수 실행: {self.coin} - {order_amount:.2f} KRW" if order_result else "매수 실패"
+
+    def backtest(self, historical_data, balance):
+        """
+        백테스트를 위한 메서드. 주어진 데이터셋에서 가상 매수를 시뮬레이션합니다.
+        :param historical_data: DataFrame, 과거 데이터를 포함한 DataFrame
+        :param balance: float, 현재 가상 잔고
+        :return: list, 매수 결과 및 잔고 업데이트
+        """
+        results = []
+        holdings = 0.0  # 보유 코인 수량
+
+        for index, row in historical_data.iterrows():
+            current_price = row["close"]
+
+            # 매수 금액 계산
+            if self.amount.endswith("%"):
+                percent = float(self.amount.strip('%')) / 100
+                buy_amount = balance * percent
+            else:
+                buy_amount = float(self.amount)
+
+            # 잔고 부족 시 매수 불가
+            if buy_amount > balance or buy_amount <= 0:
+                results.append({
+                    "index": index,
+                    "status": "잔고 부족",
+                    "balance": balance,
+                    "holdings": holdings
+                })
+                continue
+
+            # 매수 실행
+            buy_quantity = buy_amount / current_price
+            balance -= buy_amount
+            holdings += buy_quantity
+
+            results.append({
+                "index": index,
+                "status": "매수 성공",
+                "buy_price": current_price,
+                "buy_quantity": buy_quantity,
+                "buy_amount": buy_amount,
+                "balance": balance,
+                "holdings": holdings
+            })
+
+        return results
+
 
 @ActionRegistry.register("시장가 매도")
 class MarketSellAction(Action):
@@ -550,6 +1047,57 @@ class MarketSellAction(Action):
         order_result = self.upbit.sell_market_order(self.coin, order_quantity)
         return f"시장가 매도 실행: {self.coin} - {order_quantity:.6f}개" if order_result else "매도 실패"
 
+    def backtest(self, historical_data, balance, holdings):
+        """
+        백테스트를 위한 메서드. 주어진 데이터셋에서 가상 지정가 매도를 시뮬레이션합니다.
+        :param historical_data: DataFrame, 과거 데이터를 포함한 DataFrame
+        :param balance: float, 현재 가상 잔고 (KRW)
+        :param holdings: float, 현재 보유 수량 (코인)
+        :return: list, 매도 결과 및 잔고/보유 수량 업데이트
+        """
+        results = []
+        for index, row in historical_data.iterrows():
+            current_price = row["close"]
+
+            # 지정가 매도 조건 확인
+            if current_price >= self.price:
+                # 매도 수량 계산
+                sell_quantity = self.quantity
+
+                # 보유 수량 부족 시 매도 불가
+                if sell_quantity > holdings:
+                    results.append({
+                        "index": index,
+                        "status": "보유 수량 부족",
+                        "balance": balance,
+                        "holdings": holdings
+                    })
+                    continue
+
+                # 매도 실행
+                sell_amount = sell_quantity * self.price
+                balance += sell_amount
+                holdings -= sell_quantity
+                results.append({
+                    "index": index,
+                    "status": "매도 성공",
+                    "sell_price": self.price,
+                    "sell_quantity": sell_quantity,
+                    "sell_amount": sell_amount,
+                    "balance": balance,
+                    "holdings": holdings
+                })
+            else:
+                # 매도 조건 미충족
+                results.append({
+                    "index": index,
+                    "status": "매도 조건 미충족",
+                    "balance": balance,
+                    "holdings": holdings
+                })
+
+        return results
+
 
 @ActionRegistry.register("지정가 매수")
 class LimitBuyAction(Action):
@@ -571,6 +1119,43 @@ class LimitBuyAction(Action):
         order_result = self.upbit.buy_limit_order(self.coin, self.price, self.quantity)
         return f"지정가 매수 실행: {self.coin} {self.quantity}개  {self.price} KRW" if order_result else "매수 실패"
 
+    def backtest(self, historical_data, balance):
+        """
+        백테스트를 위한 메서드. 주어진 데이터셋에서 가상 지정가 매수를 시뮬레이션합니다.
+        :param historical_data: DataFrame, 과거 데이터를 포함한 DataFrame
+        :param balance: float, 현재 가상 잔고
+        :return: list, 매수 결과 및 잔고 업데이트
+        """
+        results = []
+        for index, row in historical_data.iterrows():
+            current_price = row["close"]
+
+            # 지정가 매수 조건 확인
+            if current_price <= self.price:
+                # 매수 금액 계산
+                buy_amount = self.price * self.quantity
+
+                # 잔고 부족 시 매수 불가
+                if buy_amount > balance:
+                    results.append({"index": index, "status": "잔고 부족", "balance": balance})
+                    continue
+
+                # 매수 실행
+                balance -= buy_amount
+                results.append({
+                    "index": index,
+                    "status": "매수 성공",
+                    "buy_price": self.price,
+                    "buy_quantity": self.quantity,
+                    "buy_amount": buy_amount,
+                    "balance": balance
+                })
+            else:
+                # 매수 조건 미충족
+                results.append({"index": index, "status": "매수 조건 미충족", "balance": balance})
+
+        return results
+
 @ActionRegistry.register("지정가 매도")
 class LimitSellAction(Action):
     config_fields = {
@@ -591,8 +1176,47 @@ class LimitSellAction(Action):
         order_result = self.upbit.sell_limit_order(self.coin, self.price, self.quantity)
         return f"지정가 매도 실행: {self.coin} {self.quantity}개 @ {self.price} KRW" if order_result else "매도 실패"
 
+    def backtest(self, historical_data, balance, holdings):
+        """
+        백테스트를 위한 메서드. 주어진 데이터셋에서 가상 지정가 매도를 시뮬레이션합니다.
+        :param historical_data: DataFrame, 과거 데이터를 포함한 DataFrame
+        :param balance: float, 현재 가상 잔고 (KRW)
+        :param holdings: float, 현재 보유 수량 (코인)
+        :return: list, 매도 결과 및 잔고/보유 수량 업데이트
+        """
+        results = []
+        for index, row in historical_data.iterrows():
+            current_price = row["close"]
 
-import pyupbit
+            # 지정가 매도 조건 확인
+            if current_price >= self.price:
+                # 매도 수량 계산
+                sell_quantity = self.quantity
+
+                # 보유 수량 부족 시 매도 불가
+                if sell_quantity > holdings:
+                    results.append({"index": index, "status": "보유 수량 부족", "balance": balance, "holdings": holdings})
+                    continue
+
+                # 매도 실행
+                sell_amount = sell_quantity * self.price
+                balance += sell_amount
+                holdings -= sell_quantity
+                results.append({
+                    "index": index,
+                    "status": "매도 성공",
+                    "sell_price": self.price,
+                    "sell_quantity": sell_quantity,
+                    "sell_amount": sell_amount,
+                    "balance": balance,
+                    "holdings": holdings
+                })
+            else:
+                # 매도 조건 미충족
+                results.append({"index": index, "status": "매도 조건 미충족", "balance": balance, "holdings": holdings})
+
+        return results
+
 
 @ActionRegistry.register("스탑로스(손절)")
 class StopLossAction(Action):
@@ -664,6 +1288,69 @@ class StopLossAction(Action):
         
         return f"손절 조건 미충족: 현재가 {current_price} KRW, 손절가 {stop_loss_price} KRW"
     
+    def backtest(self, historical_data, balance, holdings, buy_price):
+        """
+        백테스트를 위한 메서드. 주어진 데이터셋에서 손절 조건을 평가하고 가상 매도를 시뮬레이션합니다.
+        :param historical_data: DataFrame, 과거 데이터를 포함한 DataFrame
+        :param balance: float, 현재 가상 잔고 (KRW)
+        :param holdings: float, 현재 보유 수량 (코인)
+        :param buy_price: float, 매수 가격
+        :return: list, 매도 결과 및 잔고/보유 수량 업데이트
+        """
+        results = []
+        for index, row in historical_data.iterrows():
+            current_price = row["close"]
+    
+            # 손절가 계산
+            if self.stop_loss_percent.endswith("%"):
+                percent = float(self.stop_loss_percent.strip('%')) / 100
+                stop_loss_price = buy_price * (1 + percent)
+            else:
+                stop_loss_price = float(self.stop_loss_percent)
+    
+            # 손절 조건 확인
+            if current_price <= stop_loss_price:
+                # 매도 수량 계산
+                if self.quantity_percent.endswith("%"):
+                    percent = float(self.quantity_percent.strip('%')) / 100
+                    sell_quantity = holdings * percent
+                else:
+                    sell_quantity = float(self.quantity_percent)
+    
+                # 보유 수량 부족 시 매도 불가
+                if sell_quantity > holdings:
+                    results.append({
+                        "index": index,
+                        "status": "보유 수량 부족",
+                        "balance": balance,
+                        "holdings": holdings
+                    })
+                    continue
+    
+                # 매도 실행
+                sell_amount = sell_quantity * current_price
+                balance += sell_amount
+                holdings -= sell_quantity
+                results.append({
+                    "index": index,
+                    "status": "손절 성공",
+                    "sell_price": current_price,
+                    "sell_quantity": sell_quantity,
+                    "sell_amount": sell_amount,
+                    "balance": balance,
+                    "holdings": holdings
+                })
+            else:
+                # 손절 조건 미충족
+                results.append({
+                    "index": index,
+                    "status": "손절 조건 미충족",
+                    "balance": balance,
+                    "holdings": holdings
+                })
+    
+        return results    
+
     
 @ActionRegistry.register("테이크프로핏(익절)")
 class TakeProfitAction(Action):
@@ -733,6 +1420,69 @@ class TakeProfitAction(Action):
         
         return f"익절 조건 미충족: 현재가 {current_price} KRW, 익절가 {take_profit_price} KRW"
 
+    def backtest(self, historical_data, balance, holdings, buy_price):
+        """
+        백테스트를 위한 메서드. 주어진 데이터셋에서 익절 조건을 평가하고 가상 매도를 시뮬레이션합니다.
+        :param historical_data: DataFrame, 과거 데이터를 포함한 DataFrame
+        :param balance: float, 현재 가상 잔고 (KRW)
+        :param holdings: float, 현재 보유 수량 (코인)
+        :param buy_price: float, 매수 가격
+        :return: list, 매도 결과 및 잔고/보유 수량 업데이트
+        """
+        results = []
+        for index, row in historical_data.iterrows():
+            current_price = row["close"]
+
+            # 익절가 계산
+            if self.take_profit_percent.endswith("%"):
+                percent = float(self.take_profit_percent.strip('%')) / 100
+                take_profit_price = buy_price * (1 + percent)
+            else:
+                take_profit_price = float(self.take_profit_percent)
+
+            # 익절 조건 확인
+            if current_price >= take_profit_price:
+                # 매도 수량 계산
+                if self.quantity_percent.endswith("%"):
+                    percent = float(self.quantity_percent.strip('%')) / 100
+                    sell_quantity = holdings * percent
+                else:
+                    sell_quantity = float(self.quantity_percent)
+
+                # 보유 수량 부족 시 매도 불가
+                if sell_quantity > holdings:
+                    results.append({
+                        "index": index,
+                        "status": "보유 수량 부족",
+                        "balance": balance,
+                        "holdings": holdings
+                    })
+                    continue
+
+                # 매도 실행
+                sell_amount = sell_quantity * current_price
+                balance += sell_amount
+                holdings -= sell_quantity
+                results.append({
+                    "index": index,
+                    "status": "익절 성공",
+                    "sell_price": current_price,
+                    "sell_quantity": sell_quantity,
+                    "sell_amount": sell_amount,
+                    "balance": balance,
+                    "holdings": holdings
+                })
+            else:
+                # 익절 조건 미충족
+                results.append({
+                    "index": index,
+                    "status": "익절 조건 미충족",
+                    "balance": balance,
+                    "holdings": holdings
+                })
+
+        return results
+
 
 @ActionRegistry.register("분할매수 실행")
 class DCABuyAction(Action):
@@ -758,6 +1508,46 @@ class DCABuyAction(Action):
             return f"분할매수 실행: {self.coin} - {self.buy_amount} KRW"
         else:
             return "분할매수 실패"
+
+    def backtest(self, historical_data, balance):
+        """
+        백테스트를 위한 메서드. 주어진 데이터셋에서 분할 매수를 시뮬레이션합니다.
+        :param historical_data: DataFrame, 과거 데이터를 포함한 DataFrame
+        :param balance: float, 현재 가상 잔고 (KRW)
+        :return: list, 매수 결과 및 잔고 업데이트
+        """
+        results = []
+        holdings = 0.0  # 보유 코인 수량
+
+        for index, row in historical_data.iterrows():
+            current_price = row["close"]
+
+            # 매수 금액 확인
+            if self.buy_amount > balance:
+                results.append({
+                    "index": index,
+                    "status": "잔고 부족",
+                    "balance": balance,
+                    "holdings": holdings
+                })
+                continue
+
+            # 매수 실행
+            buy_quantity = self.buy_amount / current_price
+            balance -= self.buy_amount
+            holdings += buy_quantity
+
+            results.append({
+                "index": index,
+                "status": "매수 성공",
+                "buy_price": current_price,
+                "buy_quantity": buy_quantity,
+                "buy_amount": self.buy_amount,
+                "balance": balance,
+                "holdings": holdings
+            })
+
+        return results
 
 
 @ActionRegistry.register("DTC 동적 분할매수")
@@ -793,6 +1583,53 @@ class DTCBuyAction(Action):
         order_result = self.upbit.buy_market_order(self.coin, adjusted_amount)
         return f"DTC 매수 실행: {self.coin} - {adjusted_amount:.2f} KRW" if order_result else "DTC 매수 실패"
 
+    def backtest(self, historical_data, balance):
+        """
+        백테스트를 위한 메서드. 주어진 데이터셋에서 동적 분할 매수를 시뮬레이션합니다.
+        :param historical_data: DataFrame, 과거 데이터를 포함한 DataFrame
+        :param balance: float, 현재 가상 잔고 (KRW)
+        :return: list, 매수 결과 및 잔고 업데이트
+        """
+        results = []
+        holdings = 0.0  # 보유 코인 수량
+
+        for index in range(1, len(historical_data)):
+            prev_close = historical_data.iloc[index - 1]["close"]
+            current_close = historical_data.iloc[index]["close"]
+            price_change = abs(current_close - prev_close) / prev_close * 100
+
+            # 변동성에 따른 매수 금액 조정
+            if price_change > 1:
+                adjusted_amount = self.base_buy_amount * (1 + self.volatility_adjustment / 100)
+            else:
+                adjusted_amount = self.base_buy_amount * (1 - self.volatility_adjustment / 100)
+
+            # 잔고 부족 시 매수 불가
+            if adjusted_amount > balance:
+                results.append({
+                    "index": index,
+                    "status": "잔고 부족",
+                    "balance": balance,
+                    "holdings": holdings
+                })
+                continue
+
+            # 매수 실행
+            buy_quantity = adjusted_amount / current_close
+            balance -= adjusted_amount
+            holdings += buy_quantity
+
+            results.append({
+                "index": index,
+                "status": "매수 성공",
+                "buy_price": current_close,
+                "buy_quantity": buy_quantity,
+                "buy_amount": adjusted_amount,
+                "balance": balance,
+                "holdings": holdings
+            })
+
+        return results
 
 
 # ---------------------
@@ -1074,6 +1911,7 @@ class BlockMain(QWidget):
         # point label
         self.point1 = QLabel()
         self.point2 = QLabel()
+        self.remain_time = QLabel()
         
         self.blocks = []
         self.max_blocks = 4
@@ -1161,22 +1999,26 @@ class BlockMain(QWidget):
         block_group = QGroupBox(f"Block {len(self.blocks)}")
         block_group.setStyleSheet("""
             QGroupBox {
-                background-color: #2E3440;  /* 배경색 */
-                border: 2px solid #4C566A;  /* 테두리 */
-                border-radius: 8px;  /* 모서리 둥글게 */
-                margin-top: 10px;  /* 제목과 내용 간격 */
+                background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, 
+                                                stop:0 rgba(40, 40, 50, 255), 
+                                                stop:1 rgba(30, 30, 40, 255)); /* 다크 그라데이션 */
+                border: 1px solid rgba(100, 100, 110, 180); /* 테두리 색상 */
+                border-radius: 10px; /* 모서리 둥글게 */
+                margin-top: 10px; /* 제목과 내용 간격 */
+                padding: 10px; /* 내부 여백 */
             }
             QGroupBox::title {
-                color: #D8DEE9;  /* 제목 색상 */
-                font-size: 14px;  /* 제목 글꼴 크기 */
-                font-weight: bold;  /* 제목 글꼴 굵게 */
+                color: rgba(220, 220, 230, 230); /* 제목 색상 */
+                font-size: 12pt; /* 제목 글꼴 크기 */
+                font-weight: bold; /* 제목 글꼴 굵게 */
                 subcontrol-origin: margin;
-                subcontrol-position: top left;  /* 제목 위치 */
-                padding: 2px 10px;  /* 제목 여백 */
-                background-color: transparent;  /* 제목 배경 투명 */
+                subcontrol-position: top left; /* 제목 위치 */
+                padding: 5px 15px; /* 제목 여백 */
+                background-color: transparent; /* 제목 배경 투명 */
             }
             QGroupBox:hover {
-                border: 2px solid #81A1C1;  /* 호버 시 테두리 색상 */
+                border: 1px solid rgba(150, 150, 160, 220); /* 호버 시 테두리 색상 */
+                background-color: rgba(50, 50, 60, 255); /* 호버 시 배경색 */
             }
         """)
         block_layout = QHBoxLayout(block_group)
@@ -1326,7 +2168,7 @@ class BlockMain(QWidget):
                     block.worker.start()
                     
                     self.timer = QTimer()
-                    self.timer.setInterval(1000)  # 1분마다 실행
+                    self.timer.setInterval(60000)  # 1분마다 실행
                     self.timer.timeout.connect(self.update_point)
                     self.timer.start()
                     
@@ -1336,12 +2178,18 @@ class BlockMain(QWidget):
             self.point["point1"] -= 1
             self.consumed_points["point1"] += 1
             self.point1.setText(f"금화: {self.point["point1"]}")
+            remain_time = self.point_to_time(self.point["point1"] + self.point["point2"])
+            self.remain_time.setText(f"남은시간: {remain_time}분")
         elif self.point["point2"] > 0:
             self.point["point2"] -= 1
             self.consumed_points["point2"] += 1
             self.point1.setText(f"금화: {self.point["point2"]}")
+            remain_time = self.point_to_time(self.point["point1"] + self.point["point2"])
+            self.remain_time.setText(f"남은시간: {remain_time}분")
         else:
             self.stop_all_blocks()
+            remain_time = self.point_to_time(self.point["point1"] + self.point["point2"])
+            self.remain_time.setText(f"남은시간: {remain_time}분")
             self.add_to_history("포인트가 부족합니다.")
             return
         
@@ -1423,4 +2271,43 @@ class BlockMain(QWidget):
                 widget.setParent(None)
         
         self.blocks.clear()
+    
+    def point_to_time(self, point):
+        """point를 시:분:초 형식으로 변환합니다."""
+        hours = point // 60
+        minutes = point % 60
+        # 시:분 형식으로 변환
+        return f"{hours:02}:{minutes:02}"
+    
+    #############################################################
+    # 백테스트
+    #############################################################
+    def run_backtest(self, coin, interval, count, initial_balance):
+        """
+        백테스트 실행 (쓰레드 기반)
+        :param coin: 테스트할 코인 (예: "KRW-BTC")
+        :param interval: 분봉 간격 (예: "minute1", "minute5")
+        :param count: 가져올 데이터 개수
+        :param initial_balance: 초기 자본 (예: 1000000)
+        """
+        self.backtest_worker = BacktestWorker(coin, interval, count, initial_balance, self.blocks)
+        self.backtest_worker.log_signal.connect(self.add_to_history)  # 로그 메시지 연결
+        self.backtest_worker.result_signal.connect(self.handle_backtest_result)  # 결과 처리 연결
+        self.backtest_worker.start()  # 쓰레드 시작
+        
+    def handle_backtest_result(self, result):
+        """
+        백테스트 결과 처리
+        :param result: dict, 백테스트 결과
+        """
+        if not result:
+            self.add_to_history("백테스트가 실패했습니다.")
+            return
 
+        self.add_to_history("백테스트 결과:")
+        self.add_to_history(f"초기 잔액: {result['initial_balance']}원")
+        self.add_to_history(f"최종 잔액: {result['final_balance']}원")
+        self.add_to_history(f"총 거래 횟수: {result['total_trades']}회")
+        self.add_to_history(f"승리 횟수: {result['wins']}회")
+        self.add_to_history(f"패배 횟수: {result['losses']}회")
+        self.add_to_history(f"승률: {result['win_rate']:.2f}%")

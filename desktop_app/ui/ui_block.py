@@ -82,7 +82,8 @@ class BacktestWorker(QThread):
                                 action_results = block.action.backtest(
                                     historical_data=df.iloc[:index + 1],
                                     balance=balance,
-                                    holdings=holdings
+                                    holdings=holdings,
+                                    buy_price=self.buy_price
                                 )
 
                             for result in action_results:
@@ -964,7 +965,7 @@ class MarketBuyAction(Action):
         order_result = self.upbit.buy_market_order(self.coin, order_amount)
         return f"시장가 매수 실행: {self.coin} - {order_amount:.2f} KRW" if order_result else "매수 실패"
 
-    def backtest(self, historical_data, balance, holdings):
+    def backtest(self, historical_data, balance, holdings, buy_price):
         # 마지막 데이터 가져오기
         last_row = historical_data.iloc[-1]
         current_price = last_row["close"]
@@ -1030,9 +1031,9 @@ class MarketSellAction(Action):
         order_result = self.upbit.sell_market_order(self.coin, order_quantity)
         return f"시장가 매도 실행: {self.coin} - {order_quantity:.6f}개" if order_result else "매도 실패"
 
-    def backtest(self, historical_data, balance, holdings):
+    def backtest(self, historical_data, balance, holdings, buy_price):
         """
-        백테스트를 위한 메서드. 주어진 데이터셋에서 가상 지정가 매도를 시뮬레이션합니다.
+        백테스트를 위한 메서드. 시장가 매도를 시뮬레이션합니다.
         :param historical_data: DataFrame, 과거 데이터를 포함한 DataFrame
         :param balance: float, 현재 가상 잔고 (KRW)
         :param holdings: float, 현재 보유 수량 (코인)
@@ -1043,39 +1044,47 @@ class MarketSellAction(Action):
         # 마지막 데이터 가져오기
         last_row = historical_data.iloc[-1]
         current_price = last_row["close"]
-
-        # 지정가 매도 조건 확인
-        if current_price >= self.price:
-            # 매도 수량 계산
-            sell_quantity = self.quantity
-
-            # 보유 수량 부족 시 매도 불가
-            if sell_quantity > holdings:
-                results.append({
-                    "status": "보유 수량 부족",
-                    "balance": balance,
-                    "holdings": holdings
-                })
-
-            # 매도 실행
-            sell_amount = sell_quantity * self.price
-            balance += sell_amount
-            holdings -= sell_quantity
-            results.append({
-                "status": "매도 성공",
-                "sell_price": self.price,
-                "sell_quantity": sell_quantity,
-                "sell_amount": sell_amount,
+        
+        # buy_price가 None이면 손절 조건을 평가하지 않음
+        if buy_price is None:
+            return [{
+                "status": "매수 가격 없음",
                 "balance": balance,
-                "holdings": holdings
-            })
+                "holdings": holdings,
+                "buy_price": buy_price
+            }]
+
+        # 매도 수량 계산
+        if self.quantity.endswith("%"):
+            percent = float(self.quantity.strip('%')) / 100
+            sell_quantity = holdings * percent
         else:
-            # 매도 조건 미충족
+            sell_quantity = float(self.quantity)
+
+        # 보유 수량 부족 시 매도 불가
+        if sell_quantity > holdings:
             results.append({
-                "status": "매도 조건 미충족",
+                "status": "보유 수량 부족",
                 "balance": balance,
                 "holdings": holdings
             })
+            return results
+
+        # 매도 실행
+        sell_amount = sell_quantity * current_price
+        balance += sell_amount
+        holdings -= sell_quantity
+        profit = (current_price - buy_price) * sell_quantity
+        
+        results.append({
+            "status": "매도 성공",
+            "sell_price": current_price,
+            "sell_quantity": sell_quantity,
+            "sell_amount": sell_amount,
+            "balance": balance,
+            "holdings": holdings,
+            "profit": profit
+        })
 
         return results
 

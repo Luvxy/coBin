@@ -306,8 +306,8 @@ class MainWindow(QMainWindow):
         user_data = self.fetch_user_info()
         
         # point1 = free, point2 = paid
-        self.blockFrame.point['point1'] = user_data['point1']
-        self.blockFrame.point['point2'] = user_data['point2']
+        self.blockFrame.point['point1'] = user_data.get('point1', 0) or 0
+        self.blockFrame.point['point2'] = user_data.get('point2', 0) or 0
         
         self.ui.label_9.setText(f"금화: {user_data['point1']}")
         self.ui.label_10.setText(f"은화: {user_data['point2']}")
@@ -396,15 +396,23 @@ class MainWindow(QMainWindow):
         headers = {
             "Authorization": f"Bearer {self.token}"  # JWT 토큰을 헤더에 포함
         }
-        response = requests.get(url, headers=headers)
+        
+        try:
+            response = requests.get(url, headers=headers)
+        except requests.exceptions.RequestException as e:
+            print(f"HTTP 요청 실패: {e}")
+            return {"point1": 0, "point2": 0}  # 기본값 반환
 
         if response.status_code == 200:
             result = response.json()
-            user_data = result['user_data']
-            return user_data
+            user_data = result.get('user_data', {})
+            return {
+                "point1": user_data.get("point1", 0) or 0,  # None일 경우 0으로 설정
+                "point2": user_data.get("point2", 0) or 0   # None일 경우 0으로 설정
+            }
         else:
             print("유저 정보 요청 실패:", response.status_code, response.text)
-            return None
+            return {"point1": 0, "point2": 0}  # 기본값 반환
     
     def update_chart(self):
         """차트 업데이트"""
@@ -769,7 +777,11 @@ class SpleshScreen(QMainWindow):
             'password': self.ui.user_password.text(),
         }
         
-        response = requests.post(url, json=payload)
+        try:
+            response = requests.post(url, json=payload)
+        except requests.exceptions.RequestException as e:
+            print(f"HTTP 요청 오류: {e}")
+            return None
         
         if response.status_code == 200:
             tokens = response.json()
@@ -805,7 +817,11 @@ def login_button_clicked(id, password):
         'password': password,
     }
     
-    response = requests.post(url, data=payload)  # data를 사용
+    try:
+        response = requests.post(url, data=payload)  # data를 사용
+    except requests.exceptions.RequestException as e:
+        print(f"HTTP 요청 오류: {e}")
+        return None
 
     if response.status_code == 200:
         tokens = response.json()

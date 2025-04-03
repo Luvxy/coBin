@@ -19,7 +19,11 @@ class Upbit_api:
             'password': self.password,
         }
 
-        response = requests.post(url, data=payload)
+        try:
+            response = requests.post(url, data=payload)
+        except requests.exceptions.RequestException as e:
+            print(f"HTTP 요청 실패: {e}")
+            return None
 
         if response.status_code == 200:
             tokens = response.json()

@@ -1356,18 +1356,39 @@ class Ui_MainWindow(object):
         self.exit_button.setGeometry(QRect(1880, 5, 30, 25))  # 오른쪽 상단에 위치
         self.exit_button.setStyleSheet("""
                 QPushButton {
-                color: white;  /* 글자 색상 */
+                background-color: #4C566A;  /* 버튼 배경색 */
+                color: #ECEFF4;  /* 버튼 텍스트 색상 */
                 border: none;
+                border-radius: 5px;  /* 모서리 둥글게 */
                 }
                 QPushButton:hover {
-                background-color: #D08770;  /* 호버 시 색상 */
+                background-color: #5E81AC;  /* 호버 시 배경색 */
                 }
                 QPushButton:pressed {
-                background-color: #A54242;  /* 클릭 시 색상 */
+                background-color: #3B4252;  /* 클릭 시 배경색 */
                 }
         """)
         self.exit_button.setText("X")
         self.exit_button.clicked.connect(QApplication.quit)  # 클릭 시 프로그램 종료
+        
+        # 네모 버튼 추가
+        self.minimize_button = QPushButton(self.centralwidget)
+        self.minimize_button.setGeometry(1850, 5, 30, 25)  # 버튼 위치와 크기 설정
+        self.minimize_button.setText("□")  # 네모 모양 텍스트
+        self.minimize_button.setStyleSheet("""
+            QPushButton {
+                background-color: #4C566A;  /* 버튼 배경색 */
+                color: #ECEFF4;  /* 버튼 텍스트 색상 */
+                border: none;
+                border-radius: 5px;  /* 모서리 둥글게 */
+            }
+            QPushButton:hover {
+                background-color: #5E81AC;  /* 호버 시 배경색 */
+            }
+            QPushButton:pressed {
+                background-color: #3B4252;  /* 클릭 시 배경색 */
+            }
+        """)
 
     def retranslateUi(self, MainWindow):
         self.chart.setTitle("")

@@ -33,6 +33,8 @@ class Upbit_api:
             error_message = response.json().get('detail', '로그인 실패')
             print(f"로그인 실패: {error_message}")
             return None
+        
+    # 서버에 investmentHistory 전송
 
     def refresh_token(self):
         return self.create_token()

@@ -14,6 +14,7 @@ from PySide6.QtPdfWidgets import QPdfView
 from PySide6.QtPdf import QPdfDocument
 from ui.ui_login import Ui_login
 from ui.ui_main import Ui_MainWindow
+from ui.ui_small_window import UI_SmallWindow
 from ui.ui_block import *
 from ui.ui_loading import loading
 from upbit.get_data_upbit import *
@@ -192,6 +193,31 @@ class PdfViewer(QMainWindow):
         container.setLayout(layout)
         self.setCentralWidget(container)
 
+class SmallWindow(QMainWindow):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.ui = UI_SmallWindow()  # ui_small_window의 UI 클래스 사용
+        self.ui.setupUi(self)  # UI 초기화
+
+    def closeEvent(self, event):
+        """작은 창이 닫힐 때 메인 UI를 다시 표시"""
+        if self.parent():  # 부모(MainWindow)가 있는 경우
+            self.parent().show()  # 부모(MainWindow)를 다시 표시
+            self.parent().blockFrame.history = self.parent().ui.history  # 부모의 history와 연결
+        super().closeEvent(event)  # 기본 closeEvent 호출
+        
+    def changeEvent(self, event):
+        """창 상태 변경 이벤트 처리"""
+        if event.type() == QEvent.WindowStateChange:
+            print(f"현재 창 상태: {self.windowState()}")
+            if self.windowState() == Qt.WindowMaximized:  # 창이 전체화면 상태로 전환되었을 때
+                if self.parent():  # 부모(MainWindow)가 있는 경우
+                    self.close()  # 작은 창 닫기
+                    self.parent().show()  # 부모(MainWindow)를  다시 표시
+            elif self.windowState() == Qt.WindowMinimized:  # 최소화 상태일 경우
+                event.ignore()  # 아무 작업도 하지 않음
+        super().changeEvent(event)
+
 class LoadingDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -302,6 +328,8 @@ class MainWindow(QMainWindow):
         self.setup_tab1()
         self.setup_tab2()
         
+        self.ui.minimize_button.clicked.connect(self.show_small_window)  # 버튼 클릭 시 동작 연결
+        
         # 유저 정보 불러오기
         user_data = self.fetch_user_info()
         
@@ -331,7 +359,7 @@ class MainWindow(QMainWindow):
         self.ui.back_start.clicked.connect(self.backtest)  # 백테스트 실행 버튼
         self.ui.back_result.clicked.connect(self.display_backtest_results)  # 결과 표시 버튼
         self.ui.strategy_combo.addItems(["기본전략","custom1", "custom2", "custom3", "custom4", "custom5"])
-        self.ui.back_count.addItems(["20", "30", "50", "100", "200"])
+        self.ui.back_count.addItems(["20", "30", "50", "100", "200", "500"])
         self.ui.back_time.addItems(["1분", "3분", "5분", "15분", "30분", "1시간"])
 
     def setup_tab1(self):
@@ -382,7 +410,45 @@ class MainWindow(QMainWindow):
         self.blockFrame.point2 = self.ui.label_10
         self.blockFrame.remain_time = self.ui.label_11
         
+    def show_small_window(self):
+        """메인 UI를 숨기고 작은 창을 띄움"""
+        self.hide()  # 메인 UI 숨기기
+        self.small_window = SmallWindow(self)  # 작은 창 생성
 
+        # 작은 창의 콤보박스와 메인 창의 콤보박스를 연결
+        self.small_window.ui.strategy_combo.currentIndexChanged.connect(
+            self.ui.strategy_combo.setCurrentIndex
+        )
+        self.ui.strategy_combo.currentIndexChanged.connect(
+            self.small_window.ui.strategy_combo.setCurrentIndex
+        )
+
+        self.small_window.ui.strategy_combo_2.currentIndexChanged.connect(
+            self.ui.strategy_combo_2.setCurrentIndex
+        )
+        self.ui.strategy_combo_2.currentIndexChanged.connect(
+            self.small_window.ui.strategy_combo_2.setCurrentIndex
+        )
+        
+        self.small_window.ui.strategy_combo_2.addItems(["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-DOGE"])
+        self.small_window.ui.strategy_combo.addItems(["기본전략","custom1", "custom2", "custom3", "custom4", "custom5"])
+
+        # 작은 창의 다른 UI 요소와 메인 창의 요소 연결
+        self.small_window.ui.label_9.setText(self.ui.label_9.text())
+        self.small_window.ui.label_10.setText(self.ui.label_10.text())
+        self.small_window.ui.label_11.setText(self.ui.label_11.text())
+
+        self.blockFrame.history = self.small_window.ui.history
+
+        # 작은 창의 버튼과 메인 창의 버튼 동작 연결
+        self.small_window.ui.start_button.clicked.connect(
+            lambda: self.blockFrame.run_all_blocks(self.ui.strategy_combo_2.currentText())
+        )
+        self.small_window.ui.stop_button.clicked.connect(self.blockFrame.stop_all_blocks)
+
+
+        self.small_window.show()
+    
     def preload_tab2_data(self):
         """tab2에서 필요한 데이터를 미리 로드"""
         print("tab2 데이터를 미리 로드 중...")
@@ -401,7 +467,7 @@ class MainWindow(QMainWindow):
             response = requests.get(url, headers=headers)
         except requests.exceptions.RequestException as e:
             print(f"HTTP 요청 실패: {e}")
-            return {"point1": 0, "point2": 0}  # 기본값 반환
+            return {"point1": 99999, "point2": 99999}  # 기본값 반환
 
         if response.status_code == 200:
             result = response.json()
@@ -707,45 +773,109 @@ class MainWindow(QMainWindow):
         result_file = f"{coin}_backtest_results.json"
         with open(result_file, "w", encoding="utf-8") as f:
             json.dump(results, f, ensure_ascii=False, indent=4)
-
-        QMessageBox.information(self, "백테스트 완료", f"백테스트 결과가 {result_file}에 저장되었습니다.")
     
     def display_backtest_results(self):
-        """저장된 백테스트 결과를 불러와 새 창에 표시"""
-        options = QFileDialog.Options()
-        file_name, _ = QFileDialog.getOpenFileName(self, "백테스트 결과 파일 선택", "", "JSON Files (*.json);;All Files (*)", options=options)
-        if not file_name:
+        """backtest_logs.json 파일을 자동으로 불러와 결과를 표시"""
+        file_name = "backtest_logs.json"  # 파일 이름 고정
+        if not os.path.exists(file_name):
+            QMessageBox.warning(self, "파일 없음", f"{file_name} 파일이 존재하지 않습니다.")
             return
 
         try:
             with open(file_name, "r", encoding="utf-8") as f:
-                results = json.load(f)
+                logs = json.load(f)  # JSON 파일 읽기
 
-            # 결과 표시
-            result_text = (
-                f"초기 자본: {results['initial_balance']}원\n"
-                f"최종 자본: {results['final_balance']}원\n"
-                f"총 거래 횟수: {results['total_trades']}회\n"
-                f"승리 횟수: {results['wins']}회\n"
-                f"패배 횟수: {results['losses']}회\n"
-                f"승률: {results['win_rate']:.2f}%"
-            )
+            # 파일 내용 확인 및 결과 추출
+            start_message = next((log for log in logs if "백테스트 시작" in log), None)
+            end_message = next((log for log in logs if "백테스트 완료" in log), None)
+
+            if not start_message or not end_message:
+                QMessageBox.warning(self, "결과 없음", "백테스트 결과를 찾을 수 없습니다.")
+                return
+
+            # 결과 메시지 파싱
+            try:
+                # 백테스트 시작 정보
+                start_details = start_message.split(":")[1].strip().split(", ")
+                coin = start_details[0] if len(start_details) > 0 else "알 수 없음"
+                data_count = start_details[1].split(" ")[1] if len(start_details) > 1 else "알 수 없음"
+                interval = start_details[2].split(" ")[1] if len(start_details) > 2 else "알 수 없음"
+
+                # 백테스트 완료 정보
+                end_details = end_message.split(". ")[1].split(", ") if ". " in end_message else []
+                final_balance = end_details[0].split(": ")[1] if len(end_details) > 0 else "알 수 없음"
+                win_rate = end_details[1].split(": ")[1] if len(end_details) > 1 else "알 수 없음"
+
+                # 매수/매도 성공 로그 추출
+                trade_logs = [
+                    log for log in logs
+                    if "매수 성공" in log or "매도 성공" in log
+                ]
+
+                # 결과 텍스트 생성
+                result_text = (
+                    f"<b>코인:</b> {coin}<br>"
+                    f"<b>데이터 개수:</b> {data_count}<br>"
+                    f"<b>간격:</b> {interval}<br>"
+                    f"<b>최종 잔액:</b> {final_balance}<br>"
+                    f"<b>승률:</b> {win_rate}<br><br>"
+                    f"<b>거래 내역:</b><br>"
+                )
+                for trade_log in trade_logs:
+                    result_text += f"{trade_log}<br>"
+
+            except (IndexError, AttributeError) as e:
+                QMessageBox.critical(self, "오류", f"백테스트 결과를 파싱하는 중 오류가 발생했습니다: {e}")
+                return
 
             # 새 창에 결과 표시
             result_window = QDialog(self)
             result_window.setWindowTitle("백테스트 결과")
-            result_window.setFixedSize(400, 300)
+            result_window.setFixedSize(600, 400)
+            result_window.setStyleSheet("""
+                QDialog {
+                    background-color: #2E3440;  /* 배경색 */
+                    color: #ECEFF4;  /* 텍스트 색상 */
+                    border: 1px solid #4C566A;  /* 테두리 */
+                    border-radius: 10px;  /* 모서리 둥글게 */
+                }
+                QLabel {
+                    color: #ECEFF4;  /* 라벨 텍스트 색상 */
+                    font-size: 14px;  /* 라벨 글꼴 크기 */
+                }
+            """)
 
             layout = QVBoxLayout(result_window)
             result_label = QLabel(result_text)
             result_label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
             result_label.setWordWrap(True)
+            result_label.setTextFormat(Qt.RichText)  # HTML 형식 지원
             layout.addWidget(result_label)
 
+            close_button = QPushButton("닫기")
+            close_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #81A1C1;  /* 버튼 배경색 */
+                    color: #2E3440;  /* 버튼 텍스트 색상 */
+                    border: none;
+                    border-radius: 5px;  /* 모서리 둥글게 */
+                    padding: 8px 12px;  /* 내부 여백 */
+                }
+                QPushButton:hover {
+                    background-color: #5E81AC;  /* 호버 시 배경색 */
+                }
+                QPushButton:pressed {
+                    background-color: #4C566A;  /* 클릭 시 배경색 */
+                }
+            """)
+            close_button.clicked.connect(result_window.close)
+            layout.addWidget(close_button, alignment=Qt.AlignCenter)
+
             result_window.exec_()
+        except json.JSONDecodeError:
+            QMessageBox.critical(self, "오류", "백테스트 로그 파일이 올바른 JSON 형식이 아닙니다.")
         except Exception as e:
             QMessageBox.critical(self, "오류", f"백테스트 결과를 불러오는 중 오류가 발생했습니다: {e}")
-    
     
     
 # 로그인 윈도우 클래스

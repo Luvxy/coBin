@@ -1642,6 +1642,192 @@ class DTCBuyAction(Action):
 
         return results
 
+@ActionRegistry.register("블록 활성화/비활성화")
+class ToggleBlockAction(Action):
+    config_fields = {
+        "block_index": {"label": "블록 번호 (1~4)", "type": int, "default": 1, "ui_type": "line_edit"},
+        "enable": {"label": "활성화 여부", "type": bool, "default": True, "ui_type": "checkbox"},
+    }
+
+    def __init__(self, upbit=None, block_index=1, enable=True):
+        super().__init__()
+        self.obj_name = "블록 활성화/비활성화"
+        self.block_index = block_index
+        self.enable = enable
+        self.name = f"블록 {block_index} {'활성화' if enable else '비활성화'}"
+
+    def run_action(self, blocks):
+        """
+        선택한 블록을 활성화 또는 비활성화합니다.
+        :param blocks: list, 현재 활성화된 블록 리스트
+        """
+        if not (1 <= self.block_index <= len(blocks)):
+            return f"블록 {self.block_index}은(는) 존재하지 않습니다."
+
+        block = blocks[self.block_index - 1]
+        if self.enable:
+            block.start()  # 블록 활성화
+            return f"블록 {self.block_index}이(가) 활성화되었습니다."
+        else:
+            block.stop()  # 블록 비활성화
+            return f"블록 {self.block_index}이(가) 비활성화되었습니다."
+
+    def backtest(self, historical_data, balance, holdings):
+        """
+        백테스트에서는 블록 활성화/비활성화가 의미가 없으므로 빈 결과 반환.
+        """
+        return [{
+            "status": "백테스트에서 블록 활성화/비활성화는 지원되지 않습니다.",
+            "balance": balance,
+            "holdings": holdings
+        }]
+
+
+@ActionRegistry.register("트레일링 스탑")
+class TrailingStopAction(Action):
+    config_fields = {
+        "trailing_percent": {"label": "트레일링 비율 (%)", "type": float, "default": 5.0, "ui_type": "line_edit"},
+        "quantity_percent": {"label": "판매 수량 (%)", "type": str, "default": "100%", "ui_type": "line_edit"},
+    }
+
+    def __init__(self, upbit, trailing_percent=5.0, quantity_percent="100%", coin="KRW-BTC"):
+        super().__init__()
+        self.obj_name = "트레일링 스탑"
+        self.upbit = upbit
+        self.trailing_percent = trailing_percent
+        self.quantity_percent = quantity_percent
+        self.coin = coin
+        self.highest_price = 0.0  # 트레일링 스탑 기준이 되는 최고가
+        self.name = f"트레일링 스탑: {trailing_percent}%"
+        self.buy_price = self.get_buy_price()
+
+    def get_buy_price(self):
+        """보유 코인의 평균 매수가 조회"""
+        if not hasattr(self, 'coin') or not self.coin:
+            print("get_buy_price: coin 값이 설정되지 않음")
+            return 0.0  # ✅ None 대신 0.0 반환
+
+        balances = self.upbit.get_balances() or []  # ✅ None이면 빈 리스트 반환
+        target_currency = self.coin.replace("KRW-", "")  # 예: "KRW-BTC" → "BTC"
+
+        for b in balances:
+            if b.get('currency') == target_currency:  # ✅ get() 사용하여 KeyError 방지
+                return float(b.get('avg_buy_price', 0.0))  # ✅ KeyError 방지 + None이면 0.0 반환
+
+        return 0.0  # ✅ None 대신 0.0 반환
+
+    def run_action(self):
+        
+        if self.buy_price == 0.0:
+            return "매수가격을 가져올 수 없음"
+        
+        current_price = pyupbit.get_current_price(self.coin)
+        if current_price is None:
+            return "현재 가격을 가져올 수 없음"
+
+        # 최고가 갱신
+        if current_price > self.highest_price:
+            self.highest_price = current_price
+
+        # 트레일링 스탑 가격 계산
+        trailing_stop_price = self.highest_price * (1 - self.trailing_percent / 100)
+
+        # 현재 가격이 트레일링 스탑 가격 이하로 떨어졌는지 확인
+        if current_price <= trailing_stop_price:
+            balance = self.upbit.get_balance(self.coin)
+            if self.quantity_percent.endswith("%"):
+                percent = float(self.quantity_percent.strip('%')) / 100
+                sell_quantity = balance * percent
+            else:
+                sell_quantity = float(self.quantity_percent)
+
+            if sell_quantity > balance:
+                return "보유 수량 부족"
+
+            order_result = self.upbit.sell_market_order(self.coin, sell_quantity)
+            return f"트레일링 스탑 실행: {self.coin} - {sell_quantity:.6f}개 @ {current_price} KRW" if order_result else "트레일링 스탑 실패"
+
+        return f"트레일링 스탑 조건 미충족: 현재가 {current_price} KRW, 트레일링 스탑가 {trailing_stop_price} KRW"
+
+    def backtest(self, historical_data, balance, holdings, buy_price):
+        """
+        백테스트를 위한 메서드. 트레일링 스탑 조건을 평가합니다.
+        :param historical_data: DataFrame, 과거 데이터를 포함한 DataFrame
+        :param balance: float, 현재 가상 잔고 (KRW)
+        :param holdings: float, 현재 보유 수량 (코인)
+        :param buy_price: float, 매수 가격
+        :return: list, 매도 결과 및 잔고/보유 수량 업데이트
+        """
+        results = []
+        self.highest_price = buy_price  # 초기 최고가는 매수 가격으로 설정
+        
+        if len(historical_data) < 2:
+            return [{
+                "status": "데이터 부족",
+                "balance": balance,
+                "holdings": holdings
+            }]
+        
+        # 마지막 데이터 가져오기
+        index = -1
+        last_row = historical_data.iloc[index]
+        current_price = last_row["close"]  
+
+
+        # 최고가 갱신
+        if current_price > self.highest_price:
+            self.highest_price = current_price
+
+        # 트레일링 스탑 가격 계산
+        trailing_stop_price = self.highest_price * (1 - self.trailing_percent / 100)
+
+        # 트레일링 스탑 조건 확인
+        if current_price <= trailing_stop_price:
+            # 매도 수량 계산
+            if self.quantity_percent.endswith("%"):
+                percent = float(self.quantity_percent.strip('%')) / 100
+                sell_quantity = holdings * percent
+            else:
+                sell_quantity = float(self.quantity_percent)
+
+            # 보유 수량 부족 시 매도 불가
+            if sell_quantity > holdings:
+                results.append({
+                    "status": "보유 수량 부족",
+                    "balance": balance,
+                    "holdings": holdings,
+                    "buy_price": buy_price
+                })
+                return results
+
+            # 매도 실행
+            sell_amount = sell_quantity * current_price
+            balance += sell_amount
+            holdings -= sell_quantity
+            profit = (current_price - buy_price) * sell_quantity
+
+            results.append({
+                "status": "매도 성공",
+                "sell_price": current_price,
+                "sell_quantity": sell_quantity,
+                "sell_amount": sell_amount,
+                "balance": balance,
+                "holdings": holdings,
+                "buy_price": None,  # 매도 후 매수 가격 초기화
+                "profit": profit
+            })
+            return results
+
+        # 조건 미충족
+        results.append({
+            "status": "트레일링 스탑 조건 미충족",
+            "balance": balance,
+            "holdings": holdings,
+            "buy_price": buy_price
+        })
+
+        return results
+
 
 # ---------------------
 # 블록 클래스
@@ -2168,6 +2354,12 @@ class BlockMain(QWidget):
                     if text.strip().isdigit():
                         block.interval_sec = int(text.strip())
                         
+                # ToggleBlockAction 처리
+                if isinstance(block.action, ToggleBlockAction):
+                    result = block.action.run_action(self.blocks)
+                    self.add_to_history(result)
+                    continue
+                
                 # 타이머 추가
                 # 타이머는 1분당 point1를 1씩 차감
                 # 만약 point1 = 0이 되면 point2를 1씩 차감

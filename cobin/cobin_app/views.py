@@ -347,7 +347,46 @@ def upload_inv(request, user_id):
             "status": "error",
             "message": str(e)
         }, status=500)
-    
+
+# 요청받은 데이터로 이메일 전송
+@api_view(['POST'])
+def send_email(request):
+    """
+    요청받은 데이터로 이메일을 전송하는 API
+    """
+    try:
+        # 요청 데이터에서 이메일 정보 가져오기
+        recipient = request.data.get('recipient')
+        subject = request.data.get('subject')
+        message = request.data.get('message')
+
+        # 필수 데이터가 없는 경우 에러 반환
+        if not recipient or not subject or not message:
+            return Response({
+                "status": "error",
+                "message": "recipient, subject, and message are required."
+            }, status=400)
+
+        # 이메일 전송
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email='no-reply@yourdomain.com',  # 발신자 이메일
+            recipient_list=[recipient],
+            fail_silently=False,
+        )
+
+        return Response({
+            "status": "success",
+            "message": "이메일이 성공적으로 전송되었습니다."
+        }, status=200)
+
+    except Exception as e:
+        # 예외 발생 시 에러 메시지 반환
+        return Response({
+            "status": "error",
+            "message": str(e)
+        }, status=500)
 
 ###################################################################################################
 # cobin app api end line

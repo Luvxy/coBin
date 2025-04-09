@@ -1,13 +1,9 @@
 import sys
-import platform
 import requests
 import json
 from PySide6 import QtCore
-from PySide6.QtCore import (QCoreApplication, QMetaObject, QObject, QPoint,
-    QRect, QSize, QUrl, Qt, QByteArray, QEvent)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor, QFont,
-    QFontDatabase, QIcon, QLinearGradient, QPalette, QPainter, QPixmap,
-    QRadialGradient, QMovie)
+from PySide6.QtCore import (Qt, QByteArray, QEvent)
+from PySide6.QtGui import (QColor, QMovie)
 from PySide6.QtCore import QThread, Signal
 from PySide6.QtWidgets import *
 from PySide6.QtPdfWidgets import QPdfView
@@ -16,15 +12,11 @@ from ui.ui_login import Ui_login
 from ui.ui_main import Ui_MainWindow
 from ui.ui_small_window import UI_SmallWindow
 from ui.ui_block import *
-from ui.ui_loading import loading
 from upbit.get_data_upbit import *
 from upbit.configer import *
 from upbit.api_upbit import *
-import finplot as fplt
 import os
-import zipfile
 import shutil
-import subprocess
 from pyqtgraph import PlotWidget, plot, ViewBox
 import pyqtgraph as pg
 import psutil

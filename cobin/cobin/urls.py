@@ -59,6 +59,7 @@ urlpatterns = [
     path('api/user/<str:user_id>/upload_inv/', views.upload_inv, name='upload_inv'),
     path('purchase-points/', views.purchase_points, name='purchase_points'),
     path('api/user/update_consumed_points/', views.update_consumed_points, name='update_consumed_points'),
+    path('api/email/send/', views.send_email, name='send_email'),
     
     # emali
     path('verify/email/send/', views.send_email_verification, name='send_email_verification'),

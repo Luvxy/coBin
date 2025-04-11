@@ -32,6 +32,60 @@ def get_current_version():
 
 CURRENT_VERSION = get_current_version()  # version.json에서 현재 버전 읽기
 
+def update_launcher(api_url):
+    """launcher.exe 업데이트"""
+    launcher_path = os.path.abspath(sys.argv[0])  # 현재 실행 중인 launcher.exe 경로
+    backup_path = launcher_path + ".old"  # 백업 파일 경로
+    temp_updater_path = os.path.join(os.path.dirname(launcher_path), "temp_updater.py")  # 임시 업데이트 스크립트 경로
+
+    headers = {
+        "Authorization": f"token {TOKEN}",
+        "Accept": "application/octet-stream",
+        "User-Agent": "Mozilla/5.0"
+    }
+
+    print(f"[DEBUG] launcher.exe 다운로드 API URL: {api_url}")
+
+    response = requests.get(api_url, stream=True, headers=headers)
+    if response.status_code == 200:
+        # 기존 launcher.exe 백업
+        if os.path.exists(backup_path):
+            os.remove(backup_path)
+        os.rename(launcher_path, backup_path)
+
+        # 새 launcher.exe 다운로드
+        with open(launcher_path, "wb") as file:
+            for chunk in response.iter_content(1024):
+                file.write(chunk)
+
+        print("[DEBUG] launcher.exe 업데이트 완료 ✅")
+
+        # 임시 업데이트 스크립트 생성
+        with open(temp_updater_path, "w") as temp_updater:
+            temp_updater.write(f"""
+import os
+import time
+import shutil
+import subprocess
+
+time.sleep(1)  # 기존 프로세스 종료 대기
+backup_path = r"{backup_path}"
+launcher_path = r"{launcher_path}"
+
+# 기존 백업 파일 삭제
+if os.path.exists(backup_path):
+    os.remove(backup_path)
+
+# 새 launcher.exe 실행
+subprocess.Popen([launcher_path])
+""")
+
+        # 임시 스크립트 실행
+        subprocess.Popen([sys.executable, temp_updater_path])
+        sys.exit(0)
+    else:
+        print(f"[ERROR] launcher.exe 업데이트 실패 ❌ 상태 코드: {response.status_code}, 메시지: {response.text}")
+
 def get_latest_release():
     """GitHub에서 최신 릴리스 태그와 파일 API URL 가져오기"""
     headers = {

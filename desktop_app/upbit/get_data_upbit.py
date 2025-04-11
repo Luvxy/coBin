@@ -5,8 +5,6 @@ from PySide6 import QtGui
 from PySide6.QtCore import Qt, QDateTime, QThread, Signal, QTimer
 import pyupbit
 import time
-from pandas import Series
-import sys
 import requests  # 1) requests 라이브러리 추가
 
 

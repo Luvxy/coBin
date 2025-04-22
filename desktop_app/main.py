@@ -252,21 +252,10 @@ class LoadingDialog(QDialog):
 
 # 메인 윈도우 클래스
 class MainWindow(QMainWindow):
-    def __init__(self, token, id, password):
+    def __init__(self):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)  # UI 초기화
-        self.token = token
-        self.id = id
-        self.password = password
-        
-        # WebSocketThread 초기화
-        self.websocket_thread = WebSocketThread(
-            user_id=self.id,
-            url=f"ws://{SURVER_URL}/ws/points/{self.id}/"
-        )
-        self.websocket_thread.message_received.connect(self.update_points)  # 메시지 수신 시 UI 업데이트
-        self.websocket_thread.start()  # WebSocketThread 시작
         
         # 타이틀바 숨기기
         self.setWindowFlag(QtCore.Qt.FramelessWindowHint)  # 모든 테두리 제거
@@ -294,7 +283,7 @@ class MainWindow(QMainWindow):
         self.ui.secret_key.setText(self.secret_key)
 
         # ✅ Upbit API 초기화
-        self.upbit = Upbit_api(self.access_key, self.secret_key, self.id, self.password)
+        self.upbit = Upbit_api(self.access_key, self.secret_key)
         self.upbit.create_user()
 
         # UI 초기화 및 신호 연결
@@ -302,13 +291,6 @@ class MainWindow(QMainWindow):
         self.setup_signals()
         self.preload_tab2_data()
         self.open_patchnote()    
-
-    def update_points(self, data):
-        """WebSocket 메시지를 수신하여 UI를 업데이트"""
-        point1 = data.get("point1", 0)
-        point2 = data.get("point2", 0)
-        self.ui.label_9.setText(f"금화: {point1}")
-        self.ui.label_10.setText(f"은화: {point2}")
         
     def closeEvent(self, event):
         """창 닫기 이벤트에서 WebSocketThread 종료"""
@@ -321,18 +303,6 @@ class MainWindow(QMainWindow):
         self.setup_tab2()
         
         self.ui.minimize_button.clicked.connect(self.show_small_window)  # 버튼 클릭 시 동작 연결
-        
-        # 유저 정보 불러오기
-        user_data = self.fetch_user_info()
-        
-        # point1 = free, point2 = paid
-        self.blockFrame.point['point1'] = user_data.get('point1', 0) or 0
-        self.blockFrame.point['point2'] = user_data.get('point2', 0) or 0
-        
-        self.ui.label_9.setText(f"금화: {user_data['point1']}")
-        self.ui.label_10.setText(f"은화: {user_data['point2']}")
-        points = user_data['point1'] + user_data['point2']
-        self.ui.label_11.setText(f"남은 시간: {self.blockFrame.point_to_time(points)}")
 
     def setup_signals(self):
         """신호 연결"""
@@ -398,9 +368,6 @@ class MainWindow(QMainWindow):
         self.ui.pushButton.clicked.connect(self.blockFrame.add_block)
         self.ui.verticalLayout.addWidget(self.blockFrame)
         self.blockFrame.history = self.ui.history
-        self.blockFrame.point1 = self.ui.label_9
-        self.blockFrame.point2 = self.ui.label_10
-        self.blockFrame.remain_time = self.ui.label_11
         
     def show_small_window(self):
         """메인 UI를 숨기고 작은 창을 띄움"""
@@ -447,30 +414,6 @@ class MainWindow(QMainWindow):
         self.blockFrame.add_block()  # 예시: 블록 추가
         self.load_custom_strategy("default")  # 기본 전략 로드
         print("tab2 데이터 로드 완료.")
-
-    def fetch_user_info(self):
-        """Django 서버로 요청을 보내 유저 정보를 가져옵니다."""
-        url = f"http://{SURVER_URL}/api/user/{self.id}"  # Django 서버의 API URL
-        headers = {
-            "Authorization": f"Bearer {self.token}"  # JWT 토큰을 헤더에 포함
-        }
-        
-        try:
-            response = requests.get(url, headers=headers)
-        except requests.exceptions.RequestException as e:
-            print(f"HTTP 요청 실패: {e}")
-            return {"point1": 99999, "point2": 99999}  # 기본값 반환
-
-        if response.status_code == 200:
-            result = response.json()
-            user_data = result.get('user_data', {})
-            return {
-                "point1": user_data.get("point1", 0) or 0,  # None일 경우 0으로 설정
-                "point2": user_data.get("point2", 0) or 0   # None일 경우 0으로 설정
-            }
-        else:
-            print("유저 정보 요청 실패:", response.status_code, response.text)
-            return {"point1": 0, "point2": 0}  # 기본값 반환
     
     def update_chart(self):
         """차트 업데이트"""
@@ -573,7 +516,7 @@ class MainWindow(QMainWindow):
         
         QMessageBox.information(self, 'API 저장', 'API 키가 저장되었습니다.')
         
-        self.upbit = Upbit_api(self.access_key, self.secret_key, self.id, self.password)
+        self.upbit = Upbit_api(self.access_key, self.secret_key)
         
         self.upbit.create_user()
         if self.upbit.user is None:
@@ -964,8 +907,7 @@ if __name__ == "__main__":
     # window = SpleshScreen()
     # window.show()
     # window = LoadingScreen()
-    token = login_button_clicked("brunch", "qaz4455!")
-    window = MainWindow(token, "brunch", "qaz4455!")
+    window = MainWindow()
     window.show()
     
     sys.exit(app.exec())

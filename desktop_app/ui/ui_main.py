@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'mainEkUYEk.ui'
+## Form generated from reading UI file 'mainyiHBZT.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.2
 ##
@@ -990,7 +990,7 @@ class Ui_MainWindow(object):
 "}")
         self.pushButton = QPushButton(self.scrollAreaWidgetContents)
         self.pushButton.setObjectName(u"pushButton")
-        self.pushButton.setGeometry(QRect(1320, 40, 261, 71))
+        self.pushButton.setGeometry(QRect(1320, 40, 261, 161))
         self.pushButton.setStyleSheet(u"QPushButton {\n"
 "    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, \n"
 "                                      stop:0 rgba(50, 50, 55, 255), \n"
@@ -1075,74 +1075,6 @@ class Ui_MainWindow(object):
 "    background-color: rgba(40, 40, 45, 255); /* \ube44\ud65c\uc131\ud654 \uc2dc \ub354 \uc5b4\ub461\uac8c */\n"
 "    color: rgba(120, 120, 130, 180); /* \ube44\ud65c\uc131\ud654\ub41c \ud14d\uc2a4\ud2b8 */\n"
 "    border: 1px solid rgba(80, 80, 90, 150);\n"
-"}")
-        self.groupBox_3 = QGroupBox(self.scrollAreaWidgetContents)
-        self.groupBox_3.setObjectName(u"groupBox_3")
-        self.groupBox_3.setGeometry(QRect(1320, 120, 261, 81))
-        self.groupBox_3.setStyleSheet(u"QGroupBox {\n"
-"    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, \n"
-"                                      stop:0 rgba(40, 40, 45, 255), \n"
-"                                      stop:1 rgba(25, 25, 30, 255)); /* \ub2e4\ud06c \uadf8\ub77c\ub370\uc774\uc158 */\n"
-"    border: 1px solid rgba(100, 100, 110, 180);  /* \uc587\uace0 \uc138\ub828\ub41c \ud14c\ub450\ub9ac */\n"
-"    border-radius: 8px;\n"
-"    font: 11pt \"Roboto\";\n"
-"    color: rgba(220, 220, 220, 230);  /* \ubd80\ub4dc\ub7ec\uc6b4 \ud654\uc774\ud2b8 \ud1a4 */\n"
-"}\n"
-"\n"
-"QGroupBox::title {\n"
-"    subcontrol-origin: margin;\n"
-"    subcontrol-position: top left;\n"
-"    font-size: 12pt;\n"
-"    font-weight: bold;\n"
-"    color: rgba(180, 180, 190, 255);  /* \uc740\uc740\ud55c \ud68c\uc0c9 */\n"
-"}\n"
-"\n"
-"QGroupBox:hover {\n"
-"    border: 1px solid rgba(150, 150, 160, 200);  /* \ub9c8\uc6b0\uc2a4 \uc624\ubc84 \uc2dc \uac15\uc870 */\n"
-"}")
-        self.label_9 = QLabel(self.groupBox_3)
-        self.label_9.setObjectName(u"label_9")
-        self.label_9.setGeometry(QRect(10, 10, 251, 16))
-        font1 = QFont()
-        font1.setFamilies([u"Roboto"])
-        font1.setPointSize(11)
-        font1.setBold(False)
-        font1.setItalic(False)
-        self.label_9.setFont(font1)
-        self.label_9.setStyleSheet(u"QLabel {\n"
-"    background: transparent;  /* \ubc30\uacbd \ud22c\uba85 */\n"
-"    color: rgba(220, 220, 230, 230);  /* \ubd80\ub4dc\ub7ec\uc6b4 \ub77c\uc774\ud2b8 \uadf8\ub808\uc774 */\n"
-"    font: 10.5pt \"Roboto\";\n"
-"    padding-top: 0px;\n"
-"    padding-bottom: 0px;\n"
-"    margin-top: 0px;\n"
-"    margin-bottom: 0px;\n"
-"}")
-        self.label_10 = QLabel(self.groupBox_3)
-        self.label_10.setObjectName(u"label_10")
-        self.label_10.setGeometry(QRect(10, 30, 251, 20))
-        self.label_10.setFont(font1)
-        self.label_10.setStyleSheet(u"QLabel {\n"
-"    background: transparent;  /* \ubc30\uacbd \ud22c\uba85 */\n"
-"    color: rgba(220, 220, 230, 230);  /* \ubd80\ub4dc\ub7ec\uc6b4 \ub77c\uc774\ud2b8 \uadf8\ub808\uc774 */\n"
-"    font: 10.5pt \"Roboto\";\n"
-"    padding-top: 0px;\n"
-"    padding-bottom: 0px;\n"
-"    margin-top: 0px;\n"
-"    margin-bottom: 0px;\n"
-"}")
-        self.label_11 = QLabel(self.groupBox_3)
-        self.label_11.setObjectName(u"label_11")
-        self.label_11.setGeometry(QRect(10, 50, 251, 21))
-        self.label_11.setFont(font1)
-        self.label_11.setStyleSheet(u"QLabel {\n"
-"    background: transparent;  /* \ubc30\uacbd \ud22c\uba85 */\n"
-"    color: rgba(220, 220, 230, 230);  /* \ubd80\ub4dc\ub7ec\uc6b4 \ub77c\uc774\ud2b8 \uadf8\ub808\uc774 */\n"
-"    font: 10.5pt \"Roboto\";\n"
-"    padding-top: 0px;\n"
-"    padding-bottom: 0px;\n"
-"    margin-top: 0px;\n"
-"    margin-bottom: 0px;\n"
 "}")
         self.back_group = QGroupBox(self.scrollAreaWidgetContents)
         self.back_group.setObjectName(u"back_group")
@@ -1429,10 +1361,6 @@ class Ui_MainWindow(object):
         self.pushButton.setText(QCoreApplication.translate("MainWindow", u"\ube14\ub85d \ucd94\uac00 +", None))
         self.start_button_2.setText(QCoreApplication.translate("MainWindow", u"\uc800\uc7a5", None))
         self.clear_button.setText(QCoreApplication.translate("MainWindow", u"\ucd08\uae30\ud654", None))
-        self.groupBox_3.setTitle("")
-        self.label_9.setText(QCoreApplication.translate("MainWindow", u"\uae08\ud654 : 0", None))
-        self.label_10.setText(QCoreApplication.translate("MainWindow", u"\uc740\ud654 : 0", None))
-        self.label_11.setText(QCoreApplication.translate("MainWindow", u"\uc2e4\ud589 \uc2dc\uac04 : 0", None))
         self.back_group.setTitle("")
         self.back_start.setText(QCoreApplication.translate("MainWindow", u"\ubc31\ud14c\uc2a4\ud2b8 \uc2dc\uc791", None))
         self.back_result.setText(QCoreApplication.translate("MainWindow", u"\ubc31\ud14c\uc2a4\ud2b8 \uacb0\uacfc \ud655\uc778\ud558\uae30", None))

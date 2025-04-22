@@ -6,8 +6,12 @@ Download Page
 {% load static %}
 {% block content %}
 <h1>프로그램 다운로드</h1>
-<p>현재 버전: v1.0.0</p>
-<a href="/static/downloads/program_v1.0.0.zip" download>다운로드</a>
+{% if latest_release %}
+    <p>현재 버전: {{ latest_release.tag_name }}</p>
+    <a href="{{ latest_release.zipball_url }}" download>다운로드</a>
+{% else %}
+    <p>현재 버전을 가져올 수 없습니다.</p>
+{% endif %}
 
 <h2>프로그램 사용법</h2>
 <section class="instruction">
@@ -31,8 +35,14 @@ Download Page
 
 <h2>패치내역</h2>
 <ul>
-    <li><strong>v1.0.0</strong> - 초기 릴리즈</li>
-    <li><strong>v0.9.0</strong> - 베타 테스트 버전</li>
-    <li><strong>v0.8.0</strong> - 내부 테스트 버전</li>
+    {% for release in releases %}
+        <li>
+            <strong>{{ release.tag_name }}</strong><br>
+            {{ release.body|linebreaksbr }}
+        </li>
+        <br>
+    {% empty %}
+        <li>패치 내역이 없습니다.</li>
+    {% endfor %}
 </ul>
 {% endblock %}

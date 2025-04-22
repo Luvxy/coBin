@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}
+검색 결과
+{% endblock %}
+
+{% block content %}
+<h1>검색 결과</h1>
+{% if results %}
+    <ul>
+        {% for post in results %}
+            <li>
+                <a href="{% url 'post_detail' category=post.category pk=post.id %}">
+                    {{ post.postname }}
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>검색 결과가 없습니다.</p>
+{% endif %}
+{% endblock %}

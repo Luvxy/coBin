@@ -17,6 +17,7 @@ from django.contrib import admin
 from django.urls import path
 from cobin_app import views
 from django.shortcuts import render
+from django.conf.urls import handler404, handler500
 
 # 이미지를 업로드 하기 위한 설정
 from django.conf.urls.static import static
@@ -25,6 +26,8 @@ from django.contrib.auth import views as auth_views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 app_name = 'cobin_app'
+handler404 = 'cobin_app.views.custom_404'
+handler500 = 'cobin_app.views.custom_500'
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -40,6 +43,7 @@ urlpatterns = [
     path('best/', views.best, name='best'),
     path('download/', views.download, name='download'),
     path('purchase/', views.purchase, name='purchase'),
+    path('search/', views.search, name='search'),
     
     # 게시판 URL
     path('blog/', views.blog, name='blog'),

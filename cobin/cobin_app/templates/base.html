@@ -71,20 +71,56 @@
         </ul>
       </nav>
     </header>
+
+  <!-- 검색 기능 -->
+  <form method="GET" action="{% url 'blog' %}" class="blog-search-form">
+    <a>
+      <input type="text" name="search" value="{{ search_query }}" placeholder="게시글 검색..." />
+      <button type="submit">검색</button>
+    </a>
+  </form>
+
     <!-- 페이지별 내용 -->
     <div class="container">
       <!-- 왼쪽 박스 -->
       <aside class="left-sidebar">
-        <h3>최신 게시물</h3>
-        <ul>
-          {% for post in postlist %}
-            <li>
-              <a href="{% url 'post_detail' category=post.category pk=post.id %}">{{ post.postname }}</a>
-            </li>
-          {% empty %}
-            <li>게시글이 없습니다.</li>
-          {% endfor %}
-        </ul>
+        <div class="section">
+          <h3>게시판</h3>
+          <ul>
+            <li><a href="#">💬 자유게시판</a></li>
+            <li><a href="#">💬 정보게시판</a></li>
+            <li><a href="#">💬 투표게시판</a></li>
+          </ul>
+        </div>
+
+        <div class="section">
+          <h3>기타</h3>
+          <ul>
+            <li><a href="#">💬 전략 공유</a></li>
+            <li><a href="#">💬 수익 자랑</a></li>
+            <li><a href="#">💬 BEST 파일럿</a></li>
+          </ul>
+        </div>
+        
+        <div class="section">
+          <h3>최신 게시물</h3>
+          <ul>
+            {% for post in postlist %}
+              <li>
+                <a href="{% url 'post_detail' category=post.category pk=post.id %}">
+                  💬 
+                  {% if post.postname|length > 7 %}
+                    {{ post.postname|slice:":7" }}...
+                  {% else %}
+                    {{ post.postname }}
+                  {% endif %}
+                </a>
+              </li>
+            {% empty %}
+              <li>게시글이 없습니다.</li>
+            {% endfor %}
+          </ul>
+        </div>
       </aside>
 
       <!-- 본문 -->
@@ -112,7 +148,7 @@
             </div>
           </div>
         {% else %}
-          <h3>오른쪽 사이드바</h3>
+          <h3></h3>
           <p>로그인이 필요합니다.</p>
         {% endif %}
       </aside>

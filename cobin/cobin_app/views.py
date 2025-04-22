@@ -10,6 +10,7 @@ from django.core.files.base import ContentFile
 from django.core.paginator import Paginator
 from django.db.models import F
 from django.http import HttpResponseForbidden
+from django.db.models import Q
 
 # api 관련 라이브러리
 from rest_framework.decorators import api_view, permission_classes
@@ -41,6 +42,14 @@ from asgiref.sync import async_to_sync
 import os
 from datetime import datetime
 from django.conf import settings
+
+def custom_404(request, exception):
+    """404 에러 처리 뷰"""
+    return render(request, '404.html', status=404)
+
+def custom_500(request):
+    """500 에러 처리 뷰"""
+    return render(request, '500.html', status=500)
 
 # Firebase 인증 정보 로드
 cred_path = settings.FIREBASE_CREDENTIALS
@@ -94,7 +103,15 @@ def update_user_points(user_id, new_points):
             "message": {"points": new_points}
         }
     )
-    
+
+def search(request):
+    query = request.GET.get('q', '')
+    # 'contents' 필드와 'postname' 필드를 검색하도록 수정
+    results = Post.objects.filter(
+        Q(postname__icontains=query) | Q(contents__icontains=query)
+    ) if query else []
+    return render(request, 'search_results.html', {'query': query, 'results': results})
+
 @csrf_exempt
 def purchase_points(request):
     if request.method == 'POST':
@@ -518,7 +535,33 @@ def home(request):
 
 @login_required
 def download(request):
-    return render(request, 'download.html')  # download 파일 경로
+        # GitHub API URL
+    GITHUB_API_URL = "https://api.github.com/repos/luvxy/coBin/releases"
+    GITHUB_TOKEN = "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"
+
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}"
+    }
+
+    try:
+        # GitHub API 호출
+        response = requests.get(GITHUB_API_URL, headers=headers)
+        response.raise_for_status()  # HTTP 에러 발생 시 예외 처리
+
+        # Release 데이터 파싱
+        releases = response.json()
+
+        # 최신 릴리스 가져오기
+        latest_release = releases[0] if releases else None
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching releases: {e}")
+        releases = []
+        latest_release = None
+
+    return render(request, 'download.html', {
+        'releases': releases,
+        'latest_release': latest_release
+    })
 
 def purchase(request):
     points = [480 * i for i in range(3, 10)]  # 480 ~ 4320 포인트

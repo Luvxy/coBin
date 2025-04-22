@@ -2,8 +2,6 @@ body {
     font-family: sans-serif;
     margin: 0;
     padding: 0;
-    background: linear-gradient(90deg, #a0a0a0, #5e5e5e);
-    color: #333;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -15,6 +13,34 @@ header {
     color: #fff;
     padding: 1rem 0;
     width: 100%;
+}
+
+/* 게시판 검색창 스타일 */
+.blog-search-form {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.blog-search-form input {
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 300px;
+}
+
+.blog-search-form button {
+    padding: 5px 10px;
+    background: #333;
+    color: white;
+    border: none;
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+.blog-search-form button:hover {
+    background: #555;
 }
 
 /* 네비게이션 */
@@ -64,7 +90,6 @@ nav a:hover {
     position: absolute;
     background-color: #333;
     min-width: 160px;
-    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
     z-index: 1;
 }
 
@@ -90,23 +115,19 @@ nav a:hover {
     min-height: 100vh;
     max-width: 70vh;
     background: white;
-    border-radius: 20px;
     padding: 20px;
-    box-shadow: 8px 8px 20px rgba(0, 0, 0, 0.1);
 }
 .intro img {
     width: 100%;
-    border-radius: 10px;
     margin: 20px 0;
 }
 
 /* 서비스 소개 섹션 */
 .intro, .community, .popular-strategies, .best-traders, .user-reviews, .subscription {
     background: white;
-    border-radius: 10px;
     padding: 20px;
     margin: 20px 0;
-    box-shadow: 4px 4px 15px rgba(0, 0, 0, 0.1);
+    border: 1px solid #ddd;
 }
 
 /* 전략 섹션 */
@@ -122,7 +143,6 @@ nav a:hover {
     background: #f8f8f8;
     border-radius: 8px;
     text-align: center;
-    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 /* 버튼 스타일 */
@@ -145,22 +165,25 @@ nav a:hover {
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    gap: 20px;
     width: 100%;
     max-width: 1800px;
-    margin-top: 20px;
+}
+
+aside {
+    background: white;
+    padding: 20px;
 }
 
 /* 사이드바 & 본문 */
-aside, main {
+main {
     background: white;
-    border-radius: 20px;
     padding: 20px;
-    box-shadow: 8px 8px 20px rgba(0, 0, 0, 0.1);
+    border-left: #add solid 1px;
+    border-right: #add solid 1px;
 }
 
 .left-sidebar {
-    width: 250px;
+    width: 150px;
 }
 
 .content {
@@ -320,9 +343,7 @@ aside, main {
     overflow-y: auto;
     max-height: 200px;
     background: #fff;
-    border-radius: 10px;
     padding: 15px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .graph-title {
@@ -353,6 +374,41 @@ aside, main {
     border-radius: 8px;
 }
 
+/* 왼쪽 박스 스타일 */
+.left-sidebar {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .left-sidebar .section {
+    padding: 1px; /* 내부 여백 */
+    border-bottom: solid 1px; /* 아래쪽 테두리 */
+  }
+  
+  .left-sidebar .section h3 {
+    margin-bottom: 5px; /* 제목 아래 여백 */
+    font-size: 1.2em; /* 제목 크기 */
+  }
+  
+  .left-sidebar .section ul {
+    list-style: none; /* 리스트 스타일 제거 */
+    padding: 0; /* 리스트 내부 여백 제거 */
+    margin: 0; /* 리스트 외부 여백 제거 */
+  }
+  
+  .left-sidebar .section ul li {
+    margin-bottom: 10px; /* 리스트 항목 간 간격 */
+  }
+  
+  .left-sidebar .section ul li a {
+    text-decoration: none; /* 링크 밑줄 제거 */
+    color: #333; /* 링크 색상 */
+  }
+  
+  .left-sidebar .section ul li a:hover {
+    color: #007bff; /* 링크 호버 색상 */
+  }
+
 .left-sidebar ul {
     padding: 0;
     list-style: none;
@@ -369,7 +425,6 @@ aside, main {
 
 .left-sidebar img {
     object-fit: cover;
-    border-radius: 5px;
     max-width: 100%; /* 이미지가 넘지 않도록 제한 */
     flex-shrink: 0; /* 이미지 크기 유지 */
 }
@@ -390,7 +445,7 @@ aside, main {
     font-size: 18px;
     font-weight: bold;
     cursor: pointer;
-    box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.2);
+    border: 1px solid #ddd;
 }
 
 /* 게시판 */
@@ -656,8 +711,8 @@ form input[type="submit"]:hover {
 .instruction div {
     border-radius: 10px;
     padding: 15px;
-    box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1);
     text-align: center;
+    border: 1px solid #ddd;
 }
 
 .instruction div a {
@@ -690,7 +745,6 @@ form input[type="submit"]:hover {
 .subscription-card {
     background-color: white;
     border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     padding: 20px;
     text-align: left;
     width: 30%;
@@ -698,6 +752,7 @@ form input[type="submit"]:hover {
     flex-direction: column;
     justify-content: space-between;
     position: relative;
+    border: 1px solid #ddd;
 }
 
 .subscription-card h2 {
@@ -737,7 +792,6 @@ form input[type="submit"]:hover {
 .subscription-card {
     background-color: white;
     border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     padding: 20px;
     text-align: left;
     width: 30%;
@@ -745,6 +799,7 @@ form input[type="submit"]:hover {
     flex-direction: column;
     justify-content: space-between;
     position: relative;
+    border: 1px solid #ddd;
 }
 
 .subscription-card h2 {

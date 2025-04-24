@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}AI Chat{% endblock %}
+
+{% block content %}
+<div class="chat-wrapper">
+  <h1 class="chat-title">어디서부터 시작할까요?</h1>
+
+  <!-- 🔸 대화 내용 출력 영역 -->
+  <div class="chat-history" id="chat-history">
+    {% for message in messages %}
+      <div class="chat-message {{ message.sender }}">
+        <div class="bubble">{{ message.text }}</div>
+      </div>
+    {% empty %}
+      <p class="chat-empty">아직 대화가 없습니다.</p>
+    {% endfor %}
+  </div>
+
+  <!-- 🔸 입력 폼 -->
+  <form id="chat-form" method="post" action="{% url 'ai_chat' %}">
+    {% csrf_token %}
+    <div class="chat-input-box">
+      <button type="button" class="icon-btn plus">+</button>
+      <input type="text" name="message" placeholder="무엇이든 물어보세요" autocomplete="off" />
+      <button type="button" class="icon-btn search">🌐</button>
+      <button type="button" class="icon-btn research">🔎</button>
+      <button type="button" class="icon-btn draw">🎨</button>
+      <button type="button" class="icon-btn more">⋯</button>
+      <button type="submit" class="icon-btn send">▶</button>
+    </div>
+  </form>
+  
+</div>
+
+{% endblock %}

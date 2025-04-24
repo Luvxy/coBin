@@ -41,6 +41,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
 import os
+from cobin_app.stratege_gpt import chat_gpt
 from datetime import datetime
 from django.conf import settings
 
@@ -580,6 +581,14 @@ def contact(request):
     return render(request, 'contact.html')  # index 파일 경로
 
 @login_required
+def chat_view(request):
+    return render(request, 'chat.html')
+
+@login_required
+def ai_chat(request):
+    return render(request, 'chat.html')
+
+@login_required
 def blog(request, category):
     search_query = request.GET.get('search', '')  # 검색어 가져오기
     postlist = Post.objects.filter(category=category).select_related('author').order_by('-id')  # 최신순 정렬
@@ -746,6 +755,37 @@ def upload_user_image(request):
         return JsonResponse({'status': 'success', 'image_url': image_url})
     else:
         return JsonResponse({'status': 'fail', 'reason': 'No image provided'}, status=400)
+    
+
+#########################################################################################
+# AI 관련
+#########################################################################################
+chat_log = []  # 임시 저장용 리스트
+
+@csrf_exempt
+def chat_view(request):
+    if request.method == "POST":
+        user_msg = request.POST.get("message")
+        # 여기에 실제 AI 응답 로직 연결 (지금은 예시로 고정된 응답)
+        ai_reply = f"'{user_msg}'에 대한 답변입니다."
+
+        # 대화 저장
+        chat_log.append({"sender": "user", "text": user_msg})
+        chat_log.append({"sender": "ai", "text": ai_reply})
+        return redirect("ai_chat_page")  # POST 후 리다이렉트
+
+    return render(request, "chat.html", {"messages": chat_log})
+
+def ai_chat(request):
+    if request.method == "POST":
+        user_msg = request.POST.get("message")
+        reply = chat_gpt.chat_gpt(user_msg)
+
+        chat_log.append({"sender": "user", "text": user_msg})
+        chat_log.append({"sender": "ai", "text": reply})
+
+        return redirect("ai_chat_page")
+    
     
 #######################################################################################
 # 관리자

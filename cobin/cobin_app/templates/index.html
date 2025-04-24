@@ -14,7 +14,20 @@ Home Page
     <br><br><br>
     <p>무엇을 도와드릴까요?</p>
     <br>
-    <input type="text" class="chat-input" placeholder="AI에게 물어보세요..." />
+    <!-- 입력 박스 -->
+    <form id="chat-form" method="post" action="{% url 'ai_chat' %}">
+        {% csrf_token %}
+        <div class="chat-input-box">
+          <button type="button" class="icon-btn plus">+</button>
+          <input type="text" name="message" placeholder="무엇이든 물어보세요" autocomplete="off" />
+          <button type="button" class="icon-btn search">🌐</button>
+          <button type="button" class="icon-btn research">🔎</button>
+          <button type="button" class="icon-btn draw">🎨</button>
+          <button type="button" class="icon-btn more">⋯</button>
+          <button type="submit" class="icon-btn send">▶</button>
+        </div>
+      </form>
+      
     <br><br><br><br><br>
 </section>
 

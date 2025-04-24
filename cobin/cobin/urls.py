@@ -73,6 +73,10 @@ urlpatterns = [
     # 휴대전화(SMS) 인증
     path('verify/sms/send/', views.send_sms_verification, name='send_sms_verification'),
     path('verify/sms/', views.verify_sms, name='verify_sms'),
+    
+    # Ai 관련
+    path("chat/", views.chat_view, name="ai_chat_page"),
+    path("chat/send/", views.ai_chat, name="ai_chat"),  # 폼 action 대상
 ]
 
 # 이미지 URL 설정

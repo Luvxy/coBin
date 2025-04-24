@@ -1,9 +1,9 @@
 body {
-    background-image: url('/static/images/background.jpg'); /* 이미지 경로 */
+    /* background-image: url('/static/images/background.jpg');
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
-    background-attachment: scroll; /* ← 스크롤 시 배경도 같이 움직임 */
+    background-attachment: scroll; ← 스크롤 시 배경도 같이 움직임 */
     font-family: sans-serif;
     margin: 0;
     padding: 0;
@@ -276,13 +276,6 @@ main {
     font-size: 0.9rem;
     color: #666;
     margin: 5px 0 0 0;
-}
-
-/* 하단 동그라미 3개 */
-.profile-footer {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 15px;
 }
 
 .profile-circle {

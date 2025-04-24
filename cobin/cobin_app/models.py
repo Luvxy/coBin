@@ -26,6 +26,12 @@ class Post(models.Model):
         ('free', '자유'),
         ('info', '정보'),
         ('proposal', '제안'),
+        ('strategy', '전략'),
+        ('event', '이벤트'),
+        ('notice', '공지사항'),
+        ('qna', 'Q&A'),
+        ('etc', '기타'),
+        ('bug', '버그제보'),
     ]
     
     postname = models.CharField(max_length=50)

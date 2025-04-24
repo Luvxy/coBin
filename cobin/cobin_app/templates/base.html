@@ -36,16 +36,21 @@
           <li>
             <a href="/">COB2N</a>
           </li>
-          <li>
+          {% comment %} <li>
             <div class="dropdown">
               <a>게시판</a>
               <div class="dropdown-content">
                 <a href="/blog/free/">자유게시판</a>
                 <a href="/blog/info/">정보게시판</a>
-                <a href="/blog/proposal/">투표게시판</a>
+                <a href="/blog/proposal/">제안게시판</a>
+                <a href="/blog/strategy/">전략공유게시판</a>
+                <a href="/blog/review/">자랑하기</a>
+                <a href="/blog/notice/">공지사항</a>
+                <a href="/blog/event/">이벤트게시판</a>
+                <a href="/blog/qna/">Q&A게시판</a>
               </div>
             </div>
-          </li>
+          </li> {% endcomment %}
           <li>
             <a href="/best/">Best 파일럿</a>
           </li>
@@ -87,18 +92,22 @@
         <div class="section">
           <h3>게시판</h3>
           <ul>
-            <li><a href="#">💬 자유게시판</a></li>
-            <li><a href="#">💬 정보게시판</a></li>
-            <li><a href="#">💬 투표게시판</a></li>
+            <li><a href="/blog/notice">🚨 공지사항</a></li>
+            <li><a href="/blog/free">💬 자유게시판</a></li>
+            <li><a href="/blog/info">💌 정보게시판</a></li>
+            <li><a href="/blog/proposal">📬 제안게시판</a></li>
+            <li><a href="/blog/event">🎁 이벤트게시판</a></li>
           </ul>
         </div>
 
         <div class="section">
           <h3>기타</h3>
           <ul>
-            <li><a href="#">💬 전략 공유</a></li>
-            <li><a href="#">💬 수익 자랑</a></li>
-            <li><a href="#">💬 BEST 파일럿</a></li>
+            <li><a href="/blog/strategy">♟ 전략공유</a></li>
+            <li><a href="/blog/review">📊 자랑하기</a></li>
+            <li><a href="/blog/best">🥇 BEST파일럿</a></li>
+            <li><a href="/blog/qna">💡 Q&A</a></li>
+            <li><a href="/blog/bug">🐞 버그제보</a></li>
           </ul>
         </div>
         
@@ -140,11 +149,6 @@
                 <h3 class="profile-username">{{ user_data.name|default:user.username }} 님</h3>
                 <p class="profile-membership">등급: {{ user_data.membership|default:'Basic' }}</p>
               </div>
-            </div>
-            <div class="profile-footer">
-              <div class="profile-circle"></div>
-              <div class="profile-circle"></div>
-              <div class="profile-circle"></div>
             </div>
           </div>
         {% else %}

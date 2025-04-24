@@ -7,3 +7,8 @@ from .models import Post, infoPost
 # 관리자(admin)가 게시글(Post)에 접근 가능
 admin.site.register(Post)
 admin.site.register(infoPost)
+
+class PostAdmin(admin.ModelAdmin):
+    list_display = ('postname', 'category', 'status', 'author', 'created_at')
+    list_filter = ('category', 'status')
+    search_fields = ('postname', 'contents')

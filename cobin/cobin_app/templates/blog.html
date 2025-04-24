@@ -53,10 +53,12 @@
       {% for post in page_obj %}
         <tr>
           <td>
-            <a href="{% url 'post_detail' category=category pk=post.pk %}">
-              {{ post.postname }}
-            </a>
-            <span class="comment-count">[{{ post.comments.count }}]</span>
+            {% if post.is_accessible %}
+              <a href="{% url 'post_detail' category=category pk=post.pk %}">{{ post.postname }}</a>
+              <span class="comment-count">[{{ post.comments.count }}]</span>
+            {% else %}
+              비공개
+            {% endif %}
           </td>
           <td>{{ post.author }}</td>
           <td>{{ post.created_at|date:'m-d' }}</td>

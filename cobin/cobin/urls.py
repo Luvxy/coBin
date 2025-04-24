@@ -52,6 +52,7 @@ urlpatterns = [
     path('blog/<str:category>/<int:pk>/', views.post_detail, name='post_detail'),
     path('blog/<str:category>/<int:pk>/like/', views.like, name='like'),
     path('blog/<str:category>/<int:pk>/delete/', views.delete_post, name='delete_post'),
+    path('blog/<str:category>/<int:pk>/update-status/', views.update_post_status, name='update_post_status'),
     path('api/user/update_consumed_points/', views.update_consumed_points, name='update_consumed_points'),
     
     # cobin app 관련 URL

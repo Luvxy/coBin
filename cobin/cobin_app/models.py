@@ -34,12 +34,18 @@ class Post(models.Model):
         ('bug', '버그제보'),
     ]
     
+    STATUS_CHOICES = [
+        ('in_progress', '진행 중'),
+        ('completed', '완료'),
+    ]
+    
     postname = models.CharField(max_length=50)
     mainphoto = models.ImageField(blank=True, null=True)
     contents = models.TextField()
     author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='free')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='completed')
     
     # 조회수, 좋아요(숫자)
     view_count = models.PositiveIntegerField(default=0)
@@ -53,6 +59,21 @@ class Post(models.Model):
         related_name='like_user_set',
         through='Like'
     )
+    
+    def save(self, *args, **kwargs):
+        # 버그제보 카테고리인 경우 기본값을 'in_progress'로 설정
+        if self.category == 'bug' and not self.status:
+            self.status = 'in_progress'
+        super().save(*args, **kwargs)
+    
+    def is_accessible_by(self, user):
+        """작성자, 관리자 또는 완료된 게시글만 접근 가능"""
+        if not user.is_authenticated:  # 인증되지 않은 사용자는 접근 불가
+            print(f"[DEBUG] User is not authenticated. Post: {self.postname}")
+            return False
+
+        accessible = self.status == 'completed' or self.author == user or user.is_staff
+        return accessible
 
     def __str__(self):
         return f"[{self.get_category_display()}] {self.postname}"

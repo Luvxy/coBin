@@ -11,6 +11,7 @@ from django.core.paginator import Paginator
 from django.db.models import F
 from django.http import HttpResponseForbidden
 from django.db.models import Q
+from django.contrib.admin.views.decorators import staff_member_required
 
 # api 관련 라이브러리
 from rest_framework.decorators import api_view, permission_classes
@@ -493,6 +494,9 @@ def post_list(request, category):
     if search_query:
         posts = posts.filter(title__icontains=search_query)
 
+    for post in posts:
+        post.is_accessible = post.is_accessible_by(request.user)
+    
     context = {
         'page_obj': posts,  # 페이징 대신 전체 리스트 전달
         'category': category,
@@ -576,24 +580,34 @@ def contact(request):
     return render(request, 'contact.html')  # index 파일 경로
 
 @login_required
-def blog(request):
+def blog(request, category):
     search_query = request.GET.get('search', '')  # 검색어 가져오기
-    postlist = Post.objects.select_related('author').all().order_by('-id')  # 최신순 정렬
+    postlist = Post.objects.filter(category=category).select_related('author').order_by('-id')  # 최신순 정렬
 
     if search_query:
         postlist = postlist.filter(postname__icontains=search_query)  # 제목에 검색어 포함된 글만 필터링
-
-    paginator = Paginator(postlist, 50)  # 10개씩 페이지 나누기
+    paginator = Paginator(postlist, 50)  # 50개씩 페이지 나누기
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    return render(request, 'blog.html', {'page_obj': page_obj, 'search_query': search_query})
-
+    return render(request, 'blog.html', {
+        'page_obj': page_obj,
+        'search_query': search_query,
+        'category': category
+    })
+    
 @login_required
 def post_detail(request, category, pk):
     post = get_object_or_404(Post, pk=pk)
     comments = post.comments.all()
 
+    # 접근 권한 확인
+    if not post.is_accessible_by(request.user):
+        if post.status == 'in_progress':
+            return HttpResponseForbidden("이 게시글은 비공개 상태입니다.")
+        else:
+            return HttpResponseForbidden("접근 권한이 없습니다.")
+    
     # 댓글 작성 처리
     if request.method == 'POST':
         content = request.POST.get('content')
@@ -661,7 +675,8 @@ def new_post(request, category):
             contents=request.POST['contents'],
             mainphoto=request.FILES.get('mainphoto'),
             author=request.user,
-            category=category  # 카테고리 저장
+            category=category,
+            status='in_progress' if category == 'bug' else 'completed'  # 추가
         )
         return redirect('post_list', category=category)
     return render(request, 'new_post.html', {'category': category})
@@ -731,3 +746,20 @@ def upload_user_image(request):
         return JsonResponse({'status': 'success', 'image_url': image_url})
     else:
         return JsonResponse({'status': 'fail', 'reason': 'No image provided'}, status=400)
+    
+#######################################################################################
+# 관리자
+#######################################################################################
+
+@login_required
+@staff_member_required
+def update_post_status(request, pk):
+    """관리자가 게시글 상태를 완료로 변경"""
+    post = get_object_or_404(Post, pk=pk)
+
+    if request.method == 'POST':
+        post.status = 'completed'
+        post.save()
+        return redirect('post_detail', pk=post.pk)
+
+    return render(request, 'update_post_status.html', {'post': post})

@@ -1,5 +1,7 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
+import asyncio
+import websockets
 
 class TradingConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -37,3 +39,30 @@ class PointConsumer(AsyncWebsocketConsumer):
     async def send_point_update(self, event):
         # 클라이언트로 메시지 전송
         await self.send(text_data=json.dumps(event['message']))
+        
+class ChartConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        await self.accept()
+        asyncio.create_task(self.upbit_ws())
+
+    async def upbit_ws(self):
+        url = "wss://api.upbit.com/websocket/v1"
+        async with websockets.connect(url) as websocket:
+            subscribe_fmt = [
+                {"ticket": "test"},
+                {
+                    "type": "ticker",
+                    "codes": ["KRW-BTC"],  # 여기서 코인 종류 지정 (BTC/USDT면 "USDT-BTC")
+                },
+                {"format": "SIMPLE"}
+            ]
+            await websocket.send(json.dumps(subscribe_fmt))
+
+            while True:
+                data = await websocket.recv()
+                data_json = json.loads(data)
+                price = data_json['tp']  # 체결가격
+
+                await self.send(text_data=json.dumps({
+                    'price': price
+                }))

@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}
+  posting Page
+{% endblock %}
+
+{% block content %}
+<canvas id="coinChart"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const ctx = document.getElementById('coinChart').getContext('2d');
+const coinChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [{
+            label: '가격',
+            data: [],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        animation: false,
+        scales: {
+            y: { beginAtZero: false }
+        }
+    }
+});
+
+const socket = new WebSocket('ws://' + window.location.host + '/ws/chart/');
+
+socket.onmessage = function(e) {
+    const data = JSON.parse(e.data);
+    const now = new Date().toLocaleTimeString();
+
+    if (coinChart.data.labels.length > 20) {
+        coinChart.data.labels.shift();
+        coinChart.data.datasets[0].data.shift();
+    }
+
+    coinChart.data.labels.push(now);
+    coinChart.data.datasets[0].data.push(data.price);
+    coinChart.update();
+};
+</script>
+
+{% endblock %}

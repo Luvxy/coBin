@@ -11,6 +11,11 @@
     </title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}" />
     <script src="{% static 'js/main.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <script src="{% static 'js/chart.js' %}"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js"></script>
@@ -35,6 +40,9 @@
         <ul>
           <li>
             <a href="/">COB2N</a>
+          </li>
+          <li>
+            <a href="/chart/">차트</a>
           </li>
           {% comment %} <li>
             <div class="dropdown">

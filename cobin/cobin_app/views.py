@@ -589,6 +589,11 @@ def ai_chat(request):
     return render(request, 'chat.html')
 
 @login_required
+def chart(request):
+    return render(request, 'chart.html')
+
+
+@login_required
 def blog(request, category):
     search_query = request.GET.get('search', '')  # 검색어 가져오기
     postlist = Post.objects.filter(category=category).select_related('author').order_by('-id')  # 최신순 정렬

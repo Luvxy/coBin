@@ -2,6 +2,8 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 import asyncio
 import websockets
+import time
+from channels.db import database_sync_to_async
 
 class TradingConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -45,6 +47,10 @@ class ChartConsumer(AsyncWebsocketConsumer):
         await self.accept()
         asyncio.create_task(self.upbit_ws())
 
+    async def receive_json(self, content):
+        code = content.get("code", "KRW-BTC")
+        self.code = code
+
     async def upbit_ws(self):
         url = "wss://api.upbit.com/websocket/v1"
         async with websockets.connect(url) as websocket:
@@ -66,3 +72,85 @@ class ChartConsumer(AsyncWebsocketConsumer):
                 await self.send(text_data=json.dumps({
                     'price': price
                 }))
+
+class ChatConsumer(AsyncWebsocketConsumer):
+    last_sent_time = 0  # 클래스 변수로 1초 간격 제한
+
+    async def connect(self):
+        self.code = self.scope['url_route']['kwargs']['code']
+        self.room_group_name = f'chat_{self.code}'
+
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+        await self.accept()
+
+        messages = await self.get_recent_messages()
+        
+        for msg in messages:
+            await self.send(text_data=json.dumps(msg))
+            
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+
+    async def receive(self, text_data):
+        from cobin_app.models import ChatMessage
+        data = json.loads(text_data)
+        username = self.scope['user'].username if self.scope['user'].is_authenticated else '익명'
+        message = data['message']
+
+        # 메시지 길이 제한
+        if len(message) > 60:
+            await self.send(text_data=json.dumps({
+                'username': 'System',
+                'message': '메시지는 최대 60자까지 가능합니다.'
+            }))
+            return
+
+        current_time = time.time()
+        if current_time - self.last_sent_time < 1:
+            await self.send(text_data=json.dumps({
+                'username': 'System',
+                'message': '1초에 한 번만 전송할 수 있습니다.'
+            }))
+            return
+
+        # ✅ DB 저장 (비동기)
+        if self.scope['user'].is_authenticated:
+            await database_sync_to_async(ChatMessage.objects.create)(
+                coin_code=self.code,
+                user=self.scope['user'],
+                message=message
+            )
+        else:
+            await database_sync_to_async(ChatMessage.objects.create)(
+                coin_code=self.code,
+                user=None,
+                message=message
+            )
+
+        self.last_sent_time = current_time
+
+        # 메시지 전송
+        await self.channel_layer.group_send(self.room_group_name, {
+            'type': 'chat_message',
+            'username': username,
+            'message': message
+        })
+        
+    @database_sync_to_async
+    def get_recent_messages(self):
+        from cobin_app.models import ChatMessage
+        messages = ChatMessage.objects.filter(coin_code=self.code).order_by('-timestamp')[:30][::-1]
+        return [
+            {
+                "username": m.user.username if m.user else "익명",
+                "message": m.message,
+                "timestamp": m.timestamp.strftime('%H:%M')
+            }
+            for m in messages
+        ]
+        
+    async def chat_message(self, event):
+        await self.send(text_data=json.dumps({
+            'username': event['username'],
+            'message': event['message']
+        }))

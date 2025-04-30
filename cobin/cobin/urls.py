@@ -44,6 +44,7 @@ urlpatterns = [
     path('download/', views.download, name='download'),
     path('purchase/', views.purchase, name='purchase'),
     path('search/', views.search, name='search'),
+    path('chart/', views.chart, name='chart'),
     
     # 게시판 URL
     path('blog/', views.blog, name='blog'),

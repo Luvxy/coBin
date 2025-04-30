@@ -1,47 +1,29 @@
 {% extends 'base.html' %}
-{% block title %}
-  posting Page
-{% endblock %}
+{% block title %}실시간 코인 차트{% endblock %}
 
 {% block content %}
-<canvas id="coinChart"></canvas>
+  <h2 style="margin-bottom: 1rem;">📈 실시간 코인 차트</h2>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-const ctx = document.getElementById('coinChart').getContext('2d');
-const coinChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels: [],
-        datasets: [{
-            label: '가격',
-            data: [],
-            borderWidth: 1
-        }]
-    },
-    options: {
-        animation: false,
-        scales: {
-            y: { beginAtZero: false }
-        }
-    }
-});
+  <label for="coinSelect">코인 선택:</label>
+  <select id="coinSelect">
+    <option value="KRW-BTC" selected>BTC/KRW</option>
+    <option value="KRW-ETH">ETH/KRW</option>
+    <option value="KRW-XRP">XRP/KRW</option>
+  </select>
 
-const socket = new WebSocket('ws://' + window.location.host + '/ws/chart/');
+  <div id="price-info" style="margin-bottom: 1rem; font-size: 18px;">
+    <strong>현재가:</strong> <span id="price">-</span> 원
+  </div>
 
-socket.onmessage = function(e) {
-    const data = JSON.parse(e.data);
-    const now = new Date().toLocaleTimeString();
+  <canvas id="coinChart" width="800" height="400"></canvas> 
 
-    if (coinChart.data.labels.length > 20) {
-        coinChart.data.labels.shift();
-        coinChart.data.datasets[0].data.shift();
-    }
-
-    coinChart.data.labels.push(now);
-    coinChart.data.datasets[0].data.push(data.price);
-    coinChart.update();
-};
-</script>
-
+  <div id="chat-section">
+    <h3>💬 실시간 채팅</h3>
+    <div id="chat-box" style="height:200px; overflow-y:auto; border:1px solid #ccc; padding:10px;"></div>
+    <div style="display:flex; gap:10px; margin-top:5px;">
+      <input type="text" id="chat-message" placeholder="메시지 입력..." style="flex:1; padding:5px;">
+      <button id="chat-send">전송</button>
+    </div>
+  </div>
+  
 {% endblock %}

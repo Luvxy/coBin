@@ -29,7 +29,7 @@ class Post(models.Model):
         ('strategy', '전략'),
         ('event', '이벤트'),
         ('notice', '공지사항'),
-        ('qna', 'Q&A'),
+        ('qna', 'Q&A'), 
         ('etc', '기타'),
         ('bug', '버그제보'),
     ]

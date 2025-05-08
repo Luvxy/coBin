@@ -2,15 +2,55 @@
 {% load static %}
 
 {% block title %}
-contact Page
+  best 파일럿
 {% endblock %}
 
 {% block content %}
-    <!-- Your contact page content here -->
-    <h1>Hall of Fame</h1>
-    <ol>
-        <li>1st Place</li>
-        <li>2nd Place</li>
-        <li>3rd Place</li>
-    </ol>
+  <!-- Your contact page content here -->
+  <h2>🥇 BEST 파일럿 랭킹</h2>
+
+  <div class="podium">
+    <div class="place second">
+      <div class="name-label">김철수</div>
+      <div class="rank-label">2등</div>
+    </div>
+    <div class="place first">
+      <div class="crown">👑</div>
+      <div class="name-label">홍길동</div>
+      <div class="rank-label">1등</div>
+    </div>
+    <div class="place third">
+      <div class="name-label">이영희</div>
+      <div class="rank-label">3등</div>
+    </div>
+  </div>
+
+  <form method="GET" action="{% url 'best' %}" class="nickname-search-form">
+    <a>
+      <input type="text" name="nickname" placeholder="닉네임 검색..." value="{{ request.GET.nickname }}" />
+      <button type="submit">검색</button>
+    </a>
+  </form>
+
+  <!-- 4~10등 리스트 -->
+  <!-- 랭킹 리스트 테이블 -->
+  <table class="ranking-table">
+    <thead>
+      <tr>
+        <th>등수</th>
+        <th>닉네임</th>
+        <th>수익</th>
+      </tr>
+    </thead>
+    <tbody>
+        {% for rank, user in lower_ranked_list %}
+        <tr>
+          <td>{{ rank }}위</td>
+          <td>{{ user.nickname }}</td>
+          <td>{{ user.score }}</td>
+          <td>{{ user.created_at|date:'m-d' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+  </table>
 {% endblock %}

@@ -1,0 +1,197 @@
+Table: django_migrations
+	id	app	name	applied
+	1	contenttypes	0001_initial	2025-03-28 01:31:07.243057
+	2	auth	0001_initial	2025-03-28 01:31:07.262508
+	3	admin	0001_initial	2025-03-28 01:31:07.277878
+	4	admin	0002_logentry_remove_auto_add	2025-03-28 01:31:07.291225
+	5	admin	0003_logentry_add_action_flag_choices	2025-03-28 01:31:07.301202
+	6	contenttypes	0002_remove_content_type_name	2025-03-28 01:31:07.319348
+	7	auth	0002_alter_permission_name_max_length	2025-03-28 01:31:07.336445
+	8	auth	0003_alter_user_email_max_length	2025-03-28 01:31:07.348665
+	9	auth	0004_alter_user_username_opts	2025-03-28 01:31:07.357801
+	10	auth	0005_alter_user_last_login_null	2025-03-28 01:31:07.370219
+	11	auth	0006_require_contenttypes_0002	2025-03-28 01:31:07.375551
+	12	auth	0007_alter_validators_add_error_messages	2025-03-28 01:31:07.384957
+	13	auth	0008_alter_user_username_max_length	2025-03-28 01:31:07.397366
+	14	auth	0009_alter_user_last_name_max_length	2025-03-28 01:31:07.409710
+	15	auth	0010_alter_group_name_max_length	2025-03-28 01:31:07.420742
+	16	auth	0011_update_proxy_permissions	2025-03-28 01:31:07.429680
+	17	auth	0012_alter_user_first_name_max_length	2025-03-28 01:31:07.442413
+	18	cobin_app	0001_initial	2025-03-28 01:31:07.448400
+	19	cobin_app	0002_post_mainphoto	2025-03-28 01:31:07.454115
+	20	cobin_app	0003_infopost_post_author_profile	2025-03-28 01:31:07.475415
+	21	cobin_app	0004_post_created_at	2025-03-28 01:31:07.488353
+	22	cobin_app	0005_post_like_count_post_view_count	2025-03-28 01:31:07.509632
+	23	cobin_app	0006_like_post_liked_users_like_unique_user_post_like	2025-03-28 01:31:07.539625
+	24	cobin_app	0007_comment	2025-03-28 01:31:07.638841
+	25	cobin_app	0008_postview	2025-03-28 01:31:07.660044
+	26	cobin_app	0009_infopost_author_infopost_created_at_post_category	2025-03-28 01:31:07.694551
+	27	cobin_app	0010_userprofile	2025-03-28 01:31:07.710468
+	28	cobin_app	0011_delete_profile	2025-03-28 01:31:07.715820
+	29	sessions	0001_initial	2025-03-28 01:31:07.728316
+	30	cobin_app	0012_userprofile_point1_userprofile_point2	2025-03-31 05:10:18.711325
+	31	cobin_app	0013_alter_userprofile_point2	2025-03-31 06:14:25.854953
+	32	cobin_app	0014_post_status_alter_post_category	2025-04-24 01:15:37.103374
+	33	cobin_app	0015_alter_post_status	2025-04-24 01:35:52.735757
+	34	cobin_app	0016_chatmessage	2025-04-30 01:43:16.157494
+
+Table: sqlite_sequence
+	name	seq
+	django_migrations	34
+	django_admin_log	3
+	django_content_type	13
+	auth_permission	52
+	auth_group	0
+	auth_user	2
+	cobin_app_like	0
+	cobin_app_infopost	0
+	cobin_app_userprofile	1
+	cobin_app_post	9
+	cobin_app_chatmessage	11
+
+Table: auth_group_permissions
+	id	group_id	permission_id
+
+Table: auth_user_groups
+	id	user_id	group_id
+
+Table: auth_user_user_permissions
+	id	user_id	permission_id
+
+Table: django_admin_log
+	id	object_id	object_repr	action_flag	change_message	content_type_id	user_id	action_time
+	1	5	[자유] 123번 게시글	2	[{"changed": {"fields": ["Status"]}}]	7	1	2025-04-24 01:32:26.476290
+	2	3	[자유] 💸 자동매매로 수익 내는 개꿀팁 대방출! 💸	2	[{"changed": {"fields": ["Status"]}}]	7	1	2025-04-24 02:02:43.716679
+	3	7	[버그제보] 4번 버그 게시글입니다.	2	[{"changed": {"fields": ["Status"]}}]	7	1	2025-04-24 02:09:31.226321
+
+Table: django_content_type
+	id	app_label	model
+	1	admin	logentry
+	2	auth	permission
+	3	auth	group
+	4	auth	user
+	5	contenttypes	contenttype
+	6	sessions	session
+	7	cobin_app	post
+	8	cobin_app	infopost
+	9	cobin_app	like
+	10	cobin_app	comment
+	11	cobin_app	postview
+	12	cobin_app	userprofile
+	13	cobin_app	chatmessage
+
+Table: auth_permission
+	id	content_type_id	codename	name
+	1	1	add_logentry	Can add log entry
+	2	1	change_logentry	Can change log entry
+	3	1	delete_logentry	Can delete log entry
+	4	1	view_logentry	Can view log entry
+	5	2	add_permission	Can add permission
+	6	2	change_permission	Can change permission
+	7	2	delete_permission	Can delete permission
+	8	2	view_permission	Can view permission
+	9	3	add_group	Can add group
+	10	3	change_group	Can change group
+	11	3	delete_group	Can delete group
+	12	3	view_group	Can view group
+	13	4	add_user	Can add user
+	14	4	change_user	Can change user
+	15	4	delete_user	Can delete user
+	16	4	view_user	Can view user
+	17	5	add_contenttype	Can add content type
+	18	5	change_contenttype	Can change content type
+	19	5	delete_contenttype	Can delete content type
+	20	5	view_contenttype	Can view content type
+	21	6	add_session	Can add session
+	22	6	change_session	Can change session
+	23	6	delete_session	Can delete session
+	24	6	view_session	Can view session
+	25	7	add_post	Can add post
+	26	7	change_post	Can change post
+	27	7	delete_post	Can delete post
+	28	7	view_post	Can view post
+	29	8	add_infopost	Can add info post
+	30	8	change_infopost	Can change info post
+	31	8	delete_infopost	Can delete info post
+	32	8	view_infopost	Can view info post
+	33	9	add_like	Can add like
+	34	9	change_like	Can change like
+	35	9	delete_like	Can delete like
+	36	9	view_like	Can view like
+	37	10	add_comment	Can add comment
+	38	10	change_comment	Can change comment
+	39	10	delete_comment	Can delete comment
+	40	10	view_comment	Can view comment
+	41	11	add_postview	Can add post view
+	42	11	change_postview	Can change post view
+	43	11	delete_postview	Can delete post view
+	44	11	view_postview	Can view post view
+	45	12	add_userprofile	Can add user profile
+	46	12	change_userprofile	Can change user profile
+	47	12	delete_userprofile	Can delete user profile
+	48	12	view_userprofile	Can view user profile
+	49	13	add_chatmessage	Can add chat message
+	50	13	change_chatmessage	Can change chat message
+	51	13	delete_chatmessage	Can delete chat message
+	52	13	view_chatmessage	Can view chat message
+
+Table: auth_group
+	id	name
+
+Table: auth_user
+	id	password	last_login	is_superuser	username	last_name	email	is_staff	is_active	date_joined	first_name
+	1	pbkdf2_sha256$870000$hj2GKpE836JZXt8GGY3On8$xhXugY4moCo4eCWzztPblfYXJQTIQdAm3TU1Q8Hu/vY=	2025-05-07 00:32:22.836755	1	brunch		rlatnqls423@gmail.com	1	1	2025-03-28 01:51:04.802727	
+	2	pbkdf2_sha256$870000$ienQQAGbkZFQywV9oV8XOP$8DHSLG1NVpKQuQcFDXPQfAUc6XoVEOCb5w2p/viDL5k=	2025-05-08 01:45:53.245111	0	chess		asds@gmail.com	0	1	2025-04-24 02:06:24.427534	
+
+Table: cobin_app_like
+	id	created_at	post_id	user_id
+
+Table: cobin_app_comment
+	id	content	created_at	author_id	post_id
+
+Table: cobin_app_postview
+	id	viewed_at	post_id	user_id
+
+Table: cobin_app_infopost
+	id	postname	mainphoto	contents	author_id	created_at
+
+Table: cobin_app_userprofile
+	id	phone_number	email_verified	phone_verified	email_verification_code	sms_verification_code	user_id	point1	point2
+	1	None	0	0	None	None	1	16793	0
+
+Table: django_session
+	session_key	session_data	expire_date
+	30ypfr3jid5wxs45vr7v2w0hrlfun9w4	.eJxVjMsOgyAUBf-FdUO4iIhddu83EO6DattIIrpq-u8NiYt2e2bmvFVMxz7Ho8oWF1ZXBeryu2Gip6wN8COt96KprPu2oG6KPmnVU2F53U7372BOdW41sc1ikdKAboBsRgYcsxjruRN0PfTOuWyCeLaIFADIW-wguEAmWPX5AgpWOB8:1txysS:ZLLEpSAj3ssn6qcO5JShP3Hm2WWr8ScSFZRcoen1vgQ	2025-03-29 01:51:20.740444
+	8nxc7dn5h1faj6o5n59avtwxg3nfuo97	.eJxVjMsOgyAUBf-FdUO4iIhddu83EO6DattIIrpq-u8NiYt2e2bmvFVMxz7Ho8oWF1ZXBeryu2Gip6wN8COt96KprPu2oG6KPmnVU2F53U7372BOdW41sc1ikdKAboBsRgYcsxjruRN0PfTOuWyCeLaIFADIW-wguEAmWPX5AgpWOB8:1tz7HV:YaL_5wfwXke_yQsKQYTTGAjqB_aZ0qulfjG0Hwyv-bs	2025-04-01 05:01:53.396625
+	39im7dbjfeymwssz7bl1wap0ymkkhc3x	.eJxVjMsOgyAUBf-FdUO4iIhddu83EO6DattIIrpq-u8NiYt2e2bmvFVMxz7Ho8oWF1ZXBeryu2Gip6wN8COt96KprPu2oG6KPmnVU2F53U7372BOdW41sc1ikdKAboBsRgYcsxjruRN0PfTOuWyCeLaIFADIW-wguEAmWPX5AgpWOB8:1u7249:kTRG8AKEFs2fGuhtDJ_JoAvYzlRUSAYiM3vcY1q5TiA	2025-04-23 01:04:49.818043
+	vcqs5o0ou9slr4tz1e7srb8eeauu0znf	.eJxVjMsOgyAUBf-FdUO4iIhddu83EO6DattIIrpq-u8NiYt2e2bmvFVMxz7Ho8oWF1ZXBeryu2Gip6wN8COt96KprPu2oG6KPmnVU2F53U7372BOdW41sc1ikdKAboBsRgYcsxjruRN0PfTOuWyCeLaIFADIW-wguEAmWPX5AgpWOB8:1u7m3p:ExIPqxdvl8pnbnb5PMe7hE0NWOkiGUfs1pca7qx2FpA	2025-04-25 02:11:33.082702
+	slelh45la4dd6if8vi0nc38anhvlq2jb	.eJxVjMsOgyAUBf-FdUO4iIhddu83EO6DattIIrpq-u8NiYt2e2bmvFVMxz7Ho8oWF1ZXBeryu2Gip6wN8COt96KprPu2oG6KPmnVU2F53U7372BOdW41sc1ikdKAboBsRgYcsxjruRN0PfTOuWyCeLaIFADIW-wguEAmWPX5AgpWOB8:1u9v9T:QET-a5N9HZNZE1-8GwCAEZ6g-g-wb2VRHVNtVjXzItg	2025-05-01 00:18:15.263073
+	wdd7mxgcou2udomihcwaz2j7eq2oqjj5	.eJxVjMsOwiAQRf-FtSFAhQGX7vsNZGYYpGrapI-V8d-1SRe6veec-1IZt7XlbZE5D0VdlFOn342QHzLuoNxxvE2ap3GdB9K7og-66H4q8rwe7t9Bw6V9a-GSbMJODENggOhNxAAdV_JAnqlKlHMEw1Sq9egDWg42FWecdIDq_QH8cjhp:1uCSkC:_VeEVeqf08yTFvydfQHURvYM_ihWi1RAzN1pFeYD3mI	2025-05-08 00:34:40.550060
+	zyo36tbjaa7bf3k92ru65unj7rkphuh2	.eJxVjMsOwiAQRf-FtSFAhQGX7vsNZGYYpGrapI-V8d-1SRe6veec-1IZt7XlbZE5D0VdlFOn342QHzLuoNxxvE2ap3GdB9K7og-66H4q8rwe7t9Bw6V9a-GSbMJODENggOhNxAAdV_JAnqlKlHMEw1Sq9egDWg42FWecdIDq_QH8cjhp:1uCqKf:zSTVmyn8xjJKaqpgvGk62bf8mwXEbTcVBKSVHEztQe8	2025-05-09 01:45:53.250239
+
+Table: cobin_app_post
+	id	postname	contents	mainphoto	author_id	created_at	like_count	view_count	category	status
+	1	4번 게시글입니다.	sadfasdfsdfsadfdfas		1	2025-04-22 01:02:46.174839	0	0	proposal	completed
+	2	16번 게시글	asdfsdfadfsfds		1	2025-04-22 01:25:40.995283	0	0	free	completed
+	3	💸 자동매매로 수익 내는 개꿀팁 대방출! 💸	asdfasdfdafdssdf		1	2025-04-22 01:25:52.353351	0	0	free	in_progress
+	4	2번게시글 입니다.	12321244325		1	2025-04-22 01:26:13.059338	0	0	info	completed
+	5	123번 게시글	ㄴㅇㄻㄴㅇㄹㄹㅇㄹㅇㅁ		1	2025-04-24 01:31:27.584763	0	0	free	completed
+	6	4122번 게시글	ㄴㅇㄻㅇ늋ㅋㅌㄷㅂㅈ		1	2025-04-24 01:36:21.717619	0	0	free	completed
+	7	4번 버그 게시글입니다.	ㅂㅈㄱㄷㅈㅂㄱㅁㄴㅌㅋㅍ		1	2025-04-24 02:06:06.005353	0	0	bug	in_progress
+	8	12342번 일반유저 버그 게시글입니다.	ㄴㅇㅁㅇㄴㅌㅊㅈㅁㄾㅊ		2	2025-04-24 02:11:21.184723	0	0	bug	in_progress
+	9	4132432432	fdasfdasfad		1	2025-05-07 00:31:53.105837	0	0	bug	in_progress
+
+Table: cobin_app_chatmessage
+	id	coin_code	message	timestamp	user_id
+	1	KRW-BTC	ㅎㅇㅎㅇ	2025-04-30 02:19:03.901952	1
+	2	KRW-BTC	ㅎㅇㅎㅇㅎㅇㅎㅇㅎㅇ	2025-04-30 02:19:05.477914	1
+	3	KRW-BTC	ㅎㅇㅇㅎㅎㅇㅎㅇㅎㅇㅎㅇㅎㅇㅎ	2025-04-30 02:19:07.890930	1
+	4	KRW-BTC	ㅎㅇㅎㅇ	2025-04-30 02:21:53.256045	1
+	5	KRW-BTC	ㅎㅇㅎㅇㅎㅇㅎㅎㅇ	2025-04-30 02:21:55.015731	1
+	6	KRW-BTC	ㅎㅇㅎㅇ	2025-04-30 02:34:19.690145	1
+	7	KRW-BTC	아오 이제 되네	2025-04-30 02:34:22.672866	1
+	8	KRW-BTC	ㅋㅋㅋㅋㅋ	2025-05-07 00:34:46.845592	2
+	9	KRW-BTC	뭐하는데	2025-05-07 00:34:50.069568	2
+	10	KRW-BTC	zzzzz	2025-05-08 01:48:05.648254	2
+	11	KRW-BTC	ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ	2025-05-08 01:48:09.345153	2
+

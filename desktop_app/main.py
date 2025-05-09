@@ -294,7 +294,6 @@ class MainWindow(QMainWindow):
         
     def closeEvent(self, event):
         """창 닫기 이벤트에서 WebSocketThread 종료"""
-        self.websocket_thread.stop()
         super().closeEvent(event)
 
     def setup_ui(self):
@@ -391,11 +390,6 @@ class MainWindow(QMainWindow):
         
         self.small_window.ui.strategy_combo_2.addItems(["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-DOGE"])
         self.small_window.ui.strategy_combo.addItems(["기본전략","custom1", "custom2", "custom3", "custom4", "custom5"])
-
-        # 작은 창의 다른 UI 요소와 메인 창의 요소 연결
-        self.small_window.ui.label_9.setText(self.ui.label_9.text())
-        self.small_window.ui.label_10.setText(self.ui.label_10.text())
-        self.small_window.ui.label_11.setText(self.ui.label_11.text())
 
         self.blockFrame.history = self.small_window.ui.history
 
@@ -871,31 +865,8 @@ class SpleshScreen(QMainWindow):
             print("로그인 실패:", response.json())
             # 로그인 실패 메시지 팝업
             QMessageBox.critical(self, '로그인 실패', '아이디 또는 비밀번호가 일치하지 않습니다.')
-        
-        
-def login_button_clicked(id, password):
-    """로그인 요청을 보내고 JWT 토큰을 반환합니다."""
-    url = 'http://127.0.0.1:8000/api/token/'
-    
-    payload = {
-        'username': id,
-        'password': password,
-    }
-    
-    try:
-        response = requests.post(url, data=payload)  # data를 사용
-    except requests.exceptions.RequestException as e:
-        print(f"HTTP 요청 오류: {e}")
-        return None
 
-    if response.status_code == 200:
-        tokens = response.json()
-        access_token = tokens['access']
-        return access_token
-    else:
-        print("로그인 실패:", response.json())
-        return None
-        
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     set_global_stylesheet(app)  # 글로벌 스타일시트 설정

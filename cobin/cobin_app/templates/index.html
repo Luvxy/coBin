@@ -3,82 +3,16 @@
 {% block title %}
 Home Page
 {% endblock %}
+
 {% load static %}
+
+{% block else %}
+<link rel="stylesheet" href="{% static 'css/index_style.css' %}" />
+{% endblock %}
+
 {% block content %}
-
-<!-- 1. HERO -->
-<section class="hero flex flex-col items-center justify-center py-32 text-center"
-         data-aos="fade-up">
-  <h1 class="text-5xl font-bold mb-6">자유로운 소통 · 손쉬운 자동매매</h1>
-  <p class="mb-10 text-lg">지금 바로 시작해 여러분만의 전략으로 수익을 만들어 보세요!</p>
-  <a href="{% url 'download' %}" class="btn-primary px-8 py-3">지금 시작하기 →</a>
-</section>
-
-<!-- 2. 자동매매 (이미지 오른쪽) -->
-<section class="auto-trade py-24 bg-gray-100 grid gap-12 md:grid-cols-2 items-center"
-         data-aos="fade-right">
-  <div>
-    <h2 class="section-title mb-4">손쉬운 자동매매</h2>
-    <ul class="list-disc list-inside space-y-1">
-      <li>무료 프로그램 다운로드 후 자동매매 실행</li>
-      <li>AI와 함께 나만의 전략 설계</li>
-      <li>커뮤니티 전략을 한 번에 적용</li>
-      <li>내 전략을 다른 사용자와 공유</li>
-    </ul>
-  </div>
-  <div>
-    <!-- TODO: 자동매매 관련 스크린샷 -->
-    <img src="" alt="자동매매 UI 미리보기" class="rounded-xl shadow-lg" />
-  </div>
-</section>
-
-<!-- 3. 커뮤니티 (이미지 왼쪽) -->
-<section class="community py-24 grid gap-12 md:grid-cols-2 items-center"
-         data-aos="fade-left">
-  <div class="order-2 md:order-1">
-    <!-- TODO: 차트 + 채팅 예시 이미지 -->
-    <img src="" alt="실시간 차트 및 채팅" class="rounded-xl shadow-lg" />
-  </div>
-  <div class="order-1 md:order-2">
-    <h2 class="section-title mb-4">커뮤니티 & 전략 공유</h2>
-    <p class="mb-6">게시판과 실시간 차트에서 다른 트레이더와 경험을 나누세요.</p>
-    <div class="grid gap-4 md:grid-cols-3">
-      <a href="/boards/free" class="card">자유게시판</a>
-      <a href="/boards/info" class="card">정보게시판</a>
-      <a href="/boards/idea" class="card">제안게시판</a>
-    </div>
-  </div>
-</section>
-
-<!-- 4. Best 파일럿 (대형 배너 스타일) -->
-<section class="best-pilot py-32 text-center text-white relative"
-         style="background:#2c2c2c" data-aos="zoom-in">
-  <!-- TODO: 랭킹 배경 이미지 -->
-  <img src="" alt="" class="absolute inset-0 w-full h-full object-cover opacity-30" />
-  <div class="relative z-10">
-    <h2 class="text-4xl font-bold mb-4">Best 파일럿</h2>
-    <p class="mb-10">월간 수익률 TOP 3에 도전하고 내 실력을 확인해 보세요!</p>
-    <!-- 랭킹 위젯 자리 -->
-    <div id="pilot-ranking" class="flex justify-center gap-6"></div>
-  </div>
-</section>
-
-<!-- 5. 참여·지원 (이미지 오른쪽) -->
-<section class="support py-24 bg-gray-100 grid gap-12 md:grid-cols-2 items-center"
-         data-aos="fade-right">
-  <div>
-    <h2 class="section-title mb-4">저희와 함께 하세요</h2>
-    <ul class="list-disc list-inside space-y-1 mb-8">
-      <li>제안게시판에 아이디어 제안</li>
-      <li>구독·후원으로 시스템 발전 지원</li>
-      <li>원하는 전략 구현 의뢰</li>
-    </ul>
-    <a href="/pricing/" class="btn-secondary px-6 py-2">구독 플랜 보기</a>
-  </div>
-  <div>
-    <!-- TODO: 팀 협업/지원 관련 이미지 -->
-    <img src="" alt="함께 성장하는 모습" class="rounded-xl shadow-lg" />
-  </div>
-</section>
-
+<div class="full-screen-image">
+    <img src="{% static 'images/index.png' %}" alt="Full Screen Background">
+    <button class="hotspot" aria-label="다운로드" onclick="location.href='download.html'"></button>
+</div>
 {% endblock %}

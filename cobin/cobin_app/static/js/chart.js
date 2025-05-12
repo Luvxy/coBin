@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const chatSendBtn = document.getElementById("chat-send");
   const chatInput = document.getElementById("chat-message");
   const chatBox = document.getElementById("chat-box");
+  const timeUnitSelector = document.getElementById("time-unit-selector");
 
   let chart = new Chart(ctx, {
     type: 'candlestick',
@@ -23,7 +24,8 @@ document.addEventListener("DOMContentLoaded", function () {
       }]
     },
     options: {
-      responsive: true,
+      responsive: true, // 반응형 활성화
+      maintainAspectRatio: true, // 캔버스 비율 유지 비활성화
       animation: false,
       parsing: false,
       scales: {
@@ -46,8 +48,21 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  async function fetchCandles(code) {
-    const url = `https://api.upbit.com/v1/candles/minutes/1?market=${code}&count=30`;
+  async function fetchCandles(code, timeUnit) {
+    const timeUnitMap = {
+      minute1: 1,
+      minute3: 3,
+      minute5: 5,
+      minute10: 10,
+      minute15: 15,
+      minute30: 30,
+      minute60: 60,
+      minute240: 240,
+      day: 'days'
+    };
+
+    const unit = timeUnitMap[timeUnit] || 1; // 기본값 1분
+    const url = `https://api.upbit.com/v1/candles/minutes/${unit}?market=${code}&count=30`;
     const response = await fetch(url);
     const rawData = await response.json();
 
@@ -60,7 +75,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }));
 
     chart.data.datasets[0].data = chartData;
-    chart.data.datasets[0].label = code;
+    chart.data.datasets[0].label = `${code} (${timeUnit})`;
     chart.update();
 
     const latest = chartData[chartData.length - 1];
@@ -69,10 +84,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let refreshInterval = null;
 
-  function startAutoRefresh(code) {
+  function startAutoRefresh(code, timeUnit) {
     if (refreshInterval) clearInterval(refreshInterval);
-    fetchCandles(code);
-    refreshInterval = setInterval(() => fetchCandles(code), 30000); // 30초 간격
+    fetchCandles(code, timeUnit);
+    refreshInterval = setInterval(() => fetchCandles(code, timeUnit), 30000); // 30초 간격
   }
 
   // 채팅
@@ -130,12 +145,84 @@ document.addEventListener("DOMContentLoaded", function () {
 
   coinSelect.addEventListener("change", function () {
     const selectedCode = this.value;
-    startAutoRefresh(selectedCode);
+    const selectedTimeUnit = timeUnitSelector.value;
+    startAutoRefresh(selectedCode, selectedTimeUnit);
     connectChat(selectedCode);
+  });
+
+  timeUnitSelector.addEventListener("change", function () {
+    const selectedCode = coinSelect.value;
+    const selectedTimeUnit = this.value;
+    startAutoRefresh(selectedCode, selectedTimeUnit);
+
+    // WebSocket 메시지 전송
+    chartSocket.send(JSON.stringify({
+      code: selectedCode,
+      time_unit: selectedTimeUnit
+    }));
+    console.log(`시간 단위 변경: ${selectedTimeUnit}`);
   });
 
   // 초기 실행
   const initialCode = coinSelect.value;
-  startAutoRefresh(initialCode);
+  const initialTimeUnit = timeUnitSelector.value;
+  startAutoRefresh(initialCode, initialTimeUnit);
   connectChat(initialCode);
+
+  // WebSocket for chart updates
+  const chartSocket = new WebSocket("ws://127.0.0.1:8000/ws/chart/");
+
+  chartSocket.onopen = function () {
+    console.log("WebSocket 연결 성공");
+
+    // 초기 값 전송
+    chartSocket.send(JSON.stringify({
+      code: initialCode,
+      time_unit: initialTimeUnit
+    }));
+  };
+
+  chartSocket.onmessage = function (event) {
+    const data = JSON.parse(event.data);
+    console.log("서버로부터 받은 데이터:", data);
+
+    // 차트 업데이트 로직 추가
+    const chart = document.getElementById("chart");
+    chart.innerText = `현재 가격: ${data.price}`;
+  };
+
+  const chartContainer = document.querySelector(".chart-container");
+  const coinChart = document.getElementById("coinChart");
+
+  let isDragging = false;
+  let startX = 0;
+  let scrollLeft = 0;
+
+  // 마우스 다운 이벤트
+  chartContainer.addEventListener("mousedown", (e) => {
+    isDragging = true;
+    chartContainer.classList.add("dragging");
+    startX = e.pageX - chartContainer.offsetLeft;
+    scrollLeft = chartContainer.scrollLeft;
+  });
+
+  // 마우스 이동 이벤트
+  chartContainer.addEventListener("mousemove", (e) => {
+    if (!isDragging) return; // 드래그 중이 아닐 경우 무시
+    e.preventDefault();
+    const x = e.pageX - chartContainer.offsetLeft;
+    const walk = (x - startX) * 2; // 드래그 속도 조정
+    chartContainer.scrollLeft = scrollLeft - walk;
+  });
+
+  // 마우스 업 및 마우스 아웃 이벤트
+  chartContainer.addEventListener("mouseup", () => {
+    isDragging = false;
+    chartContainer.classList.remove("dragging");
+  });
+
+  chartContainer.addEventListener("mouseleave", () => {
+    isDragging = false;
+    chartContainer.classList.remove("dragging");
+  });
 });

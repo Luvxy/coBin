@@ -45,11 +45,15 @@ class PointConsumer(AsyncWebsocketConsumer):
 class ChartConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
+        self.time_unit = "minute30"  # 기본 시간 단위 설정
+        self.code = "KRW-BTC"  # 기본 코인 코드 설정
         asyncio.create_task(self.upbit_ws())
 
     async def receive_json(self, content):
-        code = content.get("code", "KRW-BTC")
-        self.code = code
+        # 클라이언트에서 시간 단위를 변경할 경우 처리
+        self.time_unit = content.get("time_unit", self.time_unit)
+        self.code = content.get("code", "KRW-BTC")
+        print(f"Time Unit Changed: {self.time_unit}, Code: {self.code}")
 
     async def upbit_ws(self):
         url = "wss://api.upbit.com/websocket/v1"
@@ -58,7 +62,7 @@ class ChartConsumer(AsyncWebsocketConsumer):
                 {"ticket": "test"},
                 {
                     "type": "ticker",
-                    "codes": ["KRW-BTC"],  # 여기서 코인 종류 지정 (BTC/USDT면 "USDT-BTC")
+                    "codes": [f"{self.code}"],  # 코인 종류 지정
                 },
                 {"format": "SIMPLE"}
             ]
@@ -70,7 +74,8 @@ class ChartConsumer(AsyncWebsocketConsumer):
                 price = data_json['tp']  # 체결가격
 
                 await self.send(text_data=json.dumps({
-                    'price': price
+                    'price': price,
+                    'time_unit': self.time_unit  # 현재 시간 단위도 클라이언트로 전송
                 }))
 
 class ChatConsumer(AsyncWebsocketConsumer):

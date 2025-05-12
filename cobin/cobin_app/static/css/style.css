@@ -1184,9 +1184,9 @@ form input[type="submit"]:hover {
     gap: 10px;
     justify-content: center;
     margin-top: 40px;
-  }
-  
-  .place {
+}
+
+.place {
     width: 100px;
     text-align: center;
     color: white;
@@ -1196,13 +1196,24 @@ form input[type="submit"]:hover {
     flex-direction: column;
     justify-content: flex-start;
     position: relative;
-  }
-  
-  .first { height: 200px; background: gold; }
-  .second { height: 150px; background: silver; }
-  .third { height: 120px; background: #cd7f32; }
-  
-  .name-label {
+}
+
+.first {
+    height: 200px;
+    background: gold;
+}
+
+.second {
+    height: 150px;
+    background: silver;
+}
+
+.third {
+    height: 120px;
+    background: #cd7f32;
+}
+
+.name-label {
     position: absolute;
     top: -30px;
     left: 50%;
@@ -1210,37 +1221,37 @@ form input[type="submit"]:hover {
     color: #333;
     font-size: 16px;
     font-weight: bold;
-  }
-  
-  .crown {
+}
+
+.crown {
     position: absolute;
     top: -60px;
     left: 50%;
     transform: translateX(-50%);
     font-size: 24px;
-  }
-  
-  .rank-label {
+}
+
+.rank-label {
     margin-top: auto;
     background: rgba(0, 0, 0, 0.5);
     padding: 5px 0;
-  }
-  
-  .nickname-search-form {
+}
+
+.nickname-search-form {
     margin-top: 20px;
     display: flex;
     justify-content: center;
     align-items: center;
-  }
-  
-  .nickname-search-form input[type="text"] {
+}
+
+.nickname-search-form input[type="text"] {
     padding: 5px;
     border: 1px solid #ccc;
     border-radius: 5px;
     width: 200px;
-  }
-  
-  .nickname-search-form button {
+}
+
+.nickname-search-form button {
     padding: 5px 10px;
     background: #333;
     color: white;
@@ -1248,25 +1259,85 @@ form input[type="submit"]:hover {
     margin-left: 5px;
     cursor: pointer;
     border-radius: 5px;
-  }
-  
-  .nickname-search-form button:hover {
+}
+
+.nickname-search-form button:hover {
     background-color: #666;
-  }
-  
-  .ranking-table {
+}
+
+.ranking-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 14px;
     /* 원하는 크기로 조정 */
-  }
-  
-  .ranking-table thead {
+}
+
+.ranking-table thead {
     background-color: #eee;
-  }
-  
-  .ranking-table th, .ranking-table td {
+}
+
+.ranking-table th,
+.ranking-table td {
     padding: 10px;
     border: 1px solid #ddd;
     text-align: center;
-  }
+}
+
+/* 드롭다운 컨테이너 스타일 */
+.dropdown-container {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* 드롭다운 레이블 스타일 */
+.dropdown-label {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+}
+
+/* 드롭다운 스타일 */
+.dropdown {
+    padding: 8px 12px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+    background-color: #fff;
+    transition: border-color 0.3s ease;
+}
+
+.dropdown:hover {
+    border-color: #007bff;
+}
+
+.dropdown:focus {
+    border-color: #0056b3;
+    box-shadow: 0 0 4px rgba(0, 123, 255, 0.5);
+}
+
+.chart-container {
+    position: relative;
+    width: 100%; /* 부모 요소의 너비에 맞춤 */
+    max-width: 100%; /* 화면 크기에 맞게 조정 */
+    height: 400px; /* 고정 높이 */
+    margin: 0 auto; /* 가운데 정렬 */
+    border: 1px solid #ddd; /* 테두리 추가 */
+    border-radius: 8px; /* 모서리 둥글게 */
+    background-color: #f9f9f9; /* 배경색 추가 */
+    overflow: hidden; /* 스크롤바를 숨김 */
+    cursor: grab; /* 기본 커서 설정 */
+}
+
+.chart-container.dragging {
+    cursor: grabbing; /* 드래그 중일 때 커서 변경 */
+}
+
+#coinChart {
+    width: 1200px; /* 차트의 고정된 너비 설정 */
+    height: 100%; /* 컨테이너 높이에 맞춤 */
+    display: block; /* 캔버스가 inline-block으로 렌더링되는 문제 방지 */
+}

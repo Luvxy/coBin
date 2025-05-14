@@ -30,6 +30,7 @@ from django.utils.crypto import get_random_string
 from .models import UserProfile
 import random
 import requests
+from django.urls import reverse
 
 # firebase 관련 라이브러리
 import firebase_admin
@@ -230,25 +231,65 @@ def profile_view(request):
     
     # 활동 로그는 최대 10개까지만 가져오기
     
+    post_title = None
 
     user_acting_log = []
     for doc in act_log_data:
         data = doc.to_dict()
+        address = data.get("address")
+        post_title = None
+
+        # 주소에서 게시글 ID 추출 및 제목 조회
+        if "/blog/" in address:
+            try:
+                # "/blog/{category}/{id}"에서 ID 추출
+                post_id = address.split("/")[-2]
+                post = Post.objects.get(id=post_id)
+                post_title = post.postname
+            except Post.DoesNotExist:
+                post_title = "알 수 없는 게시글"
+
         user_acting_log.append({
             "date": data.get("date"),
             "type": data.get("type"),
-            "address": data.get("address")
+            "address": address,
+            "post_title": post_title
         })
 
-    # 날짜순 정렬
+    # 날짜순 정렬해서 상위 5개만 가져오기
     user_acting_log.sort(key=lambda x: x["date"], reverse=True)  # 최신 로그가 위로 오도록 정렬
-
+    user_acting_log = user_acting_log[:5]  # 상위 5개만 가져오기
+    
     return render(request, "profile.html", {
         "profit_data": profit_data,
         "user_data": user_data,
         "user_acting_log": user_acting_log
     })
 
+
+from datetime import datetime
+
+def save_user_activity_log(user_id, address, activity_type):
+    """
+    Firebase Firestore에 유저 활동 로그를 저장하는 함수.
+
+    Args:
+        user_id (str): 유저 ID (Firestore 문서 ID로 사용).
+        address (str): 활동이 발생한 URL.
+        activity_type (str): 활동 유형 (예: "comment", "like", "post").
+    """
+    # Firestore 컬렉션 참조
+    act_log_ref = db.collection("users").document(user_id).collection("actLog")
+
+    # 현재 시간 가져오기
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Firestore에 데이터 추가
+    act_log_ref.add({
+        "date": current_time,
+        "address": address,
+        "type": activity_type
+    })
 
 ###################################################################################################
 # cobin app api
@@ -411,42 +452,64 @@ def send_email(request):
 # cobin app api end line
 ###################################################################################################
 
-
-# email verification 함수
 @login_required
 def send_email_verification(request):
     user = request.user
-    profile, created = UserProfile.objects.get_or_create(user=user)  # ✅ UserProfile 자동 생성
+    profile, created = UserProfile.objects.get_or_create(user=user)
 
+    # 인증 코드 생성
     verification_code = get_random_string(length=6, allowed_chars='0123456789')
     profile.email_verification_code = verification_code
     profile.save()
 
+    # 인증 URL 생성
+    verification_url = request.build_absolute_uri(
+        reverse('verify_email') + f"?code={verification_code}"
+    )
+
+    # 이메일 전송
     send_mail(
-        '이메일 인증 코드',
-        f'인증 코드: {verification_code}',
+        '이메일 인증 요청',
+        f'다음 링크를 클릭하여 이메일 인증을 완료하세요: {verification_url}',
         'no-reply@yourdomain.com',
         [user.email],
         fail_silently=False,
     )
 
-    messages.success(request, "이메일로 인증 코드가 발송되었습니다.")
+    messages.success(request, "이메일로 인증 링크가 발송되었습니다.")
     return redirect('profile')
 
 @login_required
 def verify_email(request):
-    if request.method == "POST":
-        code = request.POST.get('code')
-        profile, created = UserProfile.objects.get_or_create(user=request.user)  # ✅ UserProfile 자동 생성
+    code = request.GET.get('code')  # 인증 코드 가져오기
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
 
+    if code:
         if profile.email_verification_code == code:
+            # 인증 성공
             profile.email_verified = True
+            profile.email_verification_code = None  # 인증 코드 초기화
             profile.save()
-            messages.success(request, "이메일 인증이 완료되었습니다.")
-        else:
-            messages.error(request, "인증 코드가 틀립니다.")
 
+            # Firestore 업데이트 (선택 사항)
+            update_email_verification_in_firestore(request.user.username, True)
+
+            messages.success(request, "이메일 인증이 완료되었습니다.")
+            return redirect('profile')
+        else:
+            # 인증 코드가 유효하지 않은 경우
+            messages.error(request, "인증 코드가 유효하지 않습니다.")
+            return redirect('profile')
+    else:
+        # 인증 코드가 제공되지 않은 경우
+        messages.error(request, "인증 코드가 제공되지 않았습니다.")
         return redirect('profile')
+
+def update_email_verification_in_firestore(user_id, email_verified):
+    user_ref = db.collection("users").document(user_id)
+    user_ref.update({
+        "email_verified": email_verified
+    })
 
 #문자 인증
 # 휴대전화(SMS) 인증
@@ -511,7 +574,6 @@ def webhook(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)  # 웹훅 데이터 파싱
-            print("웹훅 데이터:", data)
 
             # 웹훅 데이터 처리 로직
             # ... (예: 데이터베이스 저장, 다른 시스템 연동 등)
@@ -631,6 +693,11 @@ def post_detail(request, category, pk):
                 author=request.user,
                 content=content
             )
+            save_user_activity_log(
+                user_id=request.user.username,
+                address=f"/blog/{category}/{pk}/",
+                activity_type='comment'
+            )
         return redirect('post_detail', category=category, pk=pk)
 
     context = {
@@ -678,6 +745,12 @@ def like(request, category, pk):
         post.liked_users.remove(request.user)
     else:
         post.liked_users.add(request.user)
+    
+    save_user_activity_log(
+        user_id=request.user.username,
+        address=f"/blog/{category}/{pk}/",
+        activity_type="like"
+    )
 
     return redirect('post_detail', category=category, pk=pk)
 
@@ -691,6 +764,11 @@ def new_post(request, category):
             author=request.user,
             category=category,
             status='in_progress' if category == 'bug' else 'completed'  # 추가
+        )
+        save_user_activity_log(
+            user_id=request.user.username,
+            address=f"/blog/{category}/{new_article.pk}/",
+            activity_type="post"
         )
         return redirect('post_list', category=category)
     return render(request, 'new_post.html', {'category': category})

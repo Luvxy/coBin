@@ -1337,7 +1337,7 @@ form input[type="submit"]:hover {
 }
 
 #coinChart {
-    width: 1200px; /* 차트의 고정된 너비 설정 */
+    width: 100%; /* 차트의 고정된 너비 설정 */
     height: 100%; /* 컨테이너 높이에 맞춤 */
     display: block; /* 캔버스가 inline-block으로 렌더링되는 문제 방지 */
 }

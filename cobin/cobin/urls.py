@@ -68,8 +68,8 @@ urlpatterns = [
     path('api/email/send/', views.send_email, name='send_email'),
     
     # emali
-    path('verify/email/send/', views.send_email_verification, name='send_email_verification'),
-    path('verify/email/', views.verify_email, name='verify_email'),
+    path('send-email-verification/', views.send_email_verification, name='send_email_verification'),
+    path('verify-email/', views.verify_email, name='verify_email'),
     
     # 휴대전화(SMS) 인증
     path('verify/sms/send/', views.send_sms_verification, name='send_sms_verification'),

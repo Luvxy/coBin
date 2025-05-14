@@ -28,20 +28,38 @@
   <div class="user-info" style="grid-row: 1;">
     <p><strong>ID:</strong> {{ user_data.name }}</p>
   </div>
-  <div class="user-info" style="grid-row: 2;">
+  <div class="user-info">
     <p><strong>이메일:</strong> {{ user_data.email }}</p>
+  </div>
+  <div class="user-info" style="grid-row: 2; grid-column: 7;">
+    {% if user_data.email_verified %}
+    <span class="verified">✅ 인증 완료</span>
+    {% else %}
+      <button onclick="location.href='{% url 'send_email_verification' %}'" class="verify-button">
+        인증
+      </button>
+    {% endif %}
   </div>
   <div class="user-info" style="grid-row: 3;">
     <p><strong>휴대전화:</strong> {{ user_data.number }}</p>
+  </div>
+  <div class="user-info" style="grid-row: 3; grid-column: 7;">
+    {% if user_data.phone_verified %}
+    <span class="verified">✅ 인증 완료</span>
+    {% else %}
+      <button onclick="location.href='{% url 'send_sms_verification' %}'" class="verify-button">
+        인증
+      </button>
+    {% endif %}
   </div>
   <div class="user-info" style="grid-row: 4;">
     <p><strong>멤버십:</strong> {{ user_data.membership }}</p>
   </div>
   <div class="user-info" style="grid-row: 5;">
-    <p><strong>금화:</strong> {{ user_data.point2 }}</p>
+    <p><strong>금화:</strong> {{ user_data.point1 }}</p>
   </div>
   <div class="user-info" style="grid-row: 5; grid-column: 6;">
-    <p><strong>은화:</strong> {{ user_data.point1 }}</p>
+    <p><strong>은화:</strong> {{ user_data.point2 }}</p>
   </div>
 
     <!-- 미션 완료 여부 (한 줄 정렬) -->
@@ -80,13 +98,14 @@
     <div class="log-container">
       {% for log in user_acting_log %}
       <div class="border-b border-gray-200 py-2">
-        <a href={{log.address}}>{{ log.date }} 
-          {% if log.type == "comment"%}
-            댓글을 남겼습니다.
-          {% elif log.type == "like"%}
-            좋아요를 눌렀습니다.
-          {% elif log.type == "post"%}
-            게시글을 작성했습니다.
+        <a href={{log.address}}>
+          {{ log.date }}
+          {% if log.type == "comment" %}
+            "{{ log.post_title }}"에 댓글을 남겼습니다.
+          {% elif log.type == "like" %}
+            "{{ log.post_title }}"에 좋아요를 눌렀습니다.
+          {% elif log.type == "post" %}
+            "{{ log.post_title }}" 게시글을 작성했습니다.
           {% endif %}
         </a>
       </div>

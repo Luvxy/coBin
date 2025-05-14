@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     const unit = timeUnitMap[timeUnit] || 1; // 기본값 1분
-    const url = `https://api.upbit.com/v1/candles/minutes/${unit}?market=${code}&count=30`;
+    const url = `https://api.upbit.com/v1/candles/minutes/${unit}?market=${code}&count=50`;
     const response = await fetch(url);
     const rawData = await response.json();
 
@@ -87,7 +87,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function startAutoRefresh(code, timeUnit) {
     if (refreshInterval) clearInterval(refreshInterval);
     fetchCandles(code, timeUnit);
-    refreshInterval = setInterval(() => fetchCandles(code, timeUnit), 30000); // 30초 간격
+    refreshInterval = setInterval(() => fetchCandles(code, timeUnit), 1000); // 30초 간격
   }
 
   // 채팅

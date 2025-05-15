@@ -55,7 +55,11 @@
           <td>
             {% if post.is_accessible %}
               <a href="{% url 'post_detail' category=category pk=post.pk %}">{{ post.postname }}</a>
-              <span class="comment-count">[{{ post.comments.count }}]</span>
+              
+              {% if post.comments.count < 1%}
+              {% else %}
+                <span class="comment-count">[{{ post.comments.count }}]</span>
+              {% endif %}
             {% else %}
               비공개
             {% endif %}

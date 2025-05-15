@@ -35,7 +35,7 @@
     {% if user_data.email_verified %}
     <span class="verified">✅ 인증 완료</span>
     {% else %}
-      <button onclick="location.href='{% url 'send_email_verification' %}'" class="verify-button">
+      <button onclick="sendEmailVerification()" class="verify-button">
         인증
       </button>
     {% endif %}
@@ -195,10 +195,32 @@
   #smsVerificationPopup button:hover {
     background-color: #0056b3;
   }
+
 </style>
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
+    function sendEmailVerification() {
+      fetch("{% url 'send_email_verification' %}", {
+        method: "GET",
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+        },
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === "success") {
+            alert(data.message); // 성공 메시지 표시
+          } else {
+            alert(data.message); // 실패 메시지 표시
+          }
+        })
+        .catch(error => {
+          console.error("Error:", error);
+          alert("이메일 인증 요청 중 오류가 발생했습니다."); // 오류 메시지 표시
+        });
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
       const ctx = document.getElementById('profitChart').getContext('2d');
 

@@ -453,6 +453,8 @@ def send_email(request):
 # cobin app api end line
 ###################################################################################################
 
+from django.http import JsonResponse
+
 @login_required
 def send_email_verification(request):
     user = request.user
@@ -469,16 +471,17 @@ def send_email_verification(request):
     )
 
     # 이메일 전송
-    send_mail(
-        '이메일 인증 요청',
-        f'다음 링크를 클릭하여 이메일 인증을 완료하세요: {verification_url}',
-        'no-reply@yourdomain.com',
-        [user.email],
-        fail_silently=False,
-    )
-
-    messages.success(request, "이메일로 인증 링크가 발송되었습니다.")
-    return redirect('profile')
+    try:
+        send_mail(
+            '이메일 인증 요청',
+            f'다음 링크를 클릭하여 이메일 인증을 완료하세요: {verification_url}',
+            'no-reply@yourdomain.com',
+            [user.email],
+            fail_silently=False,
+        )
+        return JsonResponse({"status": "success", "message": "이메일로 인증 링크가 발송되었습니다."})
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": f"이메일 전송 중 오류가 발생했습니다: {str(e)}"})
 
 @login_required
 def verify_email(request):

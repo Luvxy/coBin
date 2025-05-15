@@ -45,9 +45,9 @@
   </div>
   <div class="user-info" style="grid-row: 3; grid-column: 7;">
     {% if user_data.phone_verified %}
-    <span class="verified">✅ 인증 완료</span>
+      <span class="verified">✅ 인증 완료</span>
     {% else %}
-      <button onclick="location.href='{% url 'send_sms_verification' %}'" class="verify-button">
+      <button onclick="openSmsVerificationPopup()" class="verify-button">
         인증
       </button>
     {% endif %}
@@ -98,7 +98,7 @@
     <div class="log-container">
       {% for log in user_acting_log %}
       <div class="border-b border-gray-200 py-2">
-        <a href={{log.address}}>
+        <a href={{ log.address }}>
           {{ log.date }}
           {% if log.type == "comment" %}
             "{{ log.post_title }}"에 댓글을 남겼습니다.
@@ -122,6 +122,80 @@
     <canvas id="profitChart"></canvas>
   </div>
 
+  <!-- 휴대폰 인증 팝업 -->
+<div id="smsVerificationPopup" class="popup" style="display: none;">
+  <div class="popup-content">
+    <span class="close-button" onclick="closeSmsVerificationPopup()">&times;</span>
+    <h3>휴대폰 인증</h3>
+    <form id="smsVerificationForm" onsubmit="sendSmsVerification(event)">
+      {% csrf_token %}
+      <label for="phone_number">휴대폰 번호:</label>
+      <input type="text" id="phone_number" name="phone_number" placeholder="010-1234-5678" required>
+      <button type="submit">인증 코드 발송</button>
+    </form>
+    <p id="smsVerificationMessage" style="color: red;"></p>
+      {% csrf_token %}
+      <label for="verification_code">인증 코드:</label>
+      <input type="text" id="verification_code" name="code" placeholder="인증 코드 입력" required>
+      <button type="submit">확인</button>
+    </form>
+  </div>
+</div>
+<!-- 팝업 스타일 -->
+<style>
+  #smsVerificationPopup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+
+  #smsVerificationPopup .popup-content {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    width: 300px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    position: relative;
+  }
+
+  #smsVerificationPopup .close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 20px;
+    cursor: pointer;
+  }
+
+  #smsVerificationPopup input {
+    width: 100%;
+    padding: 8px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+
+  #smsVerificationPopup button {
+    width: 100%;
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  #smsVerificationPopup button:hover {
+    background-color: #0056b3;
+  }
+</style>
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
@@ -172,6 +246,45 @@
         }
       });
     });
+    function openSmsVerificationPopup() {
+      document.getElementById('smsVerificationPopup').style.display = 'flex';
+    }
+  
+    function closeSmsVerificationPopup() {
+      document.getElementById('smsVerificationPopup').style.display = 'none';
+    }
+
+    function sendSmsVerification(event) {
+      event.preventDefault(); // 폼의 기본 동작(페이지 리로드) 방지
+    
+      const phoneNumber = document.getElementById('phone_number').value;
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+      console.log("Sending SMS verification to:", phoneNumber);
+
+      fetch("{% url 'send_sms_verification' %}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken,
+        },
+        body: JSON.stringify({ phone_number: phoneNumber }),
+      })
+        .then(response => response.json())
+        .then(data => {
+          const messageElement = document.getElementById('smsVerificationMessage');
+          if (data.status === "success") {
+            messageElement.style.color = "green";
+            messageElement.textContent = data.message;
+          } else {
+            messageElement.style.color = "red";
+            messageElement.textContent = data.message;
+          }
+        })
+        .catch(error => {
+          console.error("Error:", error);
+        });
+    }
   </script>
   <script src="{% static 'js/profile.js' %}"></script>
 

@@ -30,6 +30,7 @@ from django.utils.crypto import get_random_string
 from .models import UserProfile
 import random
 import requests
+from twilio.rest import Client
 from django.urls import reverse
 
 # firebase 관련 라이브러리
@@ -515,26 +516,46 @@ def update_email_verification_in_firestore(user_id, email_verified):
 # 휴대전화(SMS) 인증
 @login_required
 def send_sms_verification(request):
-    user = request.user
-    profile, created = UserProfile.objects.get_or_create(user=user)
+    if request.method == "POST":
+        try:
+            # JSON 데이터 파싱
+            body = json.loads(request.body)
+            phone_number = body.get('phone_number')
+        except json.JSONDecodeError:
+            return JsonResponse({"status": "error", "message": "잘못된 요청 형식입니다."})
 
-    verification_code = str(random.randint(100000, 999999))
-    profile.sms_verification_code = verification_code
-    profile.save()
+        if not phone_number:
+            return JsonResponse({"status": "error", "message": "휴대폰 번호가 제공되지 않았습니다."})
 
-    # SMS API를 이용한 인증 코드 전송 (Twilio 예제)
-    requests.post(
-        "https://api.twilio.com/2010-04-01/Accounts/YOUR_ACCOUNT_SID/Messages.json",
-        data={
-            "To": profile.phone_number,
-            "From": "YOUR_TWILIO_NUMBER",
-            "Body": f"인증 코드: {verification_code}"
-        },
-        auth=("YOUR_ACCOUNT_SID", "YOUR_AUTH_TOKEN")
-    )
+        user = request.user
+        profile, created = UserProfile.objects.get_or_create(user=user)
 
-    messages.success(request, "휴대전화로 인증 코드가 발송되었습니다.")
-    return redirect('profile')
+        # 휴대폰 번호 저장
+        profile.phone_number = phone_number
+        profile.save()
+
+        # 인증 코드 생성
+        verification_code = str(random.randint(100000, 999999))
+        profile.sms_verification_code = verification_code
+        profile.save()
+
+        # Twilio API 호출
+        try:
+            account_sid = 'ACf4cbef6039c0bfd6a6f93f08e87da3c2'
+            auth_token = '0626580014ef2cb033094bb93f4a5be6'
+            client = Client(account_sid, auth_token)
+
+            message = client.messages.create(
+                messaging_service_sid='MG88776236b785255c18971b0fd076e298',
+                body=f'인증 코드: {verification_code}',
+                to=f"+82{phone_number[1:]}"  # 국제 형식으로 변환
+            )
+
+            return JsonResponse({"status": "success", "message": "휴대전화로 인증 코드가 발송되었습니다."})
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": f"SMS 전송 중 오류가 발생했습니다: {str(e)}"})
+
+    return JsonResponse({"status": "error", "message": "잘못된 요청입니다."})
 
 @login_required
 def verify_sms(request):
@@ -543,11 +564,14 @@ def verify_sms(request):
         profile, created = UserProfile.objects.get_or_create(user=request.user)
 
         if profile.sms_verification_code == code:
+            # 인증 성공
             profile.phone_verified = True
+            profile.sms_verification_code = None  # 인증 코드 초기화
             profile.save()
             messages.success(request, "휴대전화 인증이 완료되었습니다.")
         else:
-            messages.error(request, "인증 코드가 틀립니다.")
+            # 인증 실패
+            messages.error(request, "인증 코드가 유효하지 않습니다.")
 
     return redirect('profile')
 
@@ -674,6 +698,7 @@ def blog(request, category):
     
 @login_required
 def post_detail(request, category, pk):
+    # 게시글 가져오기
     post = get_object_or_404(Post, pk=pk)
     comments = post.comments.all()
 
@@ -681,9 +706,15 @@ def post_detail(request, category, pk):
     if not post.is_accessible_by(request.user):
         if post.status == 'in_progress':
             return HttpResponseForbidden("이 게시글은 비공개 상태입니다.")
-        else:
-            return HttpResponseForbidden("접근 권한이 없습니다.")
-    
+        return HttpResponseForbidden("접근 권한이 없습니다.")
+
+    # 조회수 증가 처리
+    has_viewed = PostView.objects.filter(user_id=request.user, post_id=post.id).exists()
+    if not has_viewed:
+        post.view_count = F('view_count') + 1  # 조회수 증가
+        post.save(update_fields=['view_count'])  # 특정 필드만 업데이트
+        PostView.objects.create(user_id=request.user.id, post_id=post.id)
+
     # 댓글 작성 처리
     if request.method == 'POST':
         content = request.POST.get('content')
@@ -693,6 +724,7 @@ def post_detail(request, category, pk):
                 author=request.user,
                 content=content
             )
+            # 활동 로그 저장
             save_user_activity_log(
                 user_id=request.user.username,
                 address=f"/blog/{category}/{pk}/",
@@ -700,42 +732,15 @@ def post_detail(request, category, pk):
             )
         return redirect('post_detail', category=category, pk=pk)
 
+    # 최신 데이터로 게시글 새로고침
+    post.refresh_from_db()
+
+    # 템플릿에 전달할 데이터
     context = {
         'post': post,
         'comments': comments,
     }
     return render(request, 'posting.html', context)
-
-# blog의 게시글(posting)을 부르는 posting 함수
-@login_required
-def posting(request, pk):
-    post = get_object_or_404(Post, pk=pk)
-
-    # 해당 유저가 이 포스트를 조회했는지 확인
-    has_viewed = PostView.objects.filter(user=request.user, post=post).exists()
-
-    if not has_viewed:
-        # 조회수 +1
-        post.view_count += 1
-        post.save()
-
-        # 조회 기록 저장
-        PostView.objects.create(user=request.user, post=post)
-
-    # 조회수 최신화
-    post.refresh_from_db()
-    if request.method == 'POST':
-        # form에서 name="content"로 댓글 내용을 받아옴
-        content = request.POST.get('content')
-        if content:
-            Comment.objects.create(
-                post=post,
-                author=request.user,
-                content=content
-            )
-        return redirect('posting', pk=pk)
-    
-    return render(request, 'posting.html', {'post': post})
 
 @login_required
 def like(request, category, pk):

@@ -56,17 +56,56 @@ def custom_500(request):
     return render(request, '500.html', status=500)
 
 # Firebase 인증 정보 로드
-cred_path = settings.FIREBASE_CREDENTIALS
-if not os.path.exists(cred_path):
-    raise FileNotFoundError(f"Firebase credential file not found: {cred_path}")
+class _NullFirestoreDocument:
+    exists = False
 
-cred = credentials.Certificate(cred_path)
-firebase_admin.initialize_app(cred)
+    def collection(self, *_args, **_kwargs):
+        return self
+
+    def document(self, *_args, **_kwargs):
+        return self
+
+    def limit(self, *_args, **_kwargs):
+        return self
+
+    def stream(self):
+        return []
+
+    def get(self):
+        return self
+
+    def to_dict(self):
+        return {}
+
+    def set(self, *_args, **_kwargs):
+        return None
+
+    def update(self, *_args, **_kwargs):
+        return None
+
+    def add(self, *_args, **_kwargs):
+        return None
+
+
+class _NullFirestore:
+    def collection(self, *_args, **_kwargs):
+        return _NullFirestoreDocument()
+
+
+cred_path = settings.FIREBASE_CREDENTIALS
+db = _NullFirestore()
+if os.path.exists(cred_path):
+    if not firebase_admin._apps:
+        cred = credentials.Certificate(cred_path)
+        firebase_admin.initialize_app(cred)
+    db = firestore.client()
+
 
 # Firestore 인스턴스 생성
-db = firestore.client()
 
 def save_user_to_firestore(user_id, name, email, membership, point1=0, point2=0):
+    if db is None:
+        return
     user_ref = db.collection("users").document(user_id)
     user_ref.set({
         "name": name,
@@ -79,18 +118,24 @@ def save_user_to_firestore(user_id, name, email, membership, point1=0, point2=0)
     })
     
 def set_user_image_to_firestore(user_id, image_url):
+    if db is None:
+        return
     user_ref = db.collection("users").document(user_id)
     user_ref.update({
         "profileImage": image_url
     })
     
 def set_user_membership_to_firestore(user_id, membership):
+    if db is None:
+        return
     user_ref = db.collection("users").document(user_id)
     user_ref.update({
         "membership": membership
     })
 
 def get_user_from_firestore(user_id):
+    if db is None:
+        return None
     user_ref = db.collection("users").document(user_id)
     user_doc = user_ref.get()
     if user_doc.exists:
@@ -132,10 +177,11 @@ def purchase_points(request):
 
             # Firebase에서 기존 문서 업데이트
             user_ref = db.collection("users").document(username)  # username을 문서 ID로 사용
-            user_ref.update({
-                "point1": profile.point1,
-                "point2": profile.point2 or 0
-            })
+            if db is not None:
+                user_ref.update({
+                    "point1": profile.point1,
+                    "point2": profile.point2 or 0
+                })
 
             # 구매 기록 추가
             purchase_ref = user_ref.collection("purchaseHistory")
@@ -544,12 +590,16 @@ def send_sms_verification(request):
 
         # Twilio API 호출
         try:
-            account_sid = 'ACf4cbef6039c0bfd6a6f93f08e87da3c2'
-            auth_token = '0626580014ef2cb033094bb93f4a5be6'
-            client = Client(account_sid, auth_token)
+            if not (
+                settings.TWILIO_ACCOUNT_SID
+                and settings.TWILIO_AUTH_TOKEN
+                and settings.TWILIO_MESSAGING_SERVICE_SID
+            ):
+                return JsonResponse({"status": "error", "message": "SMS provider is not configured."})
+            client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
 
             message = client.messages.create(
-                messaging_service_sid='MG88776236b785255c18971b0fd076e298',
+                messaging_service_sid=settings.TWILIO_MESSAGING_SERVICE_SID,
                 body=f'인증 코드: {verification_code}',
                 to=f"+82{phone_number[1:]}"  # 국제 형식으로 변환
             )
@@ -631,11 +681,9 @@ def home(request):
 def download(request):
         # GitHub API URL
     GITHUB_API_URL = "https://api.github.com/repos/luvxy/coBin/releases"
-    GITHUB_TOKEN = "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"
-
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}"
-    }
+    headers = {}
+    if settings.GITHUB_TOKEN:
+        headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
 
     try:
         # GitHub API 호출
@@ -891,6 +939,6 @@ def update_post_status(request, pk):
     if request.method == 'POST':
         post.status = 'completed'
         post.save()
-        return redirect('post_detail', pk=post.pk)
+        return redirect('post_detail', category=post.category, pk=post.pk)
 
     return render(request, 'update_post_status.html', {'post': post})

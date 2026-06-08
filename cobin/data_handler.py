@@ -78,7 +78,7 @@ if __name__ == "__main__":
     # Update command
     upd = sub.add_parser("update", help="Update rows in a table.")
     upd.add_argument("table", help="Table name.")
-    upd.add_argument("set", dest="set_clause", help="SET clause, e.g. 'name="Alice"'.")
+    upd.add_argument("set", dest="set_clause", help='SET clause, e.g. \'name="Alice"\'.')
     upd.add_argument("where", dest="where_clause", help="WHERE clause, e.g. 'id=1'.")
 
     # Delete command

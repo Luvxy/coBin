@@ -60,6 +60,12 @@ cover/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+db_copy.sqlite3
+db_dump.txt
+cobin/config/*.json
+!cobin/config/*.example.json
+desktop_app/ui/test.html
+version.json
 
 # Flask stuff:
 instance/

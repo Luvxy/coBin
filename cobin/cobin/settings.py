@@ -21,12 +21,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-@vf#ug0lk!vvl@!#!vr2k=3#q2ri^23pe%w$up+i6t=xnk*yp+'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-dev-only-change-me')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG', 'False').lower() in ('1', 'true', 'yes', 'on')
 LOGIN_URL = '/login/'
-ALLOWED_HOSTS = ['192.168.0.2', '127.0.0.1', 'localhost', 'cobin.com']
+ALLOWED_HOSTS = os.getenv(
+    'DJANGO_ALLOWED_HOSTS',
+    '192.168.0.2,127.0.0.1,localhost,cobin.com',
+).split(',')
 
 
 # Application definition
@@ -141,7 +144,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
-FIREBASE_CREDENTIALS = os.path.join(BASE_DIR, 'config', 'cob2n-c0ece-firebase-adminsdk-fbsvc-5d0134383a.json')
+FIREBASE_CREDENTIALS = os.getenv(
+    'FIREBASE_CREDENTIALS',
+    os.path.join(BASE_DIR, 'config', 'firebase-adminsdk.json'),
+)
 
 # ASGI 설정 추가
 ASGI_APPLICATION = "cobin.asgi.application"
@@ -165,8 +171,14 @@ REST_FRAMEWORK = {
 
 # Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'cob2n2025@gmail.com'
-EMAIL_HOST_PASSWORD = 'qhpt gfsn oikk mloc'
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('1', 'true', 'yes', 'on')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+
+TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID', '')
+TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN', '')
+TWILIO_MESSAGING_SERVICE_SID = os.getenv('TWILIO_MESSAGING_SERVICE_SID', '')
+
+GITHUB_TOKEN = os.getenv('GITHUB_TOKEN', '')

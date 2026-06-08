@@ -12,7 +12,7 @@ from ui.ui_loading import loading
 # GitHub 저장소 정보
 GITHUB_REPO = "luvxy/coBin"  # GitHub 저장소 이름
 LATEST_RELEASE_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
-TOKEN = "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"  # GitHub Personal Access Token
+TOKEN = os.getenv("GITHUB_TOKEN", "")
 DOWNLOAD_PATH = os.path.join(os.path.dirname(__file__), "cobin.exe")  # 다운로드 파일 경로
 VERSION_FILE = "version.json"  # 버전 정보 파일
 
@@ -39,10 +39,11 @@ def update_launcher(api_url):
     temp_updater_path = os.path.join(os.path.dirname(launcher_path), "temp_updater.py")  # 임시 업데이트 스크립트 경로
 
     headers = {
-        "Authorization": f"token {TOKEN}",
         "Accept": "application/octet-stream",
         "User-Agent": "Mozilla/5.0"
     }
+    if TOKEN:
+        headers["Authorization"] = f"token {TOKEN}"
 
     print(f"[DEBUG] launcher.exe 다운로드 API URL: {api_url}")
 
@@ -88,9 +89,9 @@ subprocess.Popen([launcher_path])
 
 def get_latest_release():
     """GitHub에서 최신 릴리스 태그와 파일 API URL 가져오기"""
-    headers = {
-        "Authorization": f"token {TOKEN}"
-    }
+    headers = {}
+    if TOKEN:
+        headers["Authorization"] = f"token {TOKEN}"
     response = requests.get(LATEST_RELEASE_URL, headers=headers)
 
     if response.status_code == 200:
@@ -115,12 +116,14 @@ def get_latest_release():
 def download_update(api_url):
     """GitHub API를 사용하여 업데이트 파일 다운로드"""
     headers = {
-        "Authorization": f"token {TOKEN}",
         "Accept": "application/octet-stream",  # GitHub에서 직접 다운로드 가능하도록 설정
         "User-Agent": "Mozilla/5.0"
     }
 
     print(f"[DEBUG] 다운로드 API URL: {api_url}")  # 디버깅 로그 추가
+
+    if TOKEN:
+        headers["Authorization"] = f"token {TOKEN}"
 
     response = requests.get(api_url, stream=True, headers=headers)
     print(f"[DEBUG] 다운로드 상태: {response.status_code}")  # 상태 코드 확인
